@@ -1,10 +1,9 @@
-
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Menu, Code, LogIn, User, LogOut, Crown } from "lucide-react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { Badge } from "@/components/ui/badge";
 import AuthModal from "./AuthModal";
@@ -14,6 +13,7 @@ const Navbar = () => {
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const { user, profile, signOut } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
 
   const navItems = [
     { label: "Home", href: "/" },
@@ -32,6 +32,8 @@ const Navbar = () => {
     setIsAuthModalOpen(true);
     setIsOpen(false);
   };
+
+  const isActive = (path: string) => location.pathname === path;
 
   return (
     <>
@@ -52,7 +54,11 @@ const Navbar = () => {
                 <Link
                   key={item.label}
                   to={item.href}
-                  className="text-slate-300 hover:text-white transition-colors"
+                  className={
+                    isActive(item.href)
+                      ? "bg-[#9294b2] text-white px-3 py-2 rounded transition-colors"
+                      : "text-slate-300 hover:text-white transition-colors px-3 py-2 rounded"
+                  }
                 >
                   {item.label}
                 </Link>
@@ -118,7 +124,11 @@ const Navbar = () => {
                       key={item.label}
                       to={item.href}
                       onClick={() => setIsOpen(false)}
-                      className="text-slate-300 hover:text-white transition-colors py-2"
+                      className={
+                        isActive(item.href)
+                          ? "bg-[#9294b2] text-white py-2 rounded"
+                          : "text-slate-300 hover:text-white transition-colors py-2 rounded"
+                      }
                     >
                       {item.label}
                     </Link>

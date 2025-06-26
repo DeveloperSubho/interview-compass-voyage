@@ -1,9 +1,8 @@
-
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Code, BookOpen, Users, Trophy, Star, ArrowRight, CheckCircle, Zap, Target, Award } from "lucide-react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
@@ -11,6 +10,7 @@ import AuthModal from "@/components/AuthModal";
 
 const Index = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const { user } = useAuth();
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
 
@@ -84,6 +84,8 @@ const Index = () => {
       rating: 5
     }
   ];
+
+  const isActive = (path) => location.pathname === path;
 
   return (
     <div className="min-h-screen bg-slate-900 text-white">
