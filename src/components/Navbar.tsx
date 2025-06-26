@@ -2,11 +2,16 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
-import { Menu, Code, LogIn, User } from "lucide-react";
-import { Link } from "react-router-dom";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { Menu, Code, LogIn, User, LogOut, Crown } from "lucide-react";
+import { Link, useNavigate } from "react-router-dom";
+import { useAuth } from "@/contexts/AuthContext";
+import { Badge } from "@/components/ui/badge";
 
 const Navbar = () => {
   const [isOpen, setIsOpen] = useState(false);
+  const { user, profile, signOut } = useAuth();
+  const navigate = useNavigate();
 
   const navItems = [
     { label: "Home", href: "/" },
@@ -16,13 +21,18 @@ const Navbar = () => {
     { label: "Contact", href: "/contact" }
   ];
 
+  const handleSignOut = async () => {
+    await signOut();
+    navigate("/");
+  };
+
   return (
     <nav className="bg-slate-900/95 backdrop-blur-sm border-b border-slate-800 sticky top-0 z-50">
       <div className="container mx-auto px-4">
         <div className="flex items-center justify-between h-16">
           {/* Logo */}
           <Link to="/" className="flex items-center space-x-2">
-            <div className="h-8 w-8 bg-gradient-to-r from-blue-600 to-purple-600 rounded-lg flex items-center justify-center">
+            <div className="h-8 w-8 bg-gradient-to-r from-[#555879] to-[#98A1BC] rounded-lg flex items-center justify-center">
               <Code className="h-5 w-5 text-white" />
             </div>
             <span className="text-xl font-bold text-white">InterviewVoyage</span>
@@ -41,15 +51,49 @@ const Navbar = () => {
             ))}
           </div>
 
-          {/* Desktop Auth Buttons */}
+          {/* Desktop Auth Section */}
           <div className="hidden md:flex items-center space-x-4">
-            <Button variant="ghost" className="text-slate-300 hover:text-white">
-              <LogIn className="h-4 w-4 mr-2" />
-              Login
-            </Button>
-            <Button className="bg-blue-600 hover:bg-blue-700">
-              Sign Up
-            </Button>
+            {user ? (
+              <div className="flex items-center space-x-3">
+                {profile?.is_admin && (
+                  <Badge className="bg-yellow-600 text-white flex items-center gap-1">
+                    <Crown className="h-3 w-3" />
+                    Admin
+                  </Badge>
+                )}
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="ghost" className="text-slate-300 hover:text-white">
+                      <User className="h-4 w-4 mr-2" />
+                      {profile?.first_name || user.email}
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent className="bg-slate-800 border-slate-700">
+                    <DropdownMenuItem onClick={handleSignOut} className="text-slate-300 hover:text-white">
+                      <LogOut className="h-4 w-4 mr-2" />
+                      Sign Out
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </div>
+            ) : (
+              <>
+                <Button 
+                  variant="ghost" 
+                  className="text-slate-300 hover:text-white"
+                  onClick={() => navigate("/auth")}
+                >
+                  <LogIn className="h-4 w-4 mr-2" />
+                  Login
+                </Button>
+                <Button 
+                  className="bg-[#555879] hover:bg-[#98A1BC]"
+                  onClick={() => navigate("/auth")}
+                >
+                  Sign Up
+                </Button>
+              </>
+            )}
           </div>
 
           {/* Mobile Menu */}
@@ -72,13 +116,50 @@ const Navbar = () => {
                   </Link>
                 ))}
                 <div className="border-t border-slate-800 pt-4 space-y-2">
-                  <Button variant="ghost" className="w-full justify-start text-slate-300">
-                    <LogIn className="h-4 w-4 mr-2" />
-                    Login
-                  </Button>
-                  <Button className="w-full bg-blue-600 hover:bg-blue-700">
-                    Sign Up
-                  </Button>
+                  {user ? (
+                    <div className="space-y-2">
+                      {profile?.is_admin && (
+                        <Badge className="bg-yellow-600 text-white flex items-center gap-1 w-fit">
+                          <Crown className="h-3 w-3" />
+                          Admin
+                        </Badge>
+                      )}
+                      <div className="text-slate-300 py-2">
+                        {profile?.first_name || user.email}
+                      </div>
+                      <Button 
+                        variant="ghost" 
+                        className="w-full justify-start text-slate-300"
+                        onClick={handleSignOut}
+                      >
+                        <LogOut className="h-4 w-4 mr-2" />
+                        Sign Out
+                      </Button>
+                    </div>
+                  ) : (
+                    <>
+                      <Button 
+                        variant="ghost" 
+                        className="w-full justify-start text-slate-300"
+                        onClick={() => {
+                          navigate("/auth");
+                          setIsOpen(false);
+                        }}
+                      >
+                        <LogIn className="h-4 w-4 mr-2" />
+                        Login
+                      </Button>
+                      <Button 
+                        className="w-full bg-[#555879] hover:bg-[#98A1BC]"
+                        onClick={() => {
+                          navigate("/auth");
+                          setIsOpen(false);
+                        }}
+                      >
+                        Sign Up
+                      </Button>
+                    </>
+                  )}
                 </div>
               </div>
             </SheetContent>

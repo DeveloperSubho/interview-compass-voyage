@@ -9,7 +9,137 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
-      [_ in never]: never
+      categories: {
+        Row: {
+          created_at: string | null
+          description: string | null
+          id: string
+          name: string
+          tier: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          name: string
+          tier?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          name?: string
+          tier?: string | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      pages: {
+        Row: {
+          category_id: string | null
+          content: string | null
+          created_at: string | null
+          created_by: string | null
+          difficulty: string | null
+          id: string
+          tier: string | null
+          title: string
+          updated_at: string | null
+        }
+        Insert: {
+          category_id?: string | null
+          content?: string | null
+          created_at?: string | null
+          created_by?: string | null
+          difficulty?: string | null
+          id?: string
+          tier?: string | null
+          title: string
+          updated_at?: string | null
+        }
+        Update: {
+          category_id?: string | null
+          content?: string | null
+          created_at?: string | null
+          created_by?: string | null
+          difficulty?: string | null
+          id?: string
+          tier?: string | null
+          title?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pages_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "categories"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      profiles: {
+        Row: {
+          avatar_url: string | null
+          created_at: string | null
+          first_name: string | null
+          id: string
+          is_admin: boolean | null
+          last_name: string | null
+          updated_at: string | null
+          username: string | null
+        }
+        Insert: {
+          avatar_url?: string | null
+          created_at?: string | null
+          first_name?: string | null
+          id: string
+          is_admin?: boolean | null
+          last_name?: string | null
+          updated_at?: string | null
+          username?: string | null
+        }
+        Update: {
+          avatar_url?: string | null
+          created_at?: string | null
+          first_name?: string | null
+          id?: string
+          is_admin?: boolean | null
+          last_name?: string | null
+          updated_at?: string | null
+          username?: string | null
+        }
+        Relationships: []
+      }
+      user_subscriptions: {
+        Row: {
+          created_at: string | null
+          expires_at: string | null
+          id: string
+          status: string | null
+          tier: string | null
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          expires_at?: string | null
+          id?: string
+          status?: string | null
+          tier?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          expires_at?: string | null
+          id?: string
+          status?: string | null
+          tier?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never

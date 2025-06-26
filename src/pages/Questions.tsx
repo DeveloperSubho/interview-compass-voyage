@@ -5,8 +5,15 @@ import { Button } from "@/components/ui/button";
 import { Book, Code, Database, Cloud, MessageSquare, Layers, Lock } from "lucide-react";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
+import { useAuth } from "@/contexts/AuthContext";
+import { useNavigate } from "react-router-dom";
+import { useToast } from "@/hooks/use-toast";
 
 const Questions = () => {
+  const { user } = useAuth();
+  const navigate = useNavigate();
+  const { toast } = useToast();
+
   const categories = [
     {
       icon: Code,
@@ -71,7 +78,7 @@ const Questions = () => {
       case "Explorer":
         return "bg-green-600";
       case "Builder":
-        return "bg-blue-600";
+        return "bg-[#555879]";
       case "Innovator":
         return "bg-purple-600";
       default:
@@ -89,6 +96,32 @@ const Questions = () => {
         return "bg-red-500/20 text-red-300 border-red-500/30";
       default:
         return "bg-gray-500/20 text-gray-300 border-gray-500/30";
+    }
+  };
+
+  const handleCategoryClick = (category: any) => {
+    if (!user) {
+      toast({
+        title: "Authentication Required",
+        description: "Please sign in to access questions.",
+        variant: "destructive",
+      });
+      navigate("/auth");
+      return;
+    }
+
+    if (category.tier === "Explorer") {
+      toast({
+        title: "Coming Soon",
+        description: `${category.title} questions will be available soon!`,
+      });
+    } else {
+      toast({
+        title: "Upgrade Required",
+        description: `Upgrade to ${category.tier} tier to access ${category.title} questions.`,
+        variant: "destructive",
+      });
+      navigate("/pricing");
     }
   };
 
@@ -111,7 +144,7 @@ const Questions = () => {
             <Card key={index} className="bg-slate-800/50 border-slate-700 hover:bg-slate-800/70 transition-all duration-300 hover:scale-105">
               <CardHeader>
                 <div className="flex items-start justify-between mb-4">
-                  <div className="h-12 w-12 bg-gradient-to-r from-blue-600 to-purple-600 rounded-lg flex items-center justify-center">
+                  <div className="h-12 w-12 bg-gradient-to-r from-[#555879] to-[#98A1BC] rounded-lg flex items-center justify-center">
                     <category.icon className="h-6 w-6 text-white" />
                   </div>
                   <Badge className={`${getTierColor(category.tier)} text-white`}>
@@ -146,6 +179,7 @@ const Questions = () => {
                       ? "bg-green-600 hover:bg-green-700" 
                       : "bg-slate-700 hover:bg-slate-600"
                   }`}
+                  onClick={() => handleCategoryClick(category)}
                 >
                   {category.tier === "Explorer" ? "Start Learning" : (
                     <>
@@ -161,7 +195,7 @@ const Questions = () => {
 
         {/* CTA Section */}
         <div className="mt-16 text-center">
-          <Card className="bg-gradient-to-r from-blue-600/20 to-purple-600/20 border-slate-700 max-w-2xl mx-auto">
+          <Card className="bg-gradient-to-r from-[#555879]/20 to-[#98A1BC]/20 border-slate-700 max-w-2xl mx-auto">
             <CardContent className="p-8">
               <h3 className="text-2xl font-bold text-white mb-4">
                 Ready to Master Technical Interviews?
@@ -170,11 +204,18 @@ const Questions = () => {
                 Get unlimited access to all question categories with our premium plans.
               </p>
               <div className="flex flex-col sm:flex-row gap-4 justify-center">
-                <Button className="bg-blue-600 hover:bg-blue-700">
+                <Button 
+                  className="bg-[#555879] hover:bg-[#98A1BC]"
+                  onClick={() => navigate("/pricing")}
+                >
                   View Pricing
                 </Button>
-                <Button variant="outline" className="border-slate-600 text-slate-300 hover:bg-slate-800">
-                  Start Free Trial
+                <Button 
+                  variant="outline" 
+                  className="border-slate-600 text-slate-300 hover:bg-slate-800"
+                  onClick={() => !user ? navigate("/auth") : navigate("/pricing")}
+                >
+                  {!user ? "Sign Up Free" : "Start Free Trial"}
                 </Button>
               </div>
             </CardContent>

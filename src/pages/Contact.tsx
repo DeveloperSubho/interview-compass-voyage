@@ -1,11 +1,11 @@
 
 import { useState } from "react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
-import { Mail, Phone, MessageSquare, Linkedin, Github, Send, User as UserIcon } from "lucide-react";
+import { Mail, Phone, MapPin, Clock, Send, Github, Linkedin, Twitter, Instagram } from "lucide-react";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import { useToast } from "@/hooks/use-toast";
@@ -14,62 +14,67 @@ const Contact = () => {
   const [formData, setFormData] = useState({
     name: "",
     email: "",
+    subject: "",
     message: ""
   });
+  const [loading, setLoading] = useState(false);
   const { toast } = useToast();
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    toast({
-      title: "Message Sent!",
-      description: "Thank you for your message. We'll get back to you soon.",
-    });
-    setFormData({ name: "", email: "", message: "" });
-  };
-
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-    setFormData({
-      ...formData,
-      [e.target.name]: e.target.value
-    });
+    const { name, value } = e.target;
+    setFormData(prev => ({
+      ...prev,
+      [name]: value
+    }));
   };
 
-  const contactMethods = [
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+    
+    // Simulate form submission
+    setTimeout(() => {
+      toast({
+        title: "Message Sent!",
+        description: "Thank you for contacting us. We'll get back to you soon.",
+      });
+      setFormData({ name: "", email: "", subject: "", message: "" });
+      setLoading(false);
+    }, 1000);
+  };
+
+  const contactInfo = [
     {
       icon: Mail,
       title: "Email",
-      value: "contact@interviewvoyage.com",
-      color: "bg-blue-500",
-      action: "Connect"
+      details: "contact@interviewvoyage.com",
+      subtitle: "Send us an email anytime"
     },
     {
       icon: Phone,
       title: "Phone",
-      value: "+91-9876543210",
-      color: "bg-green-500",
-      action: "Connect"
+      details: "+91 9876543210",
+      subtitle: "Call us for immediate support"
     },
     {
-      icon: MessageSquare,
-      title: "WhatsApp",
-      value: "WhatsApp",
-      color: "bg-green-500",
-      action: "Connect"
+      icon: MapPin,
+      title: "Address",
+      details: "Bangalore, Karnataka, India",
+      subtitle: "Visit us at our office"
     },
     {
-      icon: Linkedin,
-      title: "LinkedIn",
-      value: "linkedin.com/in/interviewvoyage",
-      color: "bg-blue-600",
-      action: "Connect"
-    },
-    {
-      icon: Github,
-      title: "GitHub",
-      value: "github.com/InterviewVoyage",
-      color: "bg-gray-800",
-      action: "Connect"
+      icon: Clock,
+      title: "Business Hours",
+      details: "Mon - Fri: 9AM - 6PM IST",
+      subtitle: "We're here to help"
     }
+  ];
+
+  const socialLinks = [
+    { icon: Github, name: "GitHub", url: "#", color: "hover:text-gray-400" },
+    { icon: Linkedin, name: "LinkedIn", url: "#", color: "hover:text-blue-400" },
+    { icon: Twitter, name: "Twitter", url: "#", color: "hover:text-blue-300" },
+    { icon: Instagram, name: "Instagram", url: "#", color: "hover:text-pink-400" }
   ];
 
   return (
@@ -77,129 +82,148 @@ const Contact = () => {
       <Navbar />
       
       <div className="container mx-auto px-4 py-16">
-        <div className="text-center mb-12">
+        {/* Header */}
+        <div className="text-center mb-16">
           <h1 className="text-4xl md:text-5xl font-bold mb-4 bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent">
-            Get In Touch
+            Get in Touch
           </h1>
           <p className="text-slate-400 text-lg max-w-2xl mx-auto">
-            Have questions about InterviewVoyage? We'd love to hear from you. Send us a message and we'll respond as soon as possible.
+            Have questions about InterviewVoyage? We're here to help you on your journey to tech excellence.
           </p>
         </div>
 
-        <div className="grid lg:grid-cols-3 gap-8 max-w-6xl mx-auto">
+        <div className="grid lg:grid-cols-2 gap-12 max-w-6xl mx-auto">
           {/* Contact Form */}
-          <div className="lg:col-span-1">
-            <Card className="bg-slate-800/50 border-slate-700 h-fit">
-              <CardHeader>
-                <CardTitle className="text-white flex items-center">
-                  <Send className="h-5 w-5 mr-2" />
-                  Send Message
-                </CardTitle>
-                <CardDescription className="text-slate-400">
-                  Fill out the form below and we'll get back to you soon.
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <form onSubmit={handleSubmit} className="space-y-4">
+          <Card className="bg-slate-800/50 border-slate-700">
+            <CardHeader>
+              <CardTitle className="text-2xl text-white flex items-center gap-2">
+                <Send className="h-6 w-6" />
+                Send us a Message
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <form onSubmit={handleSubmit} className="space-y-6">
+                <div className="grid sm:grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <Label htmlFor="name" className="text-slate-300">Your Name</Label>
-                    <div className="relative">
-                      <UserIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-slate-400" />
-                      <Input
-                        id="name"
-                        name="name"
-                        type="text"
-                        placeholder="Your Name"
-                        value={formData.name}
-                        onChange={handleInputChange}
-                        className="pl-10 bg-slate-800 border-slate-600 text-white placeholder:text-slate-400"
-                        required
-                      />
-                    </div>
-                  </div>
-                  
-                  <div className="space-y-2">
-                    <Label htmlFor="email" className="text-slate-300">Email</Label>
-                    <div className="relative">
-                      <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-slate-400" />
-                      <Input
-                        id="email"
-                        name="email"
-                        type="email"
-                        placeholder="your.email@example.com"
-                        value={formData.email}
-                        onChange={handleInputChange}
-                        className="pl-10 bg-slate-800 border-slate-600 text-white placeholder:text-slate-400"
-                        required
-                      />
-                    </div>
-                  </div>
-                  
-                  <div className="space-y-2">
-                    <Label htmlFor="message" className="text-slate-300">Message</Label>
-                    <Textarea
-                      id="message"
-                      name="message"
-                      placeholder="Your message..."
-                      value={formData.message}
+                    <Label htmlFor="name" className="text-slate-300">Name *</Label>
+                    <Input
+                      id="name"
+                      name="name"
+                      value={formData.name}
                       onChange={handleInputChange}
-                      rows={6}
-                      className="bg-slate-800 border-slate-600 text-white placeholder:text-slate-400 resize-none"
+                      className="bg-slate-700 border-slate-600 text-white placeholder:text-slate-400"
+                      placeholder="Your full name"
                       required
                     />
                   </div>
-                  
-                  <Button 
-                    type="submit"
-                    className="w-full bg-gradient-to-r from-green-600 to-blue-600 hover:from-green-700 hover:to-blue-700 text-white"
-                  >
-                    <Send className="h-4 w-4 mr-2" />
-                    Send Message
-                  </Button>
-                </form>
-              </CardContent>
-            </Card>
-          </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="email" className="text-slate-300">Email *</Label>
+                    <Input
+                      id="email"
+                      name="email"
+                      type="email"
+                      value={formData.email}
+                      onChange={handleInputChange}
+                      className="bg-slate-700 border-slate-600 text-white placeholder:text-slate-400"
+                      placeholder="your@email.com"
+                      required
+                    />
+                  </div>
+                </div>
+                
+                <div className="space-y-2">
+                  <Label htmlFor="subject" className="text-slate-300">Subject *</Label>
+                  <Input
+                    id="subject"
+                    name="subject"
+                    value={formData.subject}
+                    onChange={handleInputChange}
+                    className="bg-slate-700 border-slate-600 text-white placeholder:text-slate-400"
+                    placeholder="What's this about?"
+                    required
+                  />
+                </div>
+                
+                <div className="space-y-2">
+                  <Label htmlFor="message" className="text-slate-300">Message *</Label>
+                  <Textarea
+                    id="message"
+                    name="message"
+                    value={formData.message}
+                    onChange={handleInputChange}
+                    rows={6}
+                    className="bg-slate-700 border-slate-600 text-white placeholder:text-slate-400 resize-none"
+                    placeholder="Tell us more about your inquiry..."
+                    required
+                  />
+                </div>
+                
+                <Button 
+                  type="submit" 
+                  className="w-full bg-gradient-to-r from-[#555879] to-[#98A1BC] hover:from-[#98A1BC] hover:to-[#555879] text-white py-3"
+                  disabled={loading}
+                >
+                  {loading ? "Sending..." : "Send Message"}
+                  <Send className="ml-2 h-4 w-4" />
+                </Button>
+              </form>
+            </CardContent>
+          </Card>
 
-          {/* Contact Methods */}
-          <div className="lg:col-span-2">
-            <div className="grid sm:grid-cols-2 gap-4 mb-8">
-              {contactMethods.map((method, index) => (
-                <Card key={index} className="bg-slate-800/50 border-slate-700 hover:bg-slate-800/70 transition-all duration-300">
-                  <CardContent className="p-6 text-center">
-                    <div className={`h-12 w-12 ${method.color} rounded-full flex items-center justify-center mx-auto mb-4`}>
-                      <method.icon className="h-6 w-6 text-white" />
+          {/* Contact Information */}
+          <div className="space-y-8">
+            {/* Contact Details */}
+            <div className="grid gap-6">
+              {contactInfo.map((item, index) => (
+                <Card key={index} className="bg-slate-800/50 border-slate-700 hover:bg-slate-800/70 transition-colors">
+                  <CardContent className="p-6">
+                    <div className="flex items-start gap-4">
+                      <div className="h-12 w-12 bg-gradient-to-r from-[#555879] to-[#98A1BC] rounded-lg flex items-center justify-center flex-shrink-0">
+                        <item.icon className="h-6 w-6 text-white" />
+                      </div>
+                      <div>
+                        <h3 className="text-white font-semibold text-lg mb-1">{item.title}</h3>
+                        <p className="text-slate-300 font-medium mb-1">{item.details}</p>
+                        <p className="text-slate-400 text-sm">{item.subtitle}</p>
+                      </div>
                     </div>
-                    <h3 className="font-semibold text-white mb-2">{method.title}</h3>
-                    <p className="text-slate-400 text-sm mb-4">{method.value}</p>
-                    <Button 
-                      variant="outline" 
-                      size="sm" 
-                      className="border-slate-600 text-slate-300 hover:bg-slate-700"
-                    >
-                      {method.action}
-                    </Button>
                   </CardContent>
                 </Card>
               ))}
             </div>
 
-            {/* Schedule a Call */}
+            {/* Social Media */}
             <Card className="bg-slate-800/50 border-slate-700">
-              <CardContent className="p-8 text-center">
-                <div className="h-16 w-16 bg-gradient-to-r from-green-600 to-blue-600 rounded-full flex items-center justify-center mx-auto mb-6">
-                  <Phone className="h-8 w-8 text-white" />
-                </div>
-                <h3 className="text-2xl font-bold text-white mb-4">Schedule a Call</h3>
+              <CardHeader>
+                <CardTitle className="text-xl text-white">Follow Us</CardTitle>
+              </CardHeader>
+              <CardContent>
                 <p className="text-slate-400 mb-6">
-                  Let's discuss opportunities over a video call and explore how InterviewVoyage can help accelerate your career growth.
+                  Stay connected with us on social media for the latest updates, tips, and career opportunities.
                 </p>
-                <Button 
-                  size="lg"
-                  className="bg-gradient-to-r from-green-600 to-blue-600 hover:from-green-700 hover:to-blue-700 text-white px-8 py-3"
-                >
-                  Start Meeting
-                </Button>
+                <div className="flex gap-4">
+                  {socialLinks.map((social, index) => (
+                    <a
+                      key={index}
+                      href={social.url}
+                      className={`p-3 bg-slate-700 rounded-lg text-slate-400 transition-colors ${social.color} hover:bg-slate-600`}
+                      aria-label={social.name}
+                    >
+                      <social.icon className="h-5 w-5" />
+                    </a>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Quick Info */}
+            <Card className="bg-gradient-to-r from-[#555879]/20 to-[#98A1BC]/20 border-slate-700">
+              <CardContent className="p-6">
+                <h3 className="text-white font-semibold text-lg mb-4">Quick Response Promise</h3>
+                <p className="text-slate-300 text-sm leading-relaxed">
+                  We typically respond to all inquiries within 24 hours during business days. 
+                  For urgent matters, please call us directly.
+                </p>
               </CardContent>
             </Card>
           </div>

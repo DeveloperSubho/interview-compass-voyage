@@ -1,15 +1,17 @@
-
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { ArrowRight, Book, Code, CheckCircle, Star, Users, Trophy } from "lucide-react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
+import { useAuth } from "@/contexts/AuthContext";
 
 const Index = () => {
   const [selectedTier, setSelectedTier] = useState("monthly");
+  const { user } = useAuth();
+  const navigate = useNavigate();
 
   const features = [
     {
@@ -87,15 +89,23 @@ const Index = () => {
     { label: "Success Rate", value: "85%" }
   ];
 
+  const handleStartJourney = () => {
+    if (user) {
+      navigate("/questions");
+    } else {
+      navigate("/auth");
+    }
+  };
+
   return (
     <div className="min-h-screen bg-slate-900 text-white">
       <Navbar />
       
       {/* Hero Section */}
       <section className="relative py-20 px-4 overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-br from-blue-600/20 via-purple-600/20 to-teal-600/20"></div>
+        <div className="absolute inset-0 bg-gradient-to-br from-[#555879]/20 via-[#98A1BC]/20 to-teal-600/20"></div>
         <div className="container mx-auto text-center relative z-10">
-          <Badge className="mb-6 bg-blue-600/20 text-blue-300 border-blue-500/30">
+          <Badge className="mb-6 bg-[#555879]/20 text-[#98A1BC] border-[#555879]/30">
             🚀 Your Journey to Tech Excellence Starts Here
           </Badge>
           <h1 className="text-5xl md:text-7xl font-bold mb-6 bg-gradient-to-r from-blue-400 via-purple-400 to-teal-400 bg-clip-text text-transparent">
@@ -105,10 +115,19 @@ const Index = () => {
             Master technical interviews with our comprehensive platform featuring coding questions, system design, and real-world projects
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center mb-12">
-            <Button size="lg" className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white px-8 py-3">
+            <Button 
+              size="lg" 
+              className="bg-gradient-to-r from-[#555879] to-[#98A1BC] hover:from-[#98A1BC] hover:to-[#555879] text-white px-8 py-3"
+              onClick={handleStartJourney}
+            >
               Start Your Journey <ArrowRight className="ml-2 h-5 w-5" />
             </Button>
-            <Button size="lg" variant="outline" className="border-slate-600 text-slate-300 hover:bg-slate-800 px-8 py-3">
+            <Button 
+              size="lg" 
+              variant="outline" 
+              className="border-slate-600 text-slate-300 hover:bg-slate-800 px-8 py-3"
+              onClick={() => navigate("/pricing")}
+            >
               View Pricing
             </Button>
           </div>
@@ -139,7 +158,7 @@ const Index = () => {
             {features.map((feature, index) => (
               <Card key={index} className="bg-slate-800/50 border-slate-700 hover:bg-slate-800/70 transition-all duration-300 hover:scale-105">
                 <CardHeader>
-                  <div className="h-12 w-12 bg-gradient-to-r from-blue-600 to-purple-600 rounded-lg flex items-center justify-center mb-4">
+                  <div className="h-12 w-12 bg-gradient-to-r from-[#555879] to-[#98A1BC] rounded-lg flex items-center justify-center mb-4">
                     <feature.icon className="h-6 w-6 text-white" />
                   </div>
                   <CardTitle className="text-white">{feature.title}</CardTitle>
@@ -177,7 +196,7 @@ const Index = () => {
                 onClick={() => setSelectedTier("monthly")}
                 className={`px-6 py-2 rounded-md text-sm font-medium transition-all ${
                   selectedTier === "monthly"
-                    ? "bg-blue-600 text-white"
+                    ? "bg-[#555879] text-white"
                     : "text-slate-400 hover:text-white"
                 }`}
               >
@@ -187,7 +206,7 @@ const Index = () => {
                 onClick={() => setSelectedTier("yearly")}
                 className={`px-6 py-2 rounded-md text-sm font-medium transition-all ${
                   selectedTier === "yearly"
-                    ? "bg-blue-600 text-white"
+                    ? "bg-[#555879] text-white"
                     : "text-slate-400 hover:text-white"
                 }`}
               >
@@ -200,11 +219,11 @@ const Index = () => {
           <div className="grid md:grid-cols-3 gap-8 max-w-5xl mx-auto">
             {pricingTiers.map((tier, index) => (
               <Card key={index} className={`relative bg-slate-800/50 border-slate-700 hover:scale-105 transition-all duration-300 ${
-                tier.popular ? "ring-2 ring-blue-500 bg-slate-800/70" : ""
+                tier.popular ? "ring-2 ring-[#555879] bg-slate-800/70" : ""
               }`}>
                 {tier.popular && (
                   <div className="absolute -top-4 left-1/2 transform -translate-x-1/2">
-                    <Badge className="bg-blue-600 text-white px-4 py-1">
+                    <Badge className="bg-[#555879] text-white px-4 py-1">
                       <Star className="h-3 w-3 mr-1" />
                       Most Popular
                     </Badge>
@@ -232,9 +251,10 @@ const Index = () => {
                   <Button 
                     className={`w-full mt-8 ${
                       tier.popular 
-                        ? "bg-blue-600 hover:bg-blue-700 text-white" 
+                        ? "bg-[#555879] hover:bg-[#98A1BC] text-white" 
                         : "bg-slate-700 hover:bg-slate-600 text-white"
                     }`}
+                    onClick={() => navigate("/pricing")}
                   >
                     {tier.buttonText}
                   </Button>
@@ -248,12 +268,16 @@ const Index = () => {
       {/* CTA Section */}
       <section className="py-20 px-4">
         <div className="container mx-auto text-center">
-          <div className="bg-gradient-to-r from-blue-600/20 to-purple-600/20 rounded-2xl p-12">
+          <div className="bg-gradient-to-r from-[#555879]/20 to-[#98A1BC]/20 rounded-2xl p-12">
             <h2 className="text-4xl font-bold mb-4">Ready to Start Your Journey?</h2>
             <p className="text-slate-300 text-lg mb-8 max-w-2xl mx-auto">
               Join thousands of developers who have successfully landed their dream jobs with InterviewVoyage
             </p>
-            <Button size="lg" className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white px-8 py-3">
+            <Button 
+              size="lg" 
+              className="bg-gradient-to-r from-[#555879] to-[#98A1BC] hover:from-[#98A1BC] hover:to-[#555879] text-white px-8 py-3"
+              onClick={handleStartJourney}
+            >
               Get Started for Free <ArrowRight className="ml-2 h-5 w-5" />
             </Button>
           </div>
