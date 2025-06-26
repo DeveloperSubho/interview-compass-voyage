@@ -1,4 +1,3 @@
-
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -8,6 +7,12 @@ import Footer from "@/components/Footer";
 import { useAuth } from "@/contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
+
+type Project = {
+  title?: string;
+  tier?: string;
+  // Add other relevant fields as needed
+};
 
 const Projects = () => {
   const { user, profile } = useAuth();
@@ -118,7 +123,7 @@ const Projects = () => {
     }
   };
 
-  const handleProjectClick = (project: any) => {
+  const handleProjectClick = (project: Project) => {
     if (!user) {
       toast({
         title: "Authentication Required",
