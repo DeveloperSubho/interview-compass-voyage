@@ -328,14 +328,14 @@ const Projects = () => {
               </p>
               <div className="flex flex-col sm:flex-row gap-4 justify-center">
                 <Button 
-                  className="bg-white text-[#555879] hover:bg-white/90"
+                  className="bg-white text-[#555879] hover:bg-white/10 hover:border-white"
                   onClick={() => navigate("/pricing")}
                 >
                   View Pricing
                 </Button>
                 <Button 
                   variant="outline" 
-                  className="border-white/30 text-white hover:bg-white/10 hover:border-white"
+                  className="border-white/30 text-[#555879] hover:bg-white/10 hover:border-white"
                   onClick={() => !user ? navigate("/auth") : navigate("/pricing")}
                 >
                   {!user ? "Sign Up Free" : "Start Free Trial"}

@@ -91,11 +91,11 @@ const Index = () => {
       
       {/* Hero Section */}
       <section className="relative overflow-hidden bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 py-20 lg:py-32">
-        <div className="absolute inset-0 bg-[url('data:image/svg+xml,%3Csvg width=\"60\" height=\"60\" viewBox=\"0 0 60 60\" xmlns=\"http://www.w3.org/2000/svg\"%3E%3Cg fill=\"none\" fill-rule=\"evenodd\"%3E%3Cg fill=\"%23334155\" fill-opacity=\"0.05\"%3E%3Ccircle cx=\"30\" cy=\"30\" r=\"1\"/%3E%3C/g%3E%3C/g%3E%3C/svg%3E')] opacity-50"></div>
+        <svg className="absolute inset-0" width="60" height="60" viewBox="0 0 60 60" fill="none" opacity="50"></svg>
         <div className="container mx-auto px-4 relative">
           <div className="text-center max-w-4xl mx-auto">
             <h1 className="text-5xl md:text-7xl font-bold mb-6 bg-gradient-to-r from-blue-400 via-purple-400 to-cyan-400 bg-clip-text text-transparent leading-[1.2]">
-              Master Technical Interviews
+              InterviewVoyage
             </h1>
             <p className="text-xl md:text-2xl text-slate-300 mb-8 leading-relaxed">
               Prepare for your dream job with our comprehensive collection of interview questions and real-world projects from top tech companies.
@@ -110,9 +110,8 @@ const Index = () => {
                 <ArrowRight className="ml-2 h-5 w-5" />
               </Button>
               <Button 
-                variant="outline" 
                 size="lg" 
-                className="border-slate-600 text-slate-300 hover:bg-[#555879] hover:text-white hover:border-[#555879] px-8 py-3 text-lg transition-all duration-300"
+                className="bg-[#9294b2] hover:bg-[#7a7c98] text-white px-8 py-3 text-lg font-semibold transition-all duration-300 transform hover:scale-105"
                 onClick={() => navigate("/pricing")}
               >
                 View Pricing
@@ -222,7 +221,8 @@ const Index = () => {
               <div className="flex flex-col sm:flex-row gap-4 justify-center">
                 <Button 
                   size="lg"
-                  className="bg-white text-[#555879] hover:bg-white/90 px-8 py-3 text-lg font-semibold transition-all duration-300 transform hover:scale-105"
+                  variant="outline" 
+                  className="bg-[#555879] hover:bg-[#98A1BC] text-white px-8 py-3"
                   onClick={() => navigate("/pricing")}
                 >
                   View Pricing
@@ -230,7 +230,7 @@ const Index = () => {
                 <Button 
                   size="lg"
                   variant="outline" 
-                  className="border-white/30 text-white hover:bg-white/10 hover:border-white px-8 py-3 text-lg transition-all duration-300"
+                  className="bg-[#555879] hover:bg-[#98A1BC] text-white px-8 py-3"
                   onClick={handleStartLearning}
                 >
                   {!user ? "Sign Up Free" : "Start Learning"}

@@ -207,15 +207,16 @@ const Questions = () => {
                 Get unlimited access to all question categories with our premium plans.
               </p>
               <div className="flex flex-col sm:flex-row gap-4 justify-center">
-                <Button 
-                  className="bg-white text-[#555879] hover:bg-white/90"
+                <Button
+                  variant="outline" 
+                  className="bg-[#555879] hover:bg-[#98A1BC] text-white px-8 py-3"
                   onClick={() => navigate("/pricing")}
                 >
                   View Pricing
                 </Button>
                 <Button 
                   variant="outline" 
-                  className="border-white/30 text-white hover:bg-white/10 hover:border-white"
+                  className="bg-[#555879] hover:bg-[#98A1BC] text-white px-8 py-3"
                   onClick={() => !user ? navigate("/auth") : navigate("/pricing")}
                 >
                   {!user ? "Sign Up Free" : "Start Free Trial"}

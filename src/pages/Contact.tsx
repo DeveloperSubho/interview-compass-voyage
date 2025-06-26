@@ -65,7 +65,7 @@ const Contact = () => {
     {
       icon: Clock,
       title: "Business Hours",
-      details: "Mon - Fri: 9AM - 6PM IST",
+      details: "Mon - Fri: 9AM - 10PM IST",
       subtitle: "We're here to help"
     }
   ];
@@ -217,7 +217,7 @@ const Contact = () => {
             </Card>
 
             {/* Quick Info */}
-            <Card className="bg-gradient-to-r from-[#555879]/20 to-[#98A1BC]/20 border-slate-700">
+            <Card className="bg-gradient-to-r from-[#555879]/20 to-[#98A1BC]/20 border-slate-700 bg-[#9294b2]">
               <CardContent className="p-6">
                 <h3 className="text-white font-semibold text-lg mb-4">Quick Response Promise</h3>
                 <p className="text-slate-300 text-sm leading-relaxed">

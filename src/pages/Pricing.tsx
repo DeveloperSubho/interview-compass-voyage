@@ -166,7 +166,7 @@ const Pricing = () => {
 
         {/* CTA Section */}
         <div className="mt-16 text-center">
-          <Card className="bg-gradient-to-r from-[#555879]/20 to-[#98A1BC]/20 border-slate-700 max-w-2xl mx-auto">
+          <Card className="bg-gradient-to-r from-[#555879]/20 to-[#98A1BC]/20 border-slate-700 max-w-2xl mx-auto bg-[#9294b2]">
             <CardContent className="p-8">
               <h3 className="text-2xl font-bold text-white mb-4">
                 Ready to Start Your Journey?
@@ -175,6 +175,7 @@ const Pricing = () => {
                 Join thousands of developers who have successfully landed their dream jobs with InterviewVoyage
               </p>
               <Button 
+                variant="outline" 
                 className="bg-[#555879] hover:bg-[#98A1BC] text-white px-8 py-3"
                 onClick={() => handleUpgrade("Builder")}
               >
