@@ -10,7 +10,7 @@ import { useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
 
 const Questions = () => {
-  const { user } = useAuth();
+  const { user, profile } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
 
@@ -110,11 +110,14 @@ const Questions = () => {
       return;
     }
 
+    // Admin can access all categories
+    if (profile?.is_admin) {
+      navigate(`/questions/${category.title.toLowerCase().replace(/\s+/g, '-')}`);
+      return;
+    }
+
     if (category.tier === "Explorer") {
-      toast({
-        title: "Coming Soon",
-        description: `${category.title} questions will be available soon!`,
-      });
+      navigate(`/questions/${category.title.toLowerCase().replace(/\s+/g, '-')}`);
     } else {
       toast({
         title: "Upgrade Required",
@@ -175,13 +178,13 @@ const Questions = () => {
                 
                 <Button 
                   className={`w-full ${
-                    category.tier === "Explorer" 
+                    (category.tier === "Explorer" || profile?.is_admin)
                       ? "bg-green-600 hover:bg-green-700" 
                       : "bg-slate-700 hover:bg-slate-600"
                   }`}
                   onClick={() => handleCategoryClick(category)}
                 >
-                  {category.tier === "Explorer" ? "Start Learning" : (
+                  {(category.tier === "Explorer" || profile?.is_admin) ? "Start Learning" : (
                     <>
                       <Lock className="h-4 w-4 mr-2" />
                       Upgrade to Access
@@ -195,7 +198,7 @@ const Questions = () => {
 
         {/* CTA Section */}
         <div className="mt-16 text-center">
-          <Card className="bg-gradient-to-r from-[#555879]/20 to-[#98A1BC]/20 border-slate-700 max-w-2xl mx-auto">
+          <Card className="bg-[#9294b2] border-none max-w-2xl mx-auto">
             <CardContent className="p-8">
               <h3 className="text-2xl font-bold text-white mb-4">
                 Ready to Master Technical Interviews?
@@ -205,14 +208,14 @@ const Questions = () => {
               </p>
               <div className="flex flex-col sm:flex-row gap-4 justify-center">
                 <Button 
-                  className="bg-[#555879] hover:bg-[#98A1BC]"
+                  className="bg-white text-[#555879] hover:bg-white/90"
                   onClick={() => navigate("/pricing")}
                 >
                   View Pricing
                 </Button>
                 <Button 
                   variant="outline" 
-                  className="border-slate-600 text-slate-300 hover:bg-slate-800"
+                  className="border-white/30 text-white hover:bg-white/10 hover:border-white"
                   onClick={() => !user ? navigate("/auth") : navigate("/pricing")}
                 >
                   {!user ? "Sign Up Free" : "Start Free Trial"}

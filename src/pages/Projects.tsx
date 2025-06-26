@@ -1,3 +1,4 @@
+
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -9,7 +10,7 @@ import { useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
 
 const Projects = () => {
-  const { user } = useAuth();
+  const { user, profile } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
 
@@ -128,6 +129,15 @@ const Projects = () => {
       return;
     }
 
+    // Admin can access all projects
+    if (profile?.is_admin) {
+      toast({
+        title: "Admin Access",
+        description: `${project.title || project.title} projects are now accessible to you as an admin.`,
+      });
+      return;
+    }
+
     if (project.tier === "Explorer") {
       toast({
         title: "Coming Soon",
@@ -147,7 +157,7 @@ const Projects = () => {
     <div className="min-h-screen bg-slate-900 text-white">
       <Navbar />
       
-      <div className="container mx-auto px-4 py-16 max-w-7xl">
+      <div className="container mx-auto px-4 py-16">
         <div className="text-center mb-12">
           <h1 className="text-4xl md:text-5xl font-bold mb-4 bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent">
             Real-World Projects
@@ -163,7 +173,7 @@ const Projects = () => {
             <Star className="h-6 w-6 mr-2 text-yellow-500" />
             Featured Projects
           </h2>
-          <div className="space-y-6 max-w-5xl mx-auto">
+          <div className="grid md:grid-cols-2 gap-6 max-w-6xl mx-auto">
             {featuredProjects.map((project, index) => (
               <Card key={index} className="bg-slate-800/50 border-slate-700 hover:bg-slate-800/70 transition-all duration-300">
                 <CardHeader>
@@ -217,13 +227,13 @@ const Projects = () => {
                   
                   <Button 
                     className={`w-full ${
-                      project.tier === "Explorer" 
+                      (project.tier === "Explorer" || profile?.is_admin)
                         ? "bg-[#555879] hover:bg-[#98A1BC] text-white" 
                         : "bg-slate-700 hover:bg-slate-600 text-white"
                     }`}
                     onClick={() => handleProjectClick(project)}
                   >
-                    {project.tier === "Explorer" ? "Start Project" : (
+                    {(project.tier === "Explorer" || profile?.is_admin) ? "Start Project" : (
                       <>
                         <Lock className="h-4 w-4 mr-2" />
                         Upgrade to Access
@@ -239,7 +249,7 @@ const Projects = () => {
         {/* Project Categories */}
         <div>
           <h2 className="text-2xl font-bold text-white mb-8">Project Categories</h2>
-          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6 max-w-6xl mx-auto">
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-6xl mx-auto">
             {categories.map((category, index) => (
               <Card key={index} className="bg-slate-800/50 border-slate-700 hover:bg-slate-800/70 transition-all duration-300 hover:scale-105">
                 <CardHeader>
@@ -287,13 +297,13 @@ const Projects = () => {
                   
                   <Button 
                     className={`w-full ${
-                      category.tier === "Explorer" 
+                      (category.tier === "Explorer" || profile?.is_admin)
                         ? "bg-[#555879] hover:bg-[#98A1BC] text-white" 
                         : "bg-slate-700 hover:bg-slate-600 text-white"
                     }`}
                     onClick={() => handleProjectClick(category)}
                   >
-                    {category.tier === "Explorer" ? "Explore Projects" : (
+                    {(category.tier === "Explorer" || profile?.is_admin) ? "Explore Projects" : (
                       <>
                         <Lock className="h-4 w-4 mr-2" />
                         Upgrade to Access
@@ -308,7 +318,7 @@ const Projects = () => {
 
         {/* CTA Section */}
         <div className="mt-16 text-center">
-          <Card className="bg-gradient-to-br from-[#555879] via-[#6B6B9E] to-[#98A1BC] border-none max-w-2xl mx-auto">
+          <Card className="bg-[#9294b2] border-none max-w-2xl mx-auto">
             <CardContent className="p-8">
               <h3 className="text-2xl font-bold text-white mb-4">
                 Ready to Build Impressive Projects?

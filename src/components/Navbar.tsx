@@ -64,7 +64,7 @@ const Navbar = () => {
               {user ? (
                 <div className="flex items-center space-x-3">
                   {profile?.is_admin && (
-                    <Badge className="bg-yellow-600 text-white flex items-center gap-1">
+                    <Badge className="bg-yellow-600 text-white flex items-center gap-1 hover:bg-yellow-600">
                       <Crown className="h-3 w-3" />
                       Admin
                     </Badge>
@@ -127,7 +127,7 @@ const Navbar = () => {
                     {user ? (
                       <div className="space-y-2">
                         {profile?.is_admin && (
-                          <Badge className="bg-yellow-600 text-white flex items-center gap-1 w-fit">
+                          <Badge className="bg-yellow-600 text-white flex items-center gap-1 w-fit hover:bg-yellow-600">
                             <Crown className="h-3 w-3" />
                             Admin
                           </Badge>
