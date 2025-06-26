@@ -1,143 +1,138 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { ArrowRight, Book, Code, CheckCircle, Star, Users, Trophy } from "lucide-react";
-import { Link, useNavigate } from "react-router-dom";
+import { Code, BookOpen, Users, Trophy, Star, ArrowRight, CheckCircle, Zap, Target, Award } from "lucide-react";
+import { useNavigate } from "react-router-dom";
+import { useAuth } from "@/contexts/AuthContext";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
-import { useAuth } from "@/contexts/AuthContext";
+import AuthModal from "@/components/AuthModal";
 
 const Index = () => {
-  const [selectedTier, setSelectedTier] = useState("monthly");
-  const { user } = useAuth();
   const navigate = useNavigate();
+  const { user } = useAuth();
+  const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
 
-  const features = [
-    {
-      icon: Book,
-      title: "Interview Questions",
-      description: "Comprehensive collection of technical interview questions across multiple technologies",
-      categories: ["Java", "Spring Boot", "System Design", "ReactJS", "Cloud"]
-    },
-    {
-      icon: Code,
-      title: "Real-World Projects",
-      description: "Hands-on projects that mirror industry scenarios and boost your portfolio",
-      categories: ["Full-Stack", "Backend", "Frontend", "Database", "Microservices"]
-    },
-    {
-      icon: Trophy,
-      title: "System Design",
-      description: "Master system design concepts with detailed explanations and case studies",
-      categories: ["Scalability", "Architecture", "Design Patterns", "Best Practices"]
-    }
-  ];
-
-  const pricingTiers = [
-    {
-      name: "Explorer",
-      price: "Free",
-      period: "",
-      description: "Perfect for getting started",
-      features: [
-        "Basic Interview Questions",
-        "Basic System Design",
-        "Basic Projects",
-        "Community Access"
-      ],
-      buttonText: "Get Started",
-      popular: false
-    },
-    {
-      name: "Builder",
-      price: selectedTier === "monthly" ? "₹80" : "₹800",
-      period: selectedTier === "monthly" ? "/month" : "/year",
-      description: "Best for interviews",
-      features: [
-        "Everything in Explorer",
-        "Intermediate Questions",
-        "Interactive Tutorials",
-        "Intermediate Projects",
-        "Progress Tracking"
-      ],
-      buttonText: "Upgrade Plan",
-      popular: true
-    },
-    {
-      name: "Innovator",
-      price: selectedTier === "monthly" ? "₹250" : "₹2500",
-      period: selectedTier === "monthly" ? "/month" : "/year",
-      description: "Best for career growth",
-      features: [
-        "Everything in Builder",
-        "Advanced Questions",
-        "Advanced Projects",
-        "Scenario-Based Problems",
-        "1-on-1 Mentoring",
-        "Priority Support"
-      ],
-      buttonText: "Upgrade Plan",
-      popular: false
-    }
-  ];
-
-  const stats = [
-    { label: "Active Users", value: "10K+" },
-    { label: "Interview Questions", value: "500+" },
-    { label: "Projects", value: "100+" },
-    { label: "Success Rate", value: "85%" }
-  ];
-
-  const handleStartJourney = () => {
+  const handleGetStarted = () => {
     if (user) {
       navigate("/questions");
     } else {
-      navigate("/auth");
+      setIsAuthModalOpen(true);
     }
   };
+
+  const handleStartLearning = () => {
+    if (user) {
+      navigate("/questions");
+    } else {
+      setIsAuthModalOpen(true);
+    }
+  };
+
+  const stats = [
+    { number: "5000+", label: "Interview Questions" },
+    { number: "50+", label: "Real-World Projects" },
+    { number: "10000+", label: "Successful Candidates" },
+    { number: "95%", label: "Success Rate" }
+  ];
+
+  const features = [
+    {
+      icon: BookOpen,
+      title: "Comprehensive Question Bank",
+      description: "Access thousands of real interview questions from top tech companies, organized by difficulty and topic.",
+      color: "from-blue-500 to-cyan-500"
+    },
+    {
+      icon: Code,
+      title: "Hands-on Projects",
+      description: "Build impressive portfolio projects that demonstrate your skills to potential employers.",
+      color: "from-purple-500 to-pink-500"
+    },
+    {
+      icon: Users,
+      title: "Expert Guidance",
+      description: "Learn from industry professionals with detailed explanations and best practices.",
+      color: "from-green-500 to-emerald-500"
+    },
+    {
+      icon: Trophy,
+      title: "Track Progress",
+      description: "Monitor your improvement with detailed analytics and personalized learning paths.",
+      color: "from-orange-500 to-red-500"
+    }
+  ];
+
+  const testimonials = [
+    {
+      name: "Sarah Chen",
+      role: "Software Engineer at Google",
+      content: "InterviewVoyage helped me crack my dream job at Google. The questions were spot-on and the projects gave me confidence.",
+      rating: 5
+    },
+    {
+      name: "Michael Rodriguez",
+      role: "Full-Stack Developer at Meta",
+      content: "The comprehensive preparation materials and real-world projects made all the difference in my interviews.",
+      rating: 5
+    },
+    {
+      name: "Priya Patel",
+      role: "Senior Developer at Amazon",
+      content: "I landed my role at Amazon thanks to the structured approach and high-quality content on InterviewVoyage.",
+      rating: 5
+    }
+  ];
 
   return (
     <div className="min-h-screen bg-slate-900 text-white">
       <Navbar />
       
       {/* Hero Section */}
-      <section className="relative py-20 px-4 overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-br from-[#555879]/20 via-[#98A1BC]/20 to-teal-600/20"></div>
-        <div className="container mx-auto text-center relative z-10">
-          <Badge className="mb-6 bg-[#555879]/20 text-[#98A1BC] border-[#555879]/30">
-            🚀 Your Journey to Tech Excellence Starts Here
-          </Badge>
-          <h1 className="text-5xl md:text-7xl font-bold mb-6 bg-gradient-to-r from-blue-400 via-purple-400 to-teal-400 bg-clip-text text-transparent">
-            InterviewVoyage
-          </h1>
-          <p className="text-xl md:text-2xl text-slate-300 mb-8 max-w-3xl mx-auto">
-            Master technical interviews with our comprehensive platform featuring coding questions, system design, and real-world projects
-          </p>
-          <div className="flex flex-col sm:flex-row gap-4 justify-center mb-12">
-            <Button 
-              size="lg" 
-              className="bg-gradient-to-r from-[#555879] to-[#98A1BC] hover:from-[#98A1BC] hover:to-[#555879] text-white px-8 py-3"
-              onClick={handleStartJourney}
-            >
-              Start Your Journey <ArrowRight className="ml-2 h-5 w-5" />
-            </Button>
-            <Button 
-              size="lg" 
-              variant="outline" 
-              className="border-slate-600 text-slate-300 hover:bg-slate-800 px-8 py-3"
-              onClick={() => navigate("/pricing")}
-            >
-              View Pricing
-            </Button>
+      <section className="relative overflow-hidden bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 py-20 lg:py-32">
+        <div className="absolute inset-0 bg-[url('data:image/svg+xml,%3Csvg width="60" height="60" viewBox="0 0 60 60" xmlns="http://www.w3.org/2000/svg"%3E%3Cg fill="none" fill-rule="evenodd"%3E%3Cg fill="%23334155" fill-opacity="0.05"%3E%3Ccircle cx="30" cy="30" r="1"/%3E%3C/g%3E%3C/g%3E%3C/svg%3E')] opacity-50"></div>
+        <div className="container mx-auto px-4 relative">
+          <div className="text-center max-w-4xl mx-auto">
+            <h1 className="text-5xl md:text-7xl font-bold mb-6 bg-gradient-to-r from-blue-400 via-purple-400 to-cyan-400 bg-clip-text text-transparent">
+              Master Technical Interviews
+            </h1>
+            <p className="text-xl md:text-2xl text-slate-300 mb-8 leading-relaxed">
+              Prepare for your dream job with our comprehensive collection of interview questions and real-world projects from top tech companies.
+            </p>
+            <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
+              <Button 
+                size="lg" 
+                className="bg-gradient-to-r from-[#555879] to-[#98A1BC] hover:from-[#98A1BC] hover:to-[#555879] text-white px-8 py-3 text-lg font-semibold transition-all duration-300 transform hover:scale-105"
+                onClick={handleGetStarted}
+              >
+                Start Your Journey
+                <ArrowRight className="ml-2 h-5 w-5" />
+              </Button>
+              <Button 
+                variant="outline" 
+                size="lg" 
+                className="border-slate-600 text-slate-300 hover:bg-[#555879] hover:text-white hover:border-[#555879] px-8 py-3 text-lg transition-all duration-300"
+                onClick={() => navigate("/pricing")}
+              >
+                View Pricing
+              </Button>
+            </div>
           </div>
-          
-          {/* Stats */}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-8 max-w-2xl mx-auto">
+        </div>
+      </section>
+
+      {/* Stats Section */}
+      <section className="py-16 bg-slate-800/50">
+        <div className="container mx-auto px-4">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
             {stats.map((stat, index) => (
               <div key={index} className="text-center">
-                <div className="text-2xl md:text-3xl font-bold text-blue-400">{stat.value}</div>
-                <div className="text-slate-400 text-sm">{stat.label}</div>
+                <div className="text-3xl md:text-4xl font-bold text-blue-400 mb-2">
+                  {stat.number}
+                </div>
+                <div className="text-slate-400">
+                  {stat.label}
+                </div>
               </div>
             ))}
           </div>
@@ -145,34 +140,64 @@ const Index = () => {
       </section>
 
       {/* Features Section */}
-      <section className="py-20 px-4">
-        <div className="container mx-auto">
+      <section className="py-20">
+        <div className="container mx-auto px-4">
           <div className="text-center mb-16">
-            <h2 className="text-4xl font-bold mb-4">Everything You Need to Succeed</h2>
+            <h2 className="text-3xl md:text-4xl font-bold mb-4">
+              Everything You Need to Succeed
+            </h2>
             <p className="text-slate-400 text-lg max-w-2xl mx-auto">
-              Comprehensive resources designed to help you ace technical interviews and advance your career
+              Our comprehensive platform provides all the tools and resources you need to ace your technical interviews.
+            </p>
+          </div>
+          
+          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
+            {features.map((feature, index) => (
+              <Card key={index} className="bg-slate-800/50 border-slate-700 hover:bg-slate-800/70 transition-all duration-300 hover:scale-105 group">
+                <CardHeader className="text-center">
+                  <div className={`h-16 w-16 rounded-2xl bg-gradient-to-r ${feature.color} flex items-center justify-center mx-auto mb-4 group-hover:scale-110 transition-transform duration-300`}>
+                    <feature.icon className="h-8 w-8 text-white" />
+                  </div>
+                  <CardTitle className="text-white text-xl">{feature.title}</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <CardDescription className="text-slate-400 text-center">
+                    {feature.description}
+                  </CardDescription>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Testimonials Section */}
+      <section className="py-20 bg-slate-800/30">
+        <div className="container mx-auto px-4">
+          <div className="text-center mb-16">
+            <h2 className="text-3xl md:text-4xl font-bold mb-4">
+              Success Stories
+            </h2>
+            <p className="text-slate-400 text-lg max-w-2xl mx-auto">
+              Join thousands of developers who landed their dream jobs with InterviewVoyage.
             </p>
           </div>
           
           <div className="grid md:grid-cols-3 gap-8">
-            {features.map((feature, index) => (
-              <Card key={index} className="bg-slate-800/50 border-slate-700 hover:bg-slate-800/70 transition-all duration-300 hover:scale-105">
-                <CardHeader>
-                  <div className="h-12 w-12 bg-gradient-to-r from-[#555879] to-[#98A1BC] rounded-lg flex items-center justify-center mb-4">
-                    <feature.icon className="h-6 w-6 text-white" />
-                  </div>
-                  <CardTitle className="text-white">{feature.title}</CardTitle>
-                  <CardDescription className="text-slate-400">
-                    {feature.description}
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div className="flex flex-wrap gap-2">
-                    {feature.categories.map((category, catIndex) => (
-                      <Badge key={catIndex} variant="secondary" className="bg-slate-700 text-slate-300">
-                        {category}
-                      </Badge>
+            {testimonials.map((testimonial, index) => (
+              <Card key={index} className="bg-slate-800/50 border-slate-700">
+                <CardContent className="p-6">
+                  <div className="flex mb-4">
+                    {[...Array(testimonial.rating)].map((_, i) => (
+                      <Star key={i} className="h-5 w-5 fill-yellow-400 text-yellow-400" />
                     ))}
+                  </div>
+                  <p className="text-slate-300 mb-4 italic">
+                    "{testimonial.content}"
+                  </p>
+                  <div>
+                    <p className="text-white font-semibold">{testimonial.name}</p>
+                    <p className="text-slate-400 text-sm">{testimonial.role}</p>
                   </div>
                 </CardContent>
               </Card>
@@ -181,110 +206,42 @@ const Index = () => {
         </div>
       </section>
 
-      {/* Pricing Section */}
-      <section className="py-20 px-4 bg-slate-800/30">
-        <div className="container mx-auto">
-          <div className="text-center mb-16">
-            <h2 className="text-4xl font-bold mb-4">Choose Your Plan</h2>
-            <p className="text-slate-400 text-lg mb-8">
-              Select the perfect plan for your interview preparation journey
-            </p>
-            
-            {/* Pricing Toggle */}
-            <div className="inline-flex bg-slate-800 rounded-lg p-1 mb-12">
-              <button
-                onClick={() => setSelectedTier("monthly")}
-                className={`px-6 py-2 rounded-md text-sm font-medium transition-all ${
-                  selectedTier === "monthly"
-                    ? "bg-[#555879] text-white"
-                    : "text-slate-400 hover:text-white"
-                }`}
-              >
-                Monthly
-              </button>
-              <button
-                onClick={() => setSelectedTier("yearly")}
-                className={`px-6 py-2 rounded-md text-sm font-medium transition-all ${
-                  selectedTier === "yearly"
-                    ? "bg-[#555879] text-white"
-                    : "text-slate-400 hover:text-white"
-                }`}
-              >
-                Annual
-                <Badge className="ml-2 bg-green-600 text-white text-xs">Save 50%</Badge>
-              </button>
-            </div>
-          </div>
-          
-          <div className="grid md:grid-cols-3 gap-8 max-w-5xl mx-auto">
-            {pricingTiers.map((tier, index) => (
-              <Card key={index} className={`relative bg-slate-800/50 border-slate-700 hover:scale-105 transition-all duration-300 ${
-                tier.popular ? "ring-2 ring-[#555879] bg-slate-800/70" : ""
-              }`}>
-                {tier.popular && (
-                  <div className="absolute -top-4 left-1/2 transform -translate-x-1/2">
-                    <Badge className="bg-[#555879] text-white px-4 py-1">
-                      <Star className="h-3 w-3 mr-1" />
-                      Most Popular
-                    </Badge>
-                  </div>
-                )}
-                <CardHeader className="text-center pb-8">
-                  <CardTitle className="text-2xl text-white">{tier.name}</CardTitle>
-                  <CardDescription className="text-slate-400 mb-4">
-                    {tier.description}
-                  </CardDescription>
-                  <div className="text-4xl font-bold text-white">
-                    {tier.price}
-                    <span className="text-lg text-slate-400 font-normal">{tier.period}</span>
-                  </div>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <ul className="space-y-3">
-                    {tier.features.map((feature, featureIndex) => (
-                      <li key={featureIndex} className="flex items-center text-slate-300">
-                        <CheckCircle className="h-5 w-5 text-green-500 mr-3 flex-shrink-0" />
-                        {feature}
-                      </li>
-                    ))}
-                  </ul>
-                  <Button 
-                    className={`w-full mt-8 ${
-                      tier.popular 
-                        ? "bg-[#555879] hover:bg-[#98A1BC] text-white" 
-                        : "bg-slate-700 hover:bg-slate-600 text-white"
-                    }`}
-                    onClick={() => navigate("/pricing")}
-                  >
-                    {tier.buttonText}
-                  </Button>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* CTA Section */}
-      <section className="py-20 px-4">
-        <div className="container mx-auto text-center">
-          <div className="bg-gradient-to-r from-[#555879]/20 to-[#98A1BC]/20 rounded-2xl p-12">
-            <h2 className="text-4xl font-bold mb-4">Ready to Start Your Journey?</h2>
-            <p className="text-slate-300 text-lg mb-8 max-w-2xl mx-auto">
-              Join thousands of developers who have successfully landed their dream jobs with InterviewVoyage
-            </p>
-            <Button 
-              size="lg" 
-              className="bg-gradient-to-r from-[#555879] to-[#98A1BC] hover:from-[#98A1BC] hover:to-[#555879] text-white px-8 py-3"
-              onClick={handleStartJourney}
-            >
-              Get Started for Free <ArrowRight className="ml-2 h-5 w-5" />
-            </Button>
-          </div>
+      {/* CTA Section with improved styling */}
+      <section className="py-20">
+        <div className="container mx-auto px-4">
+          <Card className="bg-gradient-to-br from-[#555879] via-[#6B6B9E] to-[#98A1BC] border-none max-w-4xl mx-auto relative overflow-hidden">
+            <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent"></div>
+            <CardContent className="p-12 text-center relative">
+              <h3 className="text-3xl md:text-4xl font-bold text-white mb-6">
+                Ready to Master Technical Interviews?
+              </h3>
+              <p className="text-white/90 text-lg mb-8 max-w-2xl mx-auto">
+                Get unlimited access to all question categories with our premium plans.
+              </p>
+              <div className="flex flex-col sm:flex-row gap-4 justify-center">
+                <Button 
+                  size="lg"
+                  className="bg-white text-[#555879] hover:bg-white/90 px-8 py-3 text-lg font-semibold transition-all duration-300 transform hover:scale-105"
+                  onClick={() => navigate("/pricing")}
+                >
+                  View Pricing
+                </Button>
+                <Button 
+                  size="lg"
+                  variant="outline" 
+                  className="border-white/30 text-white hover:bg-white/10 hover:border-white px-8 py-3 text-lg transition-all duration-300"
+                  onClick={handleStartLearning}
+                >
+                  {!user ? "Sign Up Free" : "Start Learning"}
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
         </div>
       </section>
 
       <Footer />
+      <AuthModal isOpen={isAuthModalOpen} onClose={() => setIsAuthModalOpen(false)} />
     </div>
   );
 };

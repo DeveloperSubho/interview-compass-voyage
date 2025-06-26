@@ -1,4 +1,3 @@
-
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -148,7 +147,7 @@ const Projects = () => {
     <div className="min-h-screen bg-slate-900 text-white">
       <Navbar />
       
-      <div className="container mx-auto px-4 py-16">
+      <div className="container mx-auto px-4 py-16 max-w-7xl">
         <div className="text-center mb-12">
           <h1 className="text-4xl md:text-5xl font-bold mb-4 bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent">
             Real-World Projects
@@ -164,18 +163,18 @@ const Projects = () => {
             <Star className="h-6 w-6 mr-2 text-yellow-500" />
             Featured Projects
           </h2>
-          <div className="grid lg:grid-cols-1 gap-6">
+          <div className="space-y-6 max-w-5xl mx-auto">
             {featuredProjects.map((project, index) => (
               <Card key={index} className="bg-slate-800/50 border-slate-700 hover:bg-slate-800/70 transition-all duration-300">
                 <CardHeader>
-                  <div className="flex items-start justify-between mb-4">
-                    <div>
+                  <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-4">
+                    <div className="flex-1">
                       <CardTitle className="text-white text-xl mb-2">{project.title}</CardTitle>
                       <CardDescription className="text-slate-400">
                         {project.description}
                       </CardDescription>
                     </div>
-                    <div className="flex flex-col gap-2">
+                    <div className="flex flex-col gap-2 lg:flex-row lg:gap-3">
                       <Badge className={`${getTierColor(project.tier)} text-white`}>
                         {project.tier}
                       </Badge>
@@ -219,8 +218,8 @@ const Projects = () => {
                   <Button 
                     className={`w-full ${
                       project.tier === "Explorer" 
-                        ? "bg-green-600 hover:bg-green-700" 
-                        : "bg-slate-700 hover:bg-slate-600"
+                        ? "bg-[#555879] hover:bg-[#98A1BC] text-white" 
+                        : "bg-slate-700 hover:bg-slate-600 text-white"
                     }`}
                     onClick={() => handleProjectClick(project)}
                   >
@@ -240,7 +239,7 @@ const Projects = () => {
         {/* Project Categories */}
         <div>
           <h2 className="text-2xl font-bold text-white mb-8">Project Categories</h2>
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6 max-w-6xl mx-auto">
             {categories.map((category, index) => (
               <Card key={index} className="bg-slate-800/50 border-slate-700 hover:bg-slate-800/70 transition-all duration-300 hover:scale-105">
                 <CardHeader>
@@ -289,8 +288,8 @@ const Projects = () => {
                   <Button 
                     className={`w-full ${
                       category.tier === "Explorer" 
-                        ? "bg-green-600 hover:bg-green-700" 
-                        : "bg-slate-700 hover:bg-slate-600"
+                        ? "bg-[#555879] hover:bg-[#98A1BC] text-white" 
+                        : "bg-slate-700 hover:bg-slate-600 text-white"
                     }`}
                     onClick={() => handleProjectClick(category)}
                   >
@@ -309,24 +308,24 @@ const Projects = () => {
 
         {/* CTA Section */}
         <div className="mt-16 text-center">
-          <Card className="bg-gradient-to-r from-[#555879]/20 to-[#98A1BC]/20 border-slate-700 max-w-2xl mx-auto">
+          <Card className="bg-gradient-to-br from-[#555879] via-[#6B6B9E] to-[#98A1BC] border-none max-w-2xl mx-auto">
             <CardContent className="p-8">
               <h3 className="text-2xl font-bold text-white mb-4">
                 Ready to Build Impressive Projects?
               </h3>
-              <p className="text-slate-300 mb-6">
+              <p className="text-white/90 mb-6">
                 Get access to all project categories and build a portfolio that stands out to employers.
               </p>
               <div className="flex flex-col sm:flex-row gap-4 justify-center">
                 <Button 
-                  className="bg-[#555879] hover:bg-[#98A1BC]"
+                  className="bg-white text-[#555879] hover:bg-white/90"
                   onClick={() => navigate("/pricing")}
                 >
                   View Pricing
                 </Button>
                 <Button 
                   variant="outline" 
-                  className="border-slate-600 text-slate-300 hover:bg-slate-800"
+                  className="border-white/30 text-white hover:bg-white/10 hover:border-white"
                   onClick={() => !user ? navigate("/auth") : navigate("/pricing")}
                 >
                   {!user ? "Sign Up Free" : "Start Free Trial"}

@@ -1,31 +1,27 @@
 
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Github, Mail, Facebook, Twitter, Linkedin } from "lucide-react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Github, Mail, Facebook, Twitter, Linkedin, X } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
-import { useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
-import { useEffect } from "react";
 
-const Auth = () => {
+interface AuthModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+}
+
+const AuthModal = ({ isOpen, onClose }: AuthModalProps) => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
   const [loading, setLoading] = useState(false);
-  const { signUp, signIn, signInWithProvider, user } = useAuth();
-  const navigate = useNavigate();
+  const { signUp, signIn, signInWithProvider } = useAuth();
   const { toast } = useToast();
-
-  useEffect(() => {
-    if (user) {
-      navigate("/");
-    }
-  }, [user, navigate]);
 
   const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -44,6 +40,7 @@ const Auth = () => {
         title: "Success",
         description: "Check your email for the confirmation link!",
       });
+      onClose();
     }
     setLoading(false);
   };
@@ -61,7 +58,7 @@ const Auth = () => {
         variant: "destructive",
       });
     } else {
-      navigate("/");
+      onClose();
     }
     setLoading(false);
   };
@@ -75,23 +72,30 @@ const Auth = () => {
         description: error.message,
         variant: "destructive",
       });
+    } else {
+      onClose();
     }
   };
 
   return (
-    <div className="min-h-screen bg-slate-900 flex items-center justify-center p-4">
-      <Card className="w-full max-w-md bg-slate-800 border-slate-700">
-        <CardHeader className="text-center">
-          <CardTitle className="text-2xl text-white">Welcome to InterviewVoyage</CardTitle>
-          <CardDescription className="text-slate-400">
+    <Dialog open={isOpen} onOpenChange={onClose}>
+      <DialogContent className="max-w-md bg-slate-800 border-slate-700 text-white">
+        <DialogHeader>
+          <DialogTitle className="text-2xl text-center text-white">Welcome to InterviewVoyage</DialogTitle>
+          <p className="text-slate-400 text-center">
             Sign in to your account or create a new one
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
+          </p>
+        </DialogHeader>
+        
+        <div className="space-y-6">
           <Tabs defaultValue="signin" className="w-full">
             <TabsList className="grid w-full grid-cols-2 bg-slate-700">
-              <TabsTrigger value="signin" className="text-slate-300 data-[state=active]:text-white">Sign In</TabsTrigger>
-              <TabsTrigger value="signup" className="text-slate-300 data-[state=active]:text-white">Sign Up</TabsTrigger>
+              <TabsTrigger value="signin" className="text-slate-300 data-[state=active]:text-white data-[state=active]:bg-[#555879]">
+                Sign In
+              </TabsTrigger>
+              <TabsTrigger value="signup" className="text-slate-300 data-[state=active]:text-white data-[state=active]:bg-[#555879]">
+                Sign Up
+              </TabsTrigger>
             </TabsList>
             
             <TabsContent value="signin" className="space-y-4">
@@ -183,7 +187,7 @@ const Auth = () => {
             </TabsContent>
           </Tabs>
           
-          <div className="mt-6">
+          <div>
             <div className="relative">
               <div className="absolute inset-0 flex items-center">
                 <span className="w-full border-t border-slate-600" />
@@ -197,7 +201,7 @@ const Auth = () => {
               <Button
                 variant="outline"
                 onClick={() => handleSocialLogin('google')}
-                className="bg-slate-700 border-slate-600 text-slate-300 hover:bg-slate-600"
+                className="bg-slate-700 border-slate-600 text-slate-300 hover:bg-[#555879] hover:text-white"
               >
                 <Mail className="h-4 w-4 mr-2" />
                 Google
@@ -205,7 +209,7 @@ const Auth = () => {
               <Button
                 variant="outline"
                 onClick={() => handleSocialLogin('github')}
-                className="bg-slate-700 border-slate-600 text-slate-300 hover:bg-slate-600"
+                className="bg-slate-700 border-slate-600 text-slate-300 hover:bg-[#555879] hover:text-white"
               >
                 <Github className="h-4 w-4 mr-2" />
                 GitHub
@@ -213,7 +217,7 @@ const Auth = () => {
               <Button
                 variant="outline"
                 onClick={() => handleSocialLogin('facebook')}
-                className="bg-slate-700 border-slate-600 text-slate-300 hover:bg-slate-600"
+                className="bg-slate-700 border-slate-600 text-slate-300 hover:bg-[#555879] hover:text-white"
               >
                 <Facebook className="h-4 w-4 mr-2" />
                 Facebook
@@ -221,7 +225,7 @@ const Auth = () => {
               <Button
                 variant="outline"
                 onClick={() => handleSocialLogin('twitter')}
-                className="bg-slate-700 border-slate-600 text-slate-300 hover:bg-slate-600"
+                className="bg-slate-700 border-slate-600 text-slate-300 hover:bg-[#555879] hover:text-white"
               >
                 <Twitter className="h-4 w-4 mr-2" />
                 Twitter
@@ -231,17 +235,17 @@ const Auth = () => {
               <Button
                 variant="outline"
                 onClick={() => handleSocialLogin('linkedin_oidc')}
-                className="w-full bg-slate-700 border-slate-600 text-slate-300 hover:bg-slate-600"
+                className="w-full bg-slate-700 border-slate-600 text-slate-300 hover:bg-[#555879] hover:text-white"
               >
                 <Linkedin className="h-4 w-4 mr-2" />
                 LinkedIn
               </Button>
             </div>
           </div>
-        </CardContent>
-      </Card>
-    </div>
+        </div>
+      </DialogContent>
+    </Dialog>
   );
 };
 
-export default Auth;
+export default AuthModal;
