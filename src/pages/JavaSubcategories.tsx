@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { ArrowLeft, Code, Plus, BookOpen } from "lucide-react";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
+import AddTopicModal from "@/components/AddTopicModal";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
@@ -24,6 +25,7 @@ const JavaSubcategories = () => {
   const { toast } = useToast();
   const [subcategories, setSubcategories] = useState<Subcategory[]>([]);
   const [loading, setLoading] = useState(true);
+  const [showAddTopicModal, setShowAddTopicModal] = useState(false);
 
   useEffect(() => {
     fetchSubcategories();
@@ -83,6 +85,14 @@ const JavaSubcategories = () => {
     });
   };
 
+  const handleAddTopic = () => {
+    setShowAddTopicModal(true);
+  };
+
+  const handleTopicAdded = () => {
+    fetchSubcategories(); // Refresh the list
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen bg-slate-900 text-white">
@@ -123,7 +133,10 @@ const JavaSubcategories = () => {
               </p>
             </div>
             {profile?.is_admin && (
-              <Button className="bg-green-600 hover:bg-green-700 text-white">
+              <Button 
+                className="bg-green-600 hover:bg-green-700 text-white"
+                onClick={handleAddTopic}
+              >
                 <Plus className="h-4 w-4 mr-2" />
                 Add Topic
               </Button>
@@ -167,9 +180,24 @@ const JavaSubcategories = () => {
             <Code className="h-16 w-16 text-slate-600 mx-auto mb-4" />
             <h3 className="text-xl font-semibold text-slate-400 mb-2">No Topics Available</h3>
             <p className="text-slate-500">Java topics will appear here once they are added.</p>
+            {profile?.is_admin && (
+              <Button 
+                className="mt-4 bg-green-600 hover:bg-green-700 text-white"
+                onClick={handleAddTopic}
+              >
+                <Plus className="h-4 w-4 mr-2" />
+                Add Your First Topic
+              </Button>
+            )}
           </div>
         )}
       </div>
+
+      <AddTopicModal
+        isOpen={showAddTopicModal}
+        onClose={() => setShowAddTopicModal(false)}
+        onTopicAdded={handleTopicAdded}
+      />
 
       <Footer />
     </div>

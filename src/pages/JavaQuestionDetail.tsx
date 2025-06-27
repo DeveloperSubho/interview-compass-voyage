@@ -3,7 +3,7 @@ import { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, Clock, Code, CheckCircle } from "lucide-react";
+import { ArrowLeft, Clock, Code } from "lucide-react";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import { useNavigate, useParams } from "react-router-dom";
@@ -66,6 +66,40 @@ const JavaQuestionDetail = () => {
       default:
         return "bg-gray-500/20 text-gray-300 border-gray-500/30";
     }
+  };
+
+  const renderAnswerWithImages = (answer: string) => {
+    // Split by line breaks and process each line
+    const lines = answer.split('\n');
+    return lines.map((line, index) => {
+      // Check if line contains an image URL
+      const imageUrlPattern = /(https?:\/\/[^\s]+\.(jpg|jpeg|png|gif|webp))/gi;
+      const matches = line.match(imageUrlPattern);
+      
+      if (matches) {
+        return (
+          <div key={index} className="my-4">
+            {line.replace(imageUrlPattern, '').trim() && (
+              <p className="mb-2">{line.replace(imageUrlPattern, '').trim()}</p>
+            )}
+            {matches.map((url, imgIndex) => (
+              <img 
+                key={imgIndex}
+                src={url} 
+                alt="Answer illustration" 
+                className="max-w-full h-auto rounded-lg border border-slate-600 my-2"
+                onError={(e) => {
+                  const target = e.target as HTMLImageElement;
+                  target.style.display = 'none';
+                }}
+              />
+            ))}
+          </div>
+        );
+      }
+      
+      return line ? <p key={index} className="mb-2">{line}</p> : <br key={index} />;
+    });
   };
 
   if (loading) {
@@ -155,16 +189,15 @@ const JavaQuestionDetail = () => {
             </CardHeader>
             <CardContent>
               <div className="prose prose-invert max-w-none">
-                <div 
-                  className="whitespace-pre-wrap text-slate-300 leading-relaxed"
-                  dangerouslySetInnerHTML={{ __html: question.answer.replace(/\n/g, '<br/>') }}
-                />
+                <div className="text-slate-300 leading-relaxed">
+                  {renderAnswerWithImages(question.answer)}
+                </div>
               </div>
             </CardContent>
           </Card>
 
           {/* Navigation */}
-          <div className="flex justify-between items-center">
+          <div className="flex justify-start items-center">
             <Button 
               variant="outline" 
               className="border-slate-600 text-slate-300 hover:bg-slate-800"
@@ -172,12 +205,6 @@ const JavaQuestionDetail = () => {
             >
               <ArrowLeft className="h-4 w-4 mr-2" />
               Back to List
-            </Button>
-            <Button 
-              className="bg-green-600 hover:bg-green-700 text-white"
-            >
-              <CheckCircle className="h-4 w-4 mr-2" />
-              Mark as Complete
             </Button>
           </div>
         </div>

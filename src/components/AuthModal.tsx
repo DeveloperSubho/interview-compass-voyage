@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -84,10 +83,22 @@ const AuthModal = ({ isOpen, onClose }: AuthModalProps) => {
     setLoading(false);
   };
 
-  const handleSocialLogin = async (provider: 'google' | 'github' | 'facebook' | 'twitter' | 'linkedin_oidc') => {
+  const handleSocialLogin = async (provider: 'google' | 'github' | 'linkedin_oidc') => {
+    const { error } = await signInWithProvider(provider);
+    
+    if (error) {
+      toast({
+        title: "Error",
+        description: error.message,
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleUnavailableProvider = (providerName: string) => {
     toast({
       title: "Feature Unavailable",
-      description: `${provider.charAt(0).toUpperCase() + provider.slice(1)} login is not currently enabled. Please use email/password to sign in.`,
+      description: `${providerName} login is not currently enabled. Please use email/password to sign in.`,
       variant: "destructive",
     });
   };
@@ -240,10 +251,45 @@ const AuthModal = ({ isOpen, onClose }: AuthModalProps) => {
               <Button
                 variant="outline"
                 onClick={() => handleSocialLogin('google')}
-                className="bg-slate-700 border-slate-600 text-slate-300 hover:bg-[#555879] hover:text-white"
+                className="bg-slate-700 border-slate-600 text-slate-300 hover:bg-slate-600 hover:text-white flex items-center justify-center gap-2"
               >
-                <Mail className="h-4 w-4 mr-2" />
-                Google (Coming Soon)
+                <div className="w-5 h-5 bg-white rounded-full flex items-center justify-center">
+                  <span className="text-xs font-bold text-red-500">G</span>
+                </div>
+                Continue with Google
+              </Button>
+              
+              <Button
+                variant="outline"
+                onClick={() => handleSocialLogin('linkedin_oidc')}
+                className="bg-slate-700 border-slate-600 text-slate-300 hover:bg-slate-600 hover:text-white flex items-center justify-center gap-2"
+              >
+                <div className="w-5 h-5 bg-blue-600 rounded flex items-center justify-center">
+                  <span className="text-xs font-bold text-white">in</span>
+                </div>
+                Continue with LinkedIn
+              </Button>
+              
+              <Button
+                variant="outline"
+                onClick={() => handleUnavailableProvider('Instagram')}
+                className="bg-slate-700 border-slate-600 text-slate-300 hover:bg-slate-600 hover:text-white flex items-center justify-center gap-2"
+              >
+                <div className="w-5 h-5 bg-gradient-to-br from-purple-500 to-pink-500 rounded flex items-center justify-center">
+                  <span className="text-xs font-bold text-white">📷</span>
+                </div>
+                Continue with Instagram
+              </Button>
+              
+              <Button
+                variant="outline"
+                onClick={() => handleSocialLogin('github')}
+                className="bg-slate-700 border-slate-600 text-slate-300 hover:bg-slate-600 hover:text-white flex items-center justify-center gap-2"
+              >
+                <div className="w-5 h-5 bg-black rounded-full flex items-center justify-center">
+                  <span className="text-xs font-bold text-white">⚡</span>
+                </div>
+                Continue with Github
               </Button>
             </div>
           </div>

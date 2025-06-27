@@ -116,7 +116,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       });
       return { error };
     } else {
-      // Username login - first find the email associated with this username
+      // Username login - find the profile with this username
       try {
         const { data: profileData, error: profileError } = await supabase
           .from('profiles')
@@ -128,26 +128,34 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           return { error: { message: 'Username not found' } };
         }
 
-        // Get the user's email from auth.users using the profile ID
-        const { data: userData, error: userError } = await supabase.auth.admin.getUserById(profileData.id);
+        // Get the user's auth data using the profile ID to find the email
+        const { data: { users }, error: usersError } = await supabase.auth.admin.listUsers();
         
-        if (userError || !userData.user?.email) {
-          return { error: { message: 'Unable to find account' } };
+        if (usersError) {
+          // Fallback: try direct sign in with username as email
+          const { error } = await supabase.auth.signInWithPassword({
+            email: emailOrUsername,
+            password,
+          });
+          return { error };
         }
 
-        // Now sign in with email
+        // Find the user with matching ID
+        const authUser = users?.find(user => user.id === profileData.id);
+        
+        if (!authUser?.email) {
+          return { error: { message: 'Unable to find account email' } };
+        }
+
+        // Now sign in with the found email
         const { error } = await supabase.auth.signInWithPassword({
-          email: userData.user.email,
+          email: authUser.email,
           password,
         });
         return { error };
       } catch (error) {
-        // Fallback: try direct email login in case the input was actually an email
-        const { error: signInError } = await supabase.auth.signInWithPassword({
-          email: emailOrUsername,
-          password,
-        });
-        return { error: signInError };
+        console.error('Username login error:', error);
+        return { error: { message: 'Login failed. Please try again.' } };
       }
     }
   };

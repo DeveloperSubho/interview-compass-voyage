@@ -3,9 +3,11 @@ import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, Clock, Plus } from "lucide-react";
+import { ArrowLeft, Clock, Plus, Upload, Edit, Trash2 } from "lucide-react";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
+import QuestionModal from "@/components/QuestionModal";
+import BulkImportModal from "@/components/BulkImportModal";
 import { useNavigate, useParams, useLocation } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
@@ -15,6 +17,7 @@ interface Question {
   id: string;
   title: string;
   content: string;
+  answer: string;
   type: string;
   level: string;
   created_at: string;
@@ -28,6 +31,9 @@ const JavaQuestionList = () => {
   const { toast } = useToast();
   const [questions, setQuestions] = useState<Question[]>([]);
   const [loading, setLoading] = useState(true);
+  const [showQuestionModal, setShowQuestionModal] = useState(false);
+  const [showBulkImportModal, setShowBulkImportModal] = useState(false);
+  const [editingQuestion, setEditingQuestion] = useState<Question | null>(null);
   const subcategoryName = location.state?.subcategoryName || "Java Topic";
 
   useEffect(() => {
@@ -56,6 +62,54 @@ const JavaQuestionList = () => {
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleDeleteQuestion = async (questionId: string) => {
+    if (!window.confirm('Are you sure you want to delete this question?')) {
+      return;
+    }
+
+    try {
+      const { error } = await supabase
+        .from('questions')
+        .delete()
+        .eq('id', questionId);
+
+      if (error) throw error;
+
+      toast({
+        title: "Success",
+        description: "Question deleted successfully",
+      });
+
+      fetchQuestions();
+    } catch (error) {
+      console.error('Error deleting question:', error);
+      toast({
+        title: "Error",
+        description: "Failed to delete question",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleEditQuestion = (question: Question) => {
+    setEditingQuestion(question);
+    setShowQuestionModal(true);
+  };
+
+  const handleAddQuestion = () => {
+    setEditingQuestion(null);
+    setShowQuestionModal(true);
+  };
+
+  const handleQuestionSaved = () => {
+    fetchQuestions();
+    setEditingQuestion(null);
+  };
+
+  const handleBulkImportComplete = () => {
+    fetchQuestions();
   };
 
   const getDifficultyColor = (level: string) => {
@@ -115,10 +169,22 @@ const JavaQuestionList = () => {
               </p>
             </div>
             {profile?.is_admin && (
-              <Button className="bg-green-600 hover:bg-green-700 text-white">
-                <Plus className="h-4 w-4 mr-2" />
-                Add Question
-              </Button>
+              <div className="flex gap-2">
+                <Button 
+                  className="bg-blue-600 hover:bg-blue-700 text-white"
+                  onClick={() => setShowBulkImportModal(true)}
+                >
+                  <Upload className="h-4 w-4 mr-2" />
+                  Bulk Import
+                </Button>
+                <Button 
+                  className="bg-green-600 hover:bg-green-700 text-white"
+                  onClick={handleAddQuestion}
+                >
+                  <Plus className="h-4 w-4 mr-2" />
+                  Add Question
+                </Button>
+              </div>
             )}
           </div>
         </div>
@@ -127,12 +193,14 @@ const JavaQuestionList = () => {
           {questions.map((question, index) => (
             <Card 
               key={question.id} 
-              className="bg-slate-800/50 border-slate-700 hover:bg-slate-800/70 transition-all duration-300 cursor-pointer"
-              onClick={() => handleQuestionClick(question.id)}
+              className="bg-slate-800/50 border-slate-700 hover:bg-slate-800/70 transition-all duration-300"
             >
               <CardHeader>
                 <div className="flex items-start justify-between gap-4">
-                  <div className="flex-1">
+                  <div 
+                    className="flex-1 cursor-pointer"
+                    onClick={() => handleQuestionClick(question.id)}
+                  >
                     <div className="flex items-center gap-2 mb-2">
                       <span className="text-slate-400 text-sm">#{index + 1}</span>
                       <Badge className={`${getDifficultyColor(question.level)} border`}>
@@ -146,16 +214,45 @@ const JavaQuestionList = () => {
                       {question.title}
                     </CardTitle>
                   </div>
-                  <div className="flex items-center gap-4 text-slate-400">
-                    <div className="flex items-center gap-1">
+                  <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-1 text-slate-400">
                       <Clock className="h-4 w-4" />
                       <span className="text-sm">5-15 mins</span>
                     </div>
+                    {profile?.is_admin && (
+                      <div className="flex gap-1">
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleEditQuestion(question);
+                          }}
+                          className="text-blue-400 hover:text-blue-300 hover:bg-slate-700 p-2"
+                        >
+                          <Edit className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleDeleteQuestion(question.id);
+                          }}
+                          className="text-red-400 hover:text-red-300 hover:bg-slate-700 p-2"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    )}
                   </div>
                 </div>
               </CardHeader>
               <CardContent>
-                <p className="text-slate-300 text-sm line-clamp-2">
+                <p 
+                  className="text-slate-300 text-sm line-clamp-2 cursor-pointer"
+                  onClick={() => handleQuestionClick(question.id)}
+                >
                   {question.content}
                 </p>
               </CardContent>
@@ -167,7 +264,25 @@ const JavaQuestionList = () => {
           <div className="text-center py-16">
             <div className="text-6xl mb-4">📝</div>
             <h3 className="text-xl font-semibold text-slate-400 mb-2">No Questions Available</h3>
-            <p className="text-slate-500">Questions for {subcategoryName} will appear here once they are added.</p>
+            <p className="text-slate-500 mb-4">Questions for {subcategoryName} will appear here once they are added.</p>
+            {profile?.is_admin && (
+              <div className="flex gap-2 justify-center">
+                <Button 
+                  className="bg-blue-600 hover:bg-blue-700 text-white"
+                  onClick={() => setShowBulkImportModal(true)}
+                >
+                  <Upload className="h-4 w-4 mr-2" />
+                  Bulk Import Questions
+                </Button>
+                <Button 
+                  className="bg-green-600 hover:bg-green-700 text-white"
+                  onClick={handleAddQuestion}
+                >
+                  <Plus className="h-4 w-4 mr-2" />
+                  Add First Question
+                </Button>
+              </div>
+            )}
           </div>
         )}
 
@@ -201,6 +316,26 @@ const JavaQuestionList = () => {
           </div>
         )}
       </div>
+
+      <QuestionModal
+        isOpen={showQuestionModal}
+        onClose={() => {
+          setShowQuestionModal(false);
+          setEditingQuestion(null);
+        }}
+        onQuestionSaved={handleQuestionSaved}
+        subcategoryId={subcategoryId!}
+        subcategoryName={subcategoryName}
+        editingQuestion={editingQuestion}
+      />
+
+      <BulkImportModal
+        isOpen={showBulkImportModal}
+        onClose={() => setShowBulkImportModal(false)}
+        onImportComplete={handleBulkImportComplete}
+        subcategoryId={subcategoryId!}
+        subcategoryName={subcategoryName}
+      />
 
       <Footer />
     </div>
