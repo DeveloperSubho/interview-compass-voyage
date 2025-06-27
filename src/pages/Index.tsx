@@ -30,6 +30,14 @@ const Index = () => {
     }
   };
 
+  const handleViewPricing = () => {
+    navigate("/pricing");
+    // Scroll to top after navigation
+    setTimeout(() => {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }, 100);
+  };
+
   const stats = [
     { number: "5000+", label: "Interview Questions" },
     { number: "50+", label: "Real-World Projects" },
@@ -85,7 +93,7 @@ const Index = () => {
     }
   ];
 
-  const isActive = (path) => location.pathname === path;
+  const isActive = (path: string) => location.pathname === path;
 
   return (
     <div className="min-h-screen bg-slate-900 text-white">
@@ -96,7 +104,7 @@ const Index = () => {
         <svg className="absolute inset-0" width="60" height="60" viewBox="0 0 60 60" fill="none" opacity="50"></svg>
         <div className="container mx-auto px-4 relative">
           <div className="text-center max-w-4xl mx-auto">
-            <h1 className="text-5xl md:text-7xl font-bold mb-6 bg-gradient-to-r from-blue-400 via-purple-400 to-cyan-400 bg-clip-text text-transparent leading-[1.2]">
+            <h1 className="text-5xl md:text-7xl font-bold mb-6 bg-gradient-to-r from-blue-400 via-purple-400 to-cyan-400 bg-clip-text text-transparent" style={{ lineHeight: '1.2' }}>
               InterviewVoyage
             </h1>
             <p className="text-xl md:text-2xl text-slate-300 mb-8 leading-relaxed">
@@ -114,7 +122,7 @@ const Index = () => {
               <Button 
                 size="lg" 
                 className="bg-[#9294b2] hover:bg-[#7a7c98] text-white px-8 py-3 text-lg font-semibold transition-all duration-300 transform hover:scale-105"
-                onClick={() => navigate("/pricing")}
+                onClick={handleViewPricing}
               >
                 View Pricing
               </Button>
@@ -225,7 +233,7 @@ const Index = () => {
                   size="lg"
                   variant="outline" 
                   className="bg-[#555879] hover:bg-[#98A1BC] text-white px-8 py-3"
-                  onClick={() => navigate("/pricing")}
+                  onClick={handleViewPricing}
                 >
                   View Pricing
                 </Button>

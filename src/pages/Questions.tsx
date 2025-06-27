@@ -5,14 +5,17 @@ import { Button } from "@/components/ui/button";
 import { Book, Code, Database, Cloud, MessageSquare, Layers, Lock } from "lucide-react";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
+import AuthModal from "@/components/AuthModal";
 import { useAuth } from "@/contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
+import { useState } from "react";
 
 const Questions = () => {
   const { user, profile } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
+  const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
 
   const categories = [
     {
@@ -101,12 +104,7 @@ const Questions = () => {
 
   const handleCategoryClick = (category: any) => {
     if (!user) {
-      toast({
-        title: "Authentication Required",
-        description: "Please sign in to access questions.",
-        variant: "destructive",
-      });
-      navigate("/auth");
+      setIsAuthModalOpen(true);
       return;
     }
 
@@ -124,6 +122,14 @@ const Questions = () => {
         description: `Upgrade to ${category.tier} tier to access ${category.title} questions.`,
         variant: "destructive",
       });
+      navigate("/pricing");
+    }
+  };
+
+  const handleCtaClick = () => {
+    if (!user) {
+      setIsAuthModalOpen(true);
+    } else {
       navigate("/pricing");
     }
   };
@@ -217,7 +223,7 @@ const Questions = () => {
                 <Button 
                   variant="outline" 
                   className="bg-[#555879] hover:bg-[#98A1BC] text-white px-8 py-3"
-                  onClick={() => !user ? navigate("/auth") : navigate("/pricing")}
+                  onClick={handleCtaClick}
                 >
                   {!user ? "Sign Up Free" : "Start Free Trial"}
                 </Button>
@@ -228,6 +234,7 @@ const Questions = () => {
       </div>
 
       <Footer />
+      <AuthModal isOpen={isAuthModalOpen} onClose={() => setIsAuthModalOpen(false)} />
     </div>
   );
 };

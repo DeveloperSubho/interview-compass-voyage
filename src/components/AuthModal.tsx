@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Github, Mail, Facebook, Twitter, Linkedin, X } from "lucide-react";
+import { Mail, X } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 
@@ -15,8 +15,10 @@ interface AuthModalProps {
 }
 
 const AuthModal = ({ isOpen, onClose }: AuthModalProps) => {
-  const [email, setEmail] = useState("");
+  const [emailOrUsername, setEmailOrUsername] = useState("");
   const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [username, setUsername] = useState("");
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
   const [loading, setLoading] = useState(false);
@@ -25,9 +27,28 @@ const AuthModal = ({ isOpen, onClose }: AuthModalProps) => {
 
   const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    if (password !== confirmPassword) {
+      toast({
+        title: "Error",
+        description: "Passwords do not match.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (password.length < 6) {
+      toast({
+        title: "Error",
+        description: "Password must be at least 6 characters long.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     setLoading(true);
     
-    const { error } = await signUp(email, password, firstName, lastName);
+    const { error } = await signUp(emailOrUsername, password, firstName, lastName, username);
     
     if (error) {
       toast({
@@ -49,7 +70,7 @@ const AuthModal = ({ isOpen, onClose }: AuthModalProps) => {
     e.preventDefault();
     setLoading(true);
     
-    const { error } = await signIn(email, password);
+    const { error } = await signIn(emailOrUsername, password);
     
     if (error) {
       toast({
@@ -64,17 +85,11 @@ const AuthModal = ({ isOpen, onClose }: AuthModalProps) => {
   };
 
   const handleSocialLogin = async (provider: 'google' | 'github' | 'facebook' | 'twitter' | 'linkedin_oidc') => {
-    const { error } = await signInWithProvider(provider);
-    
-    if (error) {
-      toast({
-        title: "Error",
-        description: error.message,
-        variant: "destructive",
-      });
-    } else {
-      onClose();
-    }
+    toast({
+      title: "Feature Unavailable",
+      description: `${provider.charAt(0).toUpperCase() + provider.slice(1)} login is not currently enabled. Please use email/password to sign in.`,
+      variant: "destructive",
+    });
   };
 
   return (
@@ -101,13 +116,14 @@ const AuthModal = ({ isOpen, onClose }: AuthModalProps) => {
             <TabsContent value="signin" className="space-y-4">
               <form onSubmit={handleSignIn} className="space-y-4">
                 <div className="space-y-2">
-                  <Label htmlFor="email" className="text-slate-300">Email</Label>
+                  <Label htmlFor="emailOrUsername" className="text-slate-300">Email or Username</Label>
                   <Input
-                    id="email"
-                    type="email"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
+                    id="emailOrUsername"
+                    type="text"
+                    value={emailOrUsername}
+                    onChange={(e) => setEmailOrUsername(e.target.value)}
                     className="bg-slate-700 border-slate-600 text-white"
+                    placeholder="Enter your email or username"
                     required
                   />
                 </div>
@@ -134,6 +150,29 @@ const AuthModal = ({ isOpen, onClose }: AuthModalProps) => {
             
             <TabsContent value="signup" className="space-y-4">
               <form onSubmit={handleSignUp} className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="signup-email" className="text-slate-300">Email</Label>
+                  <Input
+                    id="signup-email"
+                    type="email"
+                    value={emailOrUsername}
+                    onChange={(e) => setEmailOrUsername(e.target.value)}
+                    className="bg-slate-700 border-slate-600 text-white"
+                    required
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="signup-username" className="text-slate-300">Username</Label>
+                  <Input
+                    id="signup-username"
+                    type="text"
+                    value={username}
+                    onChange={(e) => setUsername(e.target.value)}
+                    className="bg-slate-700 border-slate-600 text-white"
+                    placeholder="Choose a unique username"
+                    required
+                  />
+                </div>
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <Label htmlFor="firstName" className="text-slate-300">First Name</Label>
@@ -155,23 +194,23 @@ const AuthModal = ({ isOpen, onClose }: AuthModalProps) => {
                   </div>
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="signup-email" className="text-slate-300">Email</Label>
-                  <Input
-                    id="signup-email"
-                    type="email"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    className="bg-slate-700 border-slate-600 text-white"
-                    required
-                  />
-                </div>
-                <div className="space-y-2">
                   <Label htmlFor="signup-password" className="text-slate-300">Password</Label>
                   <Input
                     id="signup-password"
                     type="password"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
+                    className="bg-slate-700 border-slate-600 text-white"
+                    required
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="confirm-password" className="text-slate-300">Confirm Password</Label>
+                  <Input
+                    id="confirm-password"
+                    type="password"
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
                     className="bg-slate-700 border-slate-600 text-white"
                     required
                   />
@@ -197,48 +236,14 @@ const AuthModal = ({ isOpen, onClose }: AuthModalProps) => {
               </div>
             </div>
             
-            <div className="mt-6 grid grid-cols-2 gap-3">
+            <div className="mt-6 grid grid-cols-1 gap-3">
               <Button
                 variant="outline"
                 onClick={() => handleSocialLogin('google')}
                 className="bg-slate-700 border-slate-600 text-slate-300 hover:bg-[#555879] hover:text-white"
               >
                 <Mail className="h-4 w-4 mr-2" />
-                Google
-              </Button>
-              <Button
-                variant="outline"
-                onClick={() => handleSocialLogin('github')}
-                className="bg-slate-700 border-slate-600 text-slate-300 hover:bg-[#555879] hover:text-white"
-              >
-                <Github className="h-4 w-4 mr-2" />
-                GitHub
-              </Button>
-              <Button
-                variant="outline"
-                onClick={() => handleSocialLogin('facebook')}
-                className="bg-slate-700 border-slate-600 text-slate-300 hover:bg-[#555879] hover:text-white"
-              >
-                <Facebook className="h-4 w-4 mr-2" />
-                Facebook
-              </Button>
-              <Button
-                variant="outline"
-                onClick={() => handleSocialLogin('twitter')}
-                className="bg-slate-700 border-slate-600 text-slate-300 hover:bg-[#555879] hover:text-white"
-              >
-                <Twitter className="h-4 w-4 mr-2" />
-                Twitter
-              </Button>
-            </div>
-            <div className="mt-3">
-              <Button
-                variant="outline"
-                onClick={() => handleSocialLogin('linkedin_oidc')}
-                className="w-full bg-slate-700 border-slate-600 text-slate-300 hover:bg-[#555879] hover:text-white"
-              >
-                <Linkedin className="h-4 w-4 mr-2" />
-                LinkedIn
+                Google (Coming Soon)
               </Button>
             </div>
           </div>

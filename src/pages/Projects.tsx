@@ -4,9 +4,11 @@ import { Button } from "@/components/ui/button";
 import { Code, Database, Globe, Layers, Server, Lock, Star } from "lucide-react";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
+import AuthModal from "@/components/AuthModal";
 import { useAuth } from "@/contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
+import { useState } from "react";
 
 type Project = {
   title?: string;
@@ -18,6 +20,7 @@ const Projects = () => {
   const { user, profile } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
+  const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
 
   const categories = [
     {
@@ -125,12 +128,7 @@ const Projects = () => {
 
   const handleProjectClick = (project: Project) => {
     if (!user) {
-      toast({
-        title: "Authentication Required",
-        description: "Please sign in to access projects.",
-        variant: "destructive",
-      });
-      navigate("/auth");
+      setIsAuthModalOpen(true);
       return;
     }
 
@@ -154,6 +152,14 @@ const Projects = () => {
         description: `Upgrade to ${project.tier} tier to access these projects.`,
         variant: "destructive",
       });
+      navigate("/pricing");
+    }
+  };
+
+  const handleCtaClick = () => {
+    if (!user) {
+      setIsAuthModalOpen(true);
+    } else {
       navigate("/pricing");
     }
   };
@@ -342,7 +348,7 @@ const Projects = () => {
                 <Button 
                   variant="outline" 
                   className="border-white/30 text-[#555879] hover:bg-white/10 hover:border-white"
-                  onClick={() => !user ? navigate("/auth") : navigate("/pricing")}
+                  onClick={handleCtaClick}
                 >
                   {!user ? "Sign Up Free" : "Start Free Trial"}
                 </Button>
@@ -353,6 +359,7 @@ const Projects = () => {
       </div>
 
       <Footer />
+      <AuthModal isOpen={isAuthModalOpen} onClose={() => setIsAuthModalOpen(false)} />
     </div>
   );
 };

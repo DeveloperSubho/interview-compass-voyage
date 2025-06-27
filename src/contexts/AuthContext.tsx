@@ -17,8 +17,8 @@ interface AuthContextType {
   session: Session | null;
   profile: Profile | null;
   loading: boolean;
-  signUp: (email: string, password: string, firstName?: string, lastName?: string) => Promise<{ error: any }>;
-  signIn: (email: string, password: string) => Promise<{ error: any }>;
+  signUp: (email: string, password: string, firstName?: string, lastName?: string, username?: string) => Promise<{ error: any }>;
+  signIn: (emailOrUsername: string, password: string) => Promise<{ error: any }>;
   signOut: () => Promise<void>;
   signInWithProvider: (provider: 'google' | 'github' | 'facebook' | 'twitter' | 'linkedin_oidc') => Promise<{ error: any }>;
 }
@@ -86,7 +86,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return () => subscription.unsubscribe();
   }, []);
 
-  const signUp = async (email: string, password: string, firstName?: string, lastName?: string) => {
+  const signUp = async (email: string, password: string, firstName?: string, lastName?: string, username?: string) => {
     const redirectUrl = `${window.location.origin}/`;
     
     const { error } = await supabase.auth.signUp({
@@ -97,18 +97,59 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         data: {
           first_name: firstName,
           last_name: lastName,
+          username: username,
         }
       }
     });
     return { error };
   };
 
-  const signIn = async (email: string, password: string) => {
-    const { error } = await supabase.auth.signInWithPassword({
-      email,
-      password,
-    });
-    return { error };
+  const signIn = async (emailOrUsername: string, password: string) => {
+    // Check if input is email (contains @) or username
+    const isEmail = emailOrUsername.includes('@');
+    
+    if (isEmail) {
+      // Direct email login
+      const { error } = await supabase.auth.signInWithPassword({
+        email: emailOrUsername,
+        password,
+      });
+      return { error };
+    } else {
+      // Username login - first find the email associated with this username
+      try {
+        const { data: profileData, error: profileError } = await supabase
+          .from('profiles')
+          .select('id')
+          .eq('username', emailOrUsername)
+          .single();
+
+        if (profileError || !profileData) {
+          return { error: { message: 'Username not found' } };
+        }
+
+        // Get the user's email from auth.users using the profile ID
+        const { data: userData, error: userError } = await supabase.auth.admin.getUserById(profileData.id);
+        
+        if (userError || !userData.user?.email) {
+          return { error: { message: 'Unable to find account' } };
+        }
+
+        // Now sign in with email
+        const { error } = await supabase.auth.signInWithPassword({
+          email: userData.user.email,
+          password,
+        });
+        return { error };
+      } catch (error) {
+        // Fallback: try direct email login in case the input was actually an email
+        const { error: signInError } = await supabase.auth.signInWithPassword({
+          email: emailOrUsername,
+          password,
+        });
+        return { error: signInError };
+      }
+    }
   };
 
   const signOut = async () => {

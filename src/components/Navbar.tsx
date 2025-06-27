@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
@@ -70,7 +71,7 @@ const Navbar = () => {
               {user ? (
                 <div className="flex items-center space-x-3">
                   {profile?.is_admin && (
-                    <Badge className="bg-yellow-600 text-white flex items-center gap-1 hover:bg-yellow-600">
+                    <Badge className="bg-yellow-600 text-white flex items-center gap-1 hover:bg-yellow-600 cursor-default">
                       <Crown className="h-3 w-3" />
                       Admin
                     </Badge>
@@ -79,7 +80,7 @@ const Navbar = () => {
                     <DropdownMenuTrigger asChild>
                       <Button variant="ghost" className="text-slate-300 hover:text-white hover:bg-[#555879]">
                         <User className="h-4 w-4 mr-2" />
-                        {profile?.first_name || user.email}
+                        {profile?.first_name || profile?.username || user.email}
                       </Button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent className="bg-slate-800 border-slate-700">
@@ -137,13 +138,13 @@ const Navbar = () => {
                     {user ? (
                       <div className="space-y-2">
                         {profile?.is_admin && (
-                          <Badge className="bg-yellow-600 text-white flex items-center gap-1 w-fit hover:bg-yellow-600">
+                          <Badge className="bg-yellow-600 text-white flex items-center gap-1 w-fit hover:bg-yellow-600 cursor-default">
                             <Crown className="h-3 w-3" />
                             Admin
                           </Badge>
                         )}
                         <div className="text-slate-300 py-2">
-                          {profile?.first_name || user.email}
+                          {profile?.first_name || profile?.username || user.email}
                         </div>
                         <Button 
                           variant="ghost" 
