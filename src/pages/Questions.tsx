@@ -110,12 +110,22 @@ const Questions = () => {
 
     // Admin can access all categories
     if (profile?.is_admin) {
-      navigate(`/questions/${category.title.toLowerCase().replace(/\s+/g, '-')}`);
+      // Special handling for Java - go to subcategories
+      if (category.title === "Java") {
+        navigate('/questions/java');
+      } else {
+        navigate(`/questions/${category.title.toLowerCase().replace(/\s+/g, '-')}`);
+      }
       return;
     }
 
     if (category.tier === "Explorer") {
-      navigate(`/questions/${category.title.toLowerCase().replace(/\s+/g, '-')}`);
+      // Special handling for Java - go to subcategories
+      if (category.title === "Java") {
+        navigate('/questions/java');
+      } else {
+        navigate(`/questions/${category.title.toLowerCase().replace(/\s+/g, '-')}`);
+      }
     } else {
       toast({
         title: "Upgrade Required",

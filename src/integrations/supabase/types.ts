@@ -113,6 +113,88 @@ export type Database = {
         }
         Relationships: []
       }
+      questions: {
+        Row: {
+          answer: string
+          content: string
+          created_at: string | null
+          created_by: string | null
+          id: string
+          level: string
+          subcategory_id: string | null
+          title: string
+          type: string
+          updated_at: string | null
+        }
+        Insert: {
+          answer: string
+          content: string
+          created_at?: string | null
+          created_by?: string | null
+          id?: string
+          level: string
+          subcategory_id?: string | null
+          title: string
+          type: string
+          updated_at?: string | null
+        }
+        Update: {
+          answer?: string
+          content?: string
+          created_at?: string | null
+          created_by?: string | null
+          id?: string
+          level?: string
+          subcategory_id?: string | null
+          title?: string
+          type?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "questions_subcategory_id_fkey"
+            columns: ["subcategory_id"]
+            isOneToOne: false
+            referencedRelation: "subcategories"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      subcategories: {
+        Row: {
+          category_id: string | null
+          created_at: string | null
+          description: string | null
+          id: string
+          name: string
+          updated_at: string | null
+        }
+        Insert: {
+          category_id?: string | null
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          name: string
+          updated_at?: string | null
+        }
+        Update: {
+          category_id?: string | null
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          name?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "subcategories_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "categories"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       user_subscriptions: {
         Row: {
           created_at: string | null

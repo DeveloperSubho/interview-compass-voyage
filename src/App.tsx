@@ -8,6 +8,9 @@ import { AuthProvider } from "@/contexts/AuthContext";
 import Index from "./pages/Index";
 import Contact from "./pages/Contact";
 import Questions from "./pages/Questions";
+import JavaSubcategories from "./pages/JavaSubcategories";
+import JavaQuestionList from "./pages/JavaQuestionList";
+import JavaQuestionDetail from "./pages/JavaQuestionDetail";
 import QuestionList from "./pages/QuestionList";
 import QuestionDetail from "./pages/QuestionDetail";
 import Projects from "./pages/Projects";
@@ -27,6 +30,9 @@ const App = () => (
             <Route path="/" element={<Index />} />
             <Route path="/contact" element={<Contact />} />
             <Route path="/questions" element={<Questions />} />
+            <Route path="/questions/java" element={<JavaSubcategories />} />
+            <Route path="/questions/java/:subcategoryId" element={<JavaQuestionList />} />
+            <Route path="/questions/java/:subcategoryId/:questionId" element={<JavaQuestionDetail />} />
             <Route path="/questions/:category" element={<QuestionList />} />
             <Route path="/questions/:category/:questionId" element={<QuestionDetail />} />
             <Route path="/projects" element={<Projects />} />
