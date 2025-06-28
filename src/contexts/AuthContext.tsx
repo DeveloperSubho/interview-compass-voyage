@@ -133,21 +133,23 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           return { error: { message: 'Username not found' } };
         }
 
-        // Get the user's auth data using the profile ID
-        const { data: authData, error: authError } = await supabase.auth.admin.getUserById(profileData.id);
+        // Get the user's email by querying the profiles and then auth users
+        const { data: users, error: usersError } = await supabase.auth.admin.listUsers();
         
-        if (authError || !authData.user?.email) {
-          // Fallback: try direct sign in with username as email
-          const { error } = await supabase.auth.signInWithPassword({
-            email: emailOrUsername,
-            password,
-          });
-          return { error };
+        if (usersError) {
+          console.error('Users lookup error:', usersError);
+          return { error: { message: 'Login failed. Please try again.' } };
+        }
+
+        const authUser = users.users.find(user => user.id === profileData.id);
+        
+        if (!authUser?.email) {
+          return { error: { message: 'Unable to find account email' } };
         }
 
         // Now sign in with the found email
         const { error } = await supabase.auth.signInWithPassword({
-          email: authData.user.email,
+          email: authUser.email,
           password,
         });
         return { error };

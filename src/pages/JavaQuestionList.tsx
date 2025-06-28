@@ -16,10 +16,10 @@ import { useToast } from "@/hooks/use-toast";
 interface Question {
   id: string;
   title: string;
-  content: string;
   answer: string;
   type: string;
   level: string;
+  tier: string;
   created_at: string;
 }
 
@@ -27,20 +27,46 @@ const JavaQuestionList = () => {
   const navigate = useNavigate();
   const { subcategoryId } = useParams();
   const location = useLocation();
-  const { profile } = useAuth();
+  const { profile, user } = useAuth();
   const { toast } = useToast();
   const [questions, setQuestions] = useState<Question[]>([]);
+  const [filteredQuestions, setFilteredQuestions] = useState<Question[]>([]);
   const [loading, setLoading] = useState(true);
   const [showQuestionModal, setShowQuestionModal] = useState(false);
   const [showBulkImportModal, setShowBulkImportModal] = useState(false);
   const [editingQuestion, setEditingQuestion] = useState<Question | null>(null);
   const subcategoryName = location.state?.subcategoryName || "Java Topic";
 
+  // Get user's subscription tier - for now defaulting to Explorer
+  const userTier = 'Explorer'; // This should come from user subscription data
+
+  const getTierAccess = (userTier: string) => {
+    switch (userTier) {
+      case 'Explorer':
+        return ['Explorer'];
+      case 'Builder':
+        return ['Explorer', 'Builder'];
+      case 'Innovator':
+        return ['Explorer', 'Builder', 'Innovator'];
+      default:
+        return ['Explorer'];
+    }
+  };
+
   useEffect(() => {
     if (subcategoryId) {
       fetchQuestions();
     }
   }, [subcategoryId]);
+
+  useEffect(() => {
+    // Filter questions based on user's tier access
+    const accessibleTiers = getTierAccess(userTier);
+    const filtered = questions.filter(question => 
+      profile?.is_admin || accessibleTiers.includes(question.tier || question.level)
+    );
+    setFilteredQuestions(filtered);
+  }, [questions, userTier, profile?.is_admin]);
 
   const fetchQuestions = async () => {
     try {
@@ -114,11 +140,11 @@ const JavaQuestionList = () => {
 
   const getDifficultyColor = (level: string) => {
     switch (level) {
-      case "Basic":
+      case "Explorer":
         return "bg-green-500/20 text-green-300 border-green-500/30";
-      case "Intermediate":
+      case "Builder":
         return "bg-yellow-500/20 text-yellow-300 border-yellow-500/30";
-      case "Advanced":
+      case "Innovator":
         return "bg-red-500/20 text-red-300 border-red-500/30";
       default:
         return "bg-gray-500/20 text-gray-300 border-gray-500/30";
@@ -131,7 +157,7 @@ const JavaQuestionList = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-slate-900 text-white">
+      <div className="min-h-screen bg-slate-900 dark:bg-slate-900 text-white">
         <Navbar />
         <div className="container mx-auto px-4 py-16">
           <div className="text-center">
@@ -145,7 +171,7 @@ const JavaQuestionList = () => {
   }
 
   return (
-    <div className="min-h-screen bg-slate-900 text-white">
+    <div className="min-h-screen bg-slate-900 dark:bg-slate-900 text-white">
       <Navbar />
       
       <div className="container mx-auto px-4 py-16">
@@ -190,7 +216,7 @@ const JavaQuestionList = () => {
         </div>
 
         <div className="max-w-4xl mx-auto space-y-4">
-          {questions.map((question, index) => (
+          {filteredQuestions.map((question, index) => (
             <Card 
               key={question.id} 
               className="bg-slate-800/50 border-slate-700 hover:bg-slate-800/70 transition-all duration-300"
@@ -248,23 +274,19 @@ const JavaQuestionList = () => {
                   </div>
                 </div>
               </CardHeader>
-              <CardContent>
-                <p 
-                  className="text-slate-300 text-sm line-clamp-2 cursor-pointer"
-                  onClick={() => handleQuestionClick(question.id)}
-                >
-                  {question.content}
-                </p>
-              </CardContent>
             </Card>
           ))}
         </div>
 
-        {questions.length === 0 && (
+        {filteredQuestions.length === 0 && (
           <div className="text-center py-16">
             <div className="text-6xl mb-4">📝</div>
             <h3 className="text-xl font-semibold text-slate-400 mb-2">No Questions Available</h3>
-            <p className="text-slate-500 mb-4">Questions for {subcategoryName} will appear here once they are added.</p>
+            <p className="text-slate-500 mb-4">
+              {questions.length > 0 
+                ? "You need a higher tier subscription to access these questions."
+                : `Questions for ${subcategoryName} will appear here once they are added.`}
+            </p>
             {profile?.is_admin && (
               <div className="flex gap-2 justify-center">
                 <Button 
@@ -287,28 +309,28 @@ const JavaQuestionList = () => {
         )}
 
         {/* Stats */}
-        {questions.length > 0 && (
+        {filteredQuestions.length > 0 && (
           <div className="mt-16 max-w-4xl mx-auto">
             <Card className="bg-slate-800/30 border-slate-700">
               <CardContent className="p-8">
                 <div className="grid md:grid-cols-3 gap-8 text-center">
                   <div>
                     <div className="text-3xl font-bold text-green-400 mb-2">
-                      {questions.filter(q => q.level === "Basic").length}
+                      {filteredQuestions.filter(q => q.level === "Explorer").length}
                     </div>
-                    <div className="text-slate-300">Basic Questions</div>
+                    <div className="text-slate-300">Explorer Questions</div>
                   </div>
                   <div>
                     <div className="text-3xl font-bold text-yellow-400 mb-2">
-                      {questions.filter(q => q.level === "Intermediate").length}
+                      {filteredQuestions.filter(q => q.level === "Builder").length}
                     </div>
-                    <div className="text-slate-300">Intermediate Questions</div>
+                    <div className="text-slate-300">Builder Questions</div>
                   </div>
                   <div>
                     <div className="text-3xl font-bold text-red-400 mb-2">
-                      {questions.filter(q => q.level === "Advanced").length}
+                      {filteredQuestions.filter(q => q.level === "Innovator").length}
                     </div>
-                    <div className="text-slate-300">Advanced Questions</div>
+                    <div className="text-slate-300">Innovator Questions</div>
                   </div>
                 </div>
               </CardContent>

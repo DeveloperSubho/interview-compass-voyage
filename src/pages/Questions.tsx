@@ -1,12 +1,14 @@
+
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { BookOpen, Code } from "lucide-react";
+import { BookOpen, Code, Database, Globe, Layers, Server, Zap } from "lucide-react";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/contexts/AuthContext";
 
 interface Category {
   id: string;
@@ -14,10 +16,12 @@ interface Category {
   description: string;
   image: string;
   questionCount: number;
+  icon: string;
 }
 
 const Questions = () => {
   const navigate = useNavigate();
+  const { profile } = useAuth();
   const [categories, setCategories] = useState<Category[]>([
     {
       id: "1",
@@ -25,6 +29,7 @@ const Questions = () => {
       description: "Master the fundamentals and advanced concepts of JavaScript.",
       image: "/javascript.png",
       questionCount: 150,
+      icon: "Code"
     },
     {
       id: "2",
@@ -32,6 +37,7 @@ const Questions = () => {
       description: "Dive deep into React and build interactive user interfaces.",
       image: "/react.png",
       questionCount: 120,
+      icon: "Layers"
     },
     {
       id: "3",
@@ -39,6 +45,7 @@ const Questions = () => {
       description: "Explore Java programming with questions on core concepts and frameworks.",
       image: "/java.png",
       questionCount: 200,
+      icon: "Code"
     },
     {
       id: "4",
@@ -46,6 +53,7 @@ const Questions = () => {
       description: "Enhance your Python skills with questions covering data structures and algorithms.",
       image: "/python.png",
       questionCount: 180,
+      icon: "Zap"
     },
     {
       id: "5",
@@ -53,6 +61,7 @@ const Questions = () => {
       description: "Strengthen your understanding of data structures and algorithms.",
       image: "/datastructure.png",
       questionCount: 220,
+      icon: "Database"
     },
     {
       id: "6",
@@ -60,9 +69,19 @@ const Questions = () => {
       description: "Learn how to design scalable and robust systems.",
       image: "/systemdesign.png",
       questionCount: 100,
+      icon: "Server"
     },
   ]);
   const [loading, setLoading] = useState(true);
+
+  const iconMap = {
+    Code,
+    Layers, 
+    Database,
+    Globe,
+    Server,
+    Zap
+  };
 
   useEffect(() => {
     fetchCategoriesWithCounts();
@@ -124,9 +143,14 @@ const Questions = () => {
     }
   };
 
+  const getIcon = (iconName: string) => {
+    const IconComponent = iconMap[iconName as keyof typeof iconMap] || Code;
+    return <IconComponent className="h-6 w-6 text-white" />;
+  };
+
   if (loading) {
     return (
-      <div className="min-h-screen bg-slate-900 text-white">
+      <div className="min-h-screen bg-slate-900 dark:bg-slate-900 text-white">
         <Navbar />
         <div className="container mx-auto px-4 py-16">
           <div className="text-center">
@@ -140,7 +164,7 @@ const Questions = () => {
   }
 
   return (
-    <div className="min-h-screen bg-slate-900 text-white">
+    <div className="min-h-screen bg-slate-900 dark:bg-slate-900 text-white">
       <Navbar />
       
       <div className="container mx-auto px-4 py-16">
@@ -160,11 +184,9 @@ const Questions = () => {
             >
               <CardHeader>
                 <div className="flex items-start justify-between mb-4">
-                  <img
-                    src={category.image}
-                    alt={`${category.name} Logo`}
-                    className="h-12 w-12 rounded-lg"
-                  />
+                  <div className="h-12 w-12 bg-gradient-to-r from-[#555879] to-[#98A1BC] rounded-lg flex items-center justify-center">
+                    {getIcon(category.icon)}
+                  </div>
                   <Badge className="bg-blue-600 text-white">
                     {category.questionCount} Questions
                   </Badge>

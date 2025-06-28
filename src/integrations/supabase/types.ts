@@ -113,6 +113,51 @@ export type Database = {
         }
         Relationships: []
       }
+      projects: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          description: string | null
+          duration: string | null
+          github_url: string | null
+          id: string
+          key_features: string[]
+          level: string
+          technologies: string[]
+          title: string
+          type: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          duration?: string | null
+          github_url?: string | null
+          id?: string
+          key_features?: string[]
+          level?: string
+          technologies?: string[]
+          title: string
+          type: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          duration?: string | null
+          github_url?: string | null
+          id?: string
+          key_features?: string[]
+          level?: string
+          technologies?: string[]
+          title?: string
+          type?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       questions: {
         Row: {
           answer: string
@@ -122,6 +167,7 @@ export type Database = {
           id: string
           level: string
           subcategory_id: string | null
+          tier: string | null
           title: string
           type: string
           updated_at: string | null
@@ -134,6 +180,7 @@ export type Database = {
           id?: string
           level: string
           subcategory_id?: string | null
+          tier?: string | null
           title: string
           type: string
           updated_at?: string | null
@@ -146,6 +193,7 @@ export type Database = {
           id?: string
           level?: string
           subcategory_id?: string | null
+          tier?: string | null
           title?: string
           type?: string
           updated_at?: string | null
@@ -167,6 +215,7 @@ export type Database = {
           description: string | null
           id: string
           name: string
+          tier: string | null
           updated_at: string | null
         }
         Insert: {
@@ -175,6 +224,7 @@ export type Database = {
           description?: string | null
           id?: string
           name: string
+          tier?: string | null
           updated_at?: string | null
         }
         Update: {
@@ -183,6 +233,7 @@ export type Database = {
           description?: string | null
           id?: string
           name?: string
+          tier?: string | null
           updated_at?: string | null
         }
         Relationships: [

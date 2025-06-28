@@ -17,6 +17,7 @@ interface Subcategory {
   name: string;
   description: string;
   questionCount?: number;
+  tier?: string;
 }
 
 const JavaSubcategories = () => {
@@ -95,7 +96,7 @@ const JavaSubcategories = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-slate-900 text-white">
+      <div className="min-h-screen bg-slate-900 dark:bg-slate-900 text-white">
         <Navbar />
         <div className="container mx-auto px-4 py-16">
           <div className="text-center">
@@ -109,7 +110,7 @@ const JavaSubcategories = () => {
   }
 
   return (
-    <div className="min-h-screen bg-slate-900 text-white">
+    <div className="min-h-screen bg-slate-900 dark:bg-slate-900 text-white">
       <Navbar />
       
       <div className="container mx-auto px-4 py-16">
