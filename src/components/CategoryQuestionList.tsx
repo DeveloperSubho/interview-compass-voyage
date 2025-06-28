@@ -25,9 +25,9 @@ interface Question {
   created_at: string;
 }
 
-const JavaQuestionList = () => {
+const CategoryQuestionList = () => {
   const navigate = useNavigate();
-  const { subcategoryId } = useParams();
+  const { category, subcategoryId } = useParams();
   const location = useLocation();
   const { profile, user } = useAuth();
   const { toast } = useToast();
@@ -39,7 +39,7 @@ const JavaQuestionList = () => {
   const [editingQuestion, setEditingQuestion] = useState<Question | null>(null);
   const [selectedQuestions, setSelectedQuestions] = useState<string[]>([]);
   const [bulkDeleteMode, setBulkDeleteMode] = useState(false);
-  const subcategoryName = location.state?.subcategoryName || "Java Topic";
+  const subcategoryName = location.state?.subcategoryName || `${category} Topic`;
 
   // Get user's subscription tier
   const userTier = profile?.tier || 'Explorer';
@@ -213,7 +213,7 @@ const JavaQuestionList = () => {
 
   const handleQuestionClick = (questionId: string) => {
     if (!bulkDeleteMode) {
-      navigate(`/questions/java/${subcategoryId}/${questionId}`);
+      navigate(`/questions/${category}/${subcategoryId}/${questionId}`);
     }
   };
 
@@ -240,11 +240,11 @@ const JavaQuestionList = () => {
         <div className="mb-8">
           <Button 
             variant="ghost" 
-            onClick={() => navigate("/questions/java")}
+            onClick={() => navigate(`/questions/${category}`)}
             className="text-slate-300 hover:text-white hover:bg-slate-800 mb-4"
           >
             <ArrowLeft className="h-4 w-4 mr-2" />
-            Back to Java Topics
+            Back to {category} Topics
           </Button>
           
           <div className="flex items-center justify-between mb-8">
@@ -482,4 +482,4 @@ const JavaQuestionList = () => {
   );
 };
 
-export default JavaQuestionList;
+export default CategoryQuestionList;

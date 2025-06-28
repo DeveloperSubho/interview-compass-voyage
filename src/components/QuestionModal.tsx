@@ -36,14 +36,13 @@ const QuestionModal = ({
   editingQuestion 
 }: QuestionModalProps) => {
   const [title, setTitle] = useState("");
-  const [content, setContent] = useState("");
   const [answer, setAnswer] = useState("");
   const [type, setType] = useState("");
   const [level, setLevel] = useState("");
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
 
-  const levels = ["Basic", "Intermediate", "Advanced"];
+  const levels = ["Explorer", "Builder", "Innovator"];
   const types = [
     "Basic Java",
     "Advanced Java", 
@@ -58,13 +57,11 @@ const QuestionModal = ({
   useEffect(() => {
     if (editingQuestion) {
       setTitle(editingQuestion.title);
-      setContent(editingQuestion.content);
       setAnswer(editingQuestion.answer);
       setType(editingQuestion.type);
       setLevel(editingQuestion.level);
     } else {
       setTitle("");
-      setContent("");
       setAnswer("");
       setType("");
       setLevel("");
@@ -74,7 +71,7 @@ const QuestionModal = ({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!title.trim() || !content.trim() || !answer.trim() || !type || !level) {
+    if (!title.trim() || !answer.trim() || !type || !level) {
       toast({
         title: "Error",
         description: "All fields are required",
@@ -89,10 +86,11 @@ const QuestionModal = ({
       const questionData = {
         subcategory_id: subcategoryId,
         title: title.trim(),
-        content: content.trim(),
+        content: title.trim(), // Use title as content since we removed content field
         answer: answer.trim(),
         type,
-        level
+        level,
+        tier: level // Set tier same as level
       };
 
       if (editingQuestion?.id) {
@@ -155,19 +153,6 @@ const QuestionModal = ({
               onChange={(e) => setTitle(e.target.value)}
               className="bg-slate-700 border-slate-600 text-white"
               placeholder="Enter the question title"
-              required
-            />
-          </div>
-          
-          <div className="space-y-2">
-            <Label htmlFor="content" className="text-slate-300">Question Content</Label>
-            <Textarea
-              id="content"
-              value={content}
-              onChange={(e) => setContent(e.target.value)}
-              className="bg-slate-700 border-slate-600 text-white"
-              placeholder="Detailed question description"
-              rows={4}
               required
             />
           </div>

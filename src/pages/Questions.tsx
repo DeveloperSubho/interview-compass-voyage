@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { BookOpen, Code, Database, Globe, Layers, Server, Zap } from "lucide-react";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 
@@ -21,6 +21,7 @@ interface Category {
 
 const Questions = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const { profile } = useAuth();
   const [categories, setCategories] = useState<Category[]>([
     {
@@ -87,23 +88,56 @@ const Questions = () => {
     fetchCategoriesWithCounts();
   }, []);
 
+  // Highlight current route in navbar
+  useEffect(() => {
+    const navItems = document.querySelectorAll('.nav-item');
+    navItems.forEach(item => {
+      item.classList.remove('bg-slate-800', 'text-white');
+    });
+    
+    const questionsNavItem = document.querySelector('[href="/questions"]');
+    if (questionsNavItem) {
+      questionsNavItem.classList.add('bg-slate-800', 'text-white');
+    }
+  }, [location.pathname]);
+
   const fetchCategoriesWithCounts = async () => {
     try {
       const categoriesWithCounts = await Promise.all(
         categories.map(async (category) => {
-          if (category.name === 'Java') {
-            // Get Java subcategories and their question counts
-            const { data: javaCategory } = await supabase
-              .from('categories')
-              .select('id')
-              .eq('name', 'Java')
-              .single();
+          // Get category from database
+          const { data: dbCategory } = await supabase
+            .from('categories')
+            .select('id')
+            .eq('name', category.name)
+            .single();
 
-            if (javaCategory) {
+          if (dbCategory) {
+            if (category.name === 'Java') {
+              // Get Java subcategories and their question counts
               const { data: subcategories } = await supabase
                 .from('subcategories')
                 .select('id')
-                .eq('category_id', javaCategory.id);
+                .eq('category_id', dbCategory.id);
+
+              if (subcategories && subcategories.length > 0) {
+                const subcategoryIds = subcategories.map(sub => sub.id);
+                const { count } = await supabase
+                  .from('questions')
+                  .select('*', { count: 'exact', head: true })
+                  .in('subcategory_id', subcategoryIds);
+
+                return {
+                  ...category,
+                  questionCount: count || 0
+                };
+              }
+            } else {
+              // For other categories, get subcategories and question counts
+              const { data: subcategories } = await supabase
+                .from('subcategories')
+                .select('id')
+                .eq('category_id', dbCategory.id);
 
               if (subcategories && subcategories.length > 0) {
                 const subcategoryIds = subcategories.map(sub => sub.id);
@@ -122,7 +156,7 @@ const Questions = () => {
           
           return {
             ...category,
-            questionCount: category.questionCount
+            questionCount: 0
           };
         })
       );
@@ -139,7 +173,7 @@ const Questions = () => {
     if (categoryName === "Java") {
       navigate("/questions/java");
     } else {
-      navigate(`/questions/${categoryName}`);
+      navigate(`/questions/${categoryName.toLowerCase()}`);
     }
   };
 

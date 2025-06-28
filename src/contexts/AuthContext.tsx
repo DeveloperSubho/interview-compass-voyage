@@ -133,7 +133,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           return { error: { message: 'Username not found' } };
         }
 
-        // Get the user's email by querying the profiles and then auth users
+        // Get the user's email from auth.users using RPC or admin functions
+        // For now, we'll use a workaround by getting user data from profiles
         const { data: users, error: usersError } = await supabase.auth.admin.listUsers();
         
         if (usersError) {
