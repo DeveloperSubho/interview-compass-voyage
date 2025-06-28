@@ -32,8 +32,8 @@ const Projects = () => {
   const [projects, setProjects] = useState<Project[]>([]);
   const [loading, setLoading] = useState(true);
 
-  // Get user's subscription tier - for now defaulting to Explorer
-  const userTier = 'Explorer'; // This should come from user subscription data
+  // Get user's subscription tier
+  const userTier = profile?.tier || 'Explorer';
 
   const getTierAccess = (userTier: string) => {
     switch (userTier) {
@@ -207,9 +207,8 @@ const Projects = () => {
     }
   };
 
-  const accessibleProjects = projects.filter(project => 
-    profile?.is_admin || canAccessProject(project.level)
-  );
+  // Show all projects but filter clickable access
+  const displayProjects = projects;
 
   if (loading) {
     return (
@@ -241,15 +240,17 @@ const Projects = () => {
         </div>
 
         {/* Featured Projects */}
-        {accessibleProjects.length > 0 && (
+        {displayProjects.length > 0 && (
           <div className="mb-16">
             <h2 className="text-2xl font-bold text-foreground mb-8 flex items-center">
               <Star className="h-6 w-6 mr-2 text-yellow-500" />
               Featured Projects
             </h2>
             <div className="grid md:grid-cols-2 gap-6 max-w-6xl mx-auto">
-              {accessibleProjects.slice(0, 4).map((project) => (
-                <Card key={project.id} className="bg-card border-border hover:bg-accent/50 transition-all duration-300">
+              {displayProjects.slice(0, 4).map((project) => (
+                <Card key={project.id} className={`bg-card border-border transition-all duration-300 ${
+                  canAccessProject(project.level) ? 'hover:bg-accent/50 cursor-pointer' : 'opacity-75 cursor-not-allowed'
+                }`}>
                   <CardHeader>
                     <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-4">
                       <div className="flex-1">
@@ -265,6 +266,11 @@ const Projects = () => {
                         <Badge className={`${getDifficultyColor(project.level)} border`}>
                           {project.type}
                         </Badge>
+                        {!canAccessProject(project.level) && !profile?.is_admin && (
+                          <Badge className="bg-orange-500/20 text-orange-300 border-orange-500/30">
+                            Upgrade Required
+                          </Badge>
+                        )}
                       </div>
                     </div>
                   </CardHeader>
@@ -301,16 +307,26 @@ const Projects = () => {
                     </div>
                     
                     <Button 
-                      className="w-full bg-[#555879] hover:bg-[#98A1BC] text-white"
+                      className={`w-full ${
+                        canAccessProject(project.level) 
+                          ? "bg-[#555879] hover:bg-[#98A1BC] text-white" 
+                          : "bg-muted hover:bg-muted/80 text-muted-foreground cursor-not-allowed"
+                      }`}
                       onClick={() => handleProjectClick(project)}
+                      disabled={!canAccessProject(project.level) && !profile?.is_admin}
                     >
-                      {project.github_url ? (
+                      {project.github_url && canAccessProject(project.level) ? (
                         <>
                           <ExternalLink className="h-4 w-4 mr-2" />
                           View on GitHub
                         </>
-                      ) : (
+                      ) : canAccessProject(project.level) ? (
                         "Start Project"
+                      ) : (
+                        <>
+                          <Lock className="h-4 w-4 mr-2" />
+                          Upgrade Required
+                        </>
                       )}
                     </Button>
                   </CardContent>

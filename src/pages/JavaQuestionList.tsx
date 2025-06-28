@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -56,6 +57,11 @@ const JavaQuestionList = () => {
     }
   };
 
+  const canAccessQuestion = (questionLevel: string) => {
+    const accessibleTiers = getTierAccess(userTier);
+    return profile?.is_admin || accessibleTiers.includes(questionLevel || 'Explorer');
+  };
+
   useEffect(() => {
     if (subcategoryId) {
       fetchQuestions();
@@ -63,12 +69,8 @@ const JavaQuestionList = () => {
   }, [subcategoryId]);
 
   useEffect(() => {
-    // Filter questions based on user's tier access
-    const accessibleTiers = getTierAccess(userTier);
-    const filtered = questions.filter(question => 
-      profile?.is_admin || accessibleTiers.includes(question.tier || question.level)
-    );
-    setFilteredQuestions(filtered);
+    // Show all questions but filter clickable access
+    setFilteredQuestions(questions);
   }, [questions, userTier, profile?.is_admin]);
 
   const fetchQuestions = async () => {
@@ -210,9 +212,18 @@ const JavaQuestionList = () => {
     }
   };
 
-  const handleQuestionClick = (questionId: string) => {
-    if (!bulkDeleteMode) {
-      navigate(`/questions/java/${subcategoryId}/${questionId}`);
+  const handleQuestionClick = (question: Question) => {
+    if (bulkDeleteMode) return;
+    
+    if (canAccessQuestion(question.level)) {
+      navigate(`/questions/java/${subcategoryId}/${question.id}`);
+    } else {
+      toast({
+        title: "Upgrade Required",
+        description: `Upgrade to ${question.level} tier to access this question.`,
+        variant: "destructive",
+      });
+      navigate("/pricing");
     }
   };
 
@@ -327,11 +338,15 @@ const JavaQuestionList = () => {
           {filteredQuestions.map((question, index) => (
             <Card 
               key={question.id} 
-              className="bg-card border-border hover:bg-accent/50 transition-all duration-300"
+              className={`bg-card border-border transition-all duration-300 ${
+                canAccessQuestion(question.level) || bulkDeleteMode 
+                  ? 'hover:bg-accent/50 cursor-pointer' 
+                  : 'opacity-75 cursor-not-allowed'
+              }`}
             >
               <CardHeader>
                 <div className="flex items-start justify-between gap-4">
-                  <div className="flex items-start gap-3">
+                  <div className="flex items-start gap-3 w-full">
                     {bulkDeleteMode && profile?.is_admin && (
                       <Checkbox
                         checked={selectedQuestions.includes(question.id)}
@@ -340,8 +355,8 @@ const JavaQuestionList = () => {
                       />
                     )}
                     <div 
-                      className="flex-1 cursor-pointer"
-                      onClick={() => handleQuestionClick(question.id)}
+                      className="flex-1"
+                      onClick={() => handleQuestionClick(question)}
                     >
                       <div className="flex items-center gap-2 mb-2">
                         <span className="text-muted-foreground text-sm">#{index + 1}</span>
@@ -351,6 +366,11 @@ const JavaQuestionList = () => {
                         <Badge variant="secondary" className="bg-blue-600/20 text-blue-300 border-blue-600/30">
                           {question.type}
                         </Badge>
+                        {!canAccessQuestion(question.level) && !profile?.is_admin && (
+                          <Badge className="bg-orange-500/20 text-orange-300 border-orange-500/30">
+                            Upgrade Required
+                          </Badge>
+                        )}
                       </div>
                       <CardTitle className="text-foreground text-lg hover:text-blue-400 transition-colors">
                         {question.title}
@@ -400,9 +420,7 @@ const JavaQuestionList = () => {
             <div className="text-6xl mb-4">📝</div>
             <h3 className="text-xl font-semibold text-muted-foreground mb-2">No Questions Available</h3>
             <p className="text-muted-foreground mb-4">
-              {questions.length > 0 
-                ? "You need a higher tier subscription to access these questions."
-                : `Questions for ${subcategoryName} will appear here once they are added.`}
+              Questions for {subcategoryName} will appear here once they are added.
             </p>
             {profile?.is_admin && (
               <div className="flex gap-2 justify-center">

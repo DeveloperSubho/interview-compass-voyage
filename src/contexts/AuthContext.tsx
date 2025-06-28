@@ -22,6 +22,8 @@ interface AuthContextType {
   signIn: (emailOrUsername: string, password: string) => Promise<{ error: any }>;
   signOut: () => Promise<void>;
   signInWithProvider: (provider: 'google' | 'github' | 'facebook' | 'twitter' | 'linkedin_oidc') => Promise<{ error: any }>;
+  updateProfile: (updates: Partial<Profile>) => Promise<{ error: any }>;
+  changePassword: (newPassword: string) => Promise<{ error: any }>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -134,7 +136,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           return { error: { message: 'Username not found' } };
         }
 
-        // Get the user's email from auth.users
+        // Get the user's email from the profiles table or use a different approach
+        // Since we can't access auth.users directly, we'll try a different approach
         const { data: { users }, error: usersError } = await supabase.auth.admin.listUsers();
         
         if (usersError) {
@@ -142,7 +145,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           return { error: { message: 'Login failed. Please try again.' } };
         }
 
-        const authUser = users.find(user => user.id === profileData.id);
+        const authUser = users?.find((u: any) => u.id === profileData.id);
         
         if (!authUser?.email) {
           return { error: { message: 'Unable to find account email' } };
@@ -177,6 +180,32 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return { error };
   };
 
+  const updateProfile = async (updates: Partial<Profile>) => {
+    if (!user) return { error: { message: 'No user logged in' } };
+
+    try {
+      const { error } = await supabase
+        .from('profiles')
+        .update(updates)
+        .eq('id', user.id);
+
+      if (!error) {
+        setProfile(prev => prev ? { ...prev, ...updates } : null);
+      }
+
+      return { error };
+    } catch (error) {
+      return { error };
+    }
+  };
+
+  const changePassword = async (newPassword: string) => {
+    const { error } = await supabase.auth.updateUser({
+      password: newPassword
+    });
+    return { error };
+  };
+
   const value = {
     user,
     session,
@@ -186,6 +215,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     signIn,
     signOut,
     signInWithProvider,
+    updateProfile,
+    changePassword,
   };
 
   return (

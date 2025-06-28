@@ -1,274 +1,156 @@
 
 import { useState } from "react";
+import { Menu, X, User, LogOut, Settings } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Menu, X, User, Settings, LogOut } from "lucide-react";
+import { Link, useNavigate } from "react-router-dom";
+import AuthModal from "./AuthModal";
+import { useAuth } from "@/contexts/AuthContext";
+import { ThemeToggle } from "./ThemeToggle";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { useAuth } from "@/contexts/AuthContext";
-import AuthModal from "./AuthModal";
-import ThemeToggle from "./ThemeToggle";
-import { useNavigate, useLocation } from "react-router-dom";
 
 const Navbar = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const { user, profile, signOut } = useAuth();
   const navigate = useNavigate();
-  const location = useLocation();
 
   const handleSignOut = async () => {
     await signOut();
-    navigate("/");
+    navigate('/');
   };
 
-  const isActive = (path: string) => {
-    if (path === '/' || path === '/questions') {
-      return location.pathname === path;
-    }
-    return location.pathname.startsWith(path);
-  };
+  const navItems = [
+    { name: "Home", href: "/" },
+    { name: "Questions", href: "/questions" },
+    { name: "Projects", href: "/projects" },
+    { name: "Pricing", href: "/pricing" },
+    { name: "Contact", href: "/contact" },
+  ];
 
   return (
-    <nav className="bg-slate-800/80 dark:bg-slate-800/80 backdrop-blur-md border-b border-slate-700 sticky top-0 z-50">
-      <div className="container mx-auto px-4">
-        <div className="flex items-center justify-between h-16">
-          <div className="flex items-center space-x-8">
-            <div 
-              className="text-xl font-bold text-white cursor-pointer"
-              onClick={() => navigate("/")}
-            >
-              InterviewAce
-            </div>
-            
-            <div className="hidden md:flex space-x-6">
-              <Button 
-                variant="ghost" 
-                className={`text-slate-300 hover:text-white hover:bg-slate-700 ${
-                  isActive('/') ? 'text-white bg-slate-700' : ''
-                }`}
-                onClick={() => navigate("/")}
-              >
-                Home
-              </Button>
-              <Button 
-                variant="ghost" 
-                className={`text-slate-300 hover:text-white hover:bg-slate-700 ${
-                  isActive('/questions') ? 'text-white bg-slate-700' : ''
-                }`}
-                onClick={() => navigate("/questions")}
-              >
-                Questions
-              </Button>
-              <Button 
-                variant="ghost" 
-                className={`text-slate-300 hover:text-white hover:bg-slate-700 ${
-                  isActive('/projects') ? 'text-white bg-slate-700' : ''
-                }`}
-                onClick={() => navigate("/projects")}
-              >
-                Projects
-              </Button>
-              <Button 
-                variant="ghost" 
-                className={`text-slate-300 hover:text-white hover:bg-slate-700 ${
-                  isActive('/pricing') ? 'text-white bg-slate-700' : ''
-                }`}
-                onClick={() => navigate("/pricing")}
-              >
-                Pricing
-              </Button>
-              <Button 
-                variant="ghost" 
-                className={`text-slate-300 hover:text-white hover:bg-slate-700 ${
-                  isActive('/contact') ? 'text-white bg-slate-700' : ''
-                }`}
-                onClick={() => navigate("/contact")}
-              >
-                Contact
-              </Button>
-            </div>
+    <nav className="bg-background border-b border-border sticky top-0 z-50">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="flex justify-between h-16">
+          <div className="flex items-center">
+            <Link to="/" className="flex-shrink-0 flex items-center">
+              <span className="text-xl font-bold bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent">
+                InterviewVoyage
+              </span>
+            </Link>
           </div>
 
-          <div className="hidden md:flex items-center space-x-4">
+          {/* Desktop Navigation */}
+          <div className="hidden md:flex items-center space-x-8">
+            {navItems.map((item) => (
+              <Link
+                key={item.name}
+                to={item.href}
+                className="nav-item text-muted-foreground hover:text-foreground px-3 py-2 rounded-md text-sm font-medium transition-colors"
+              >
+                {item.name}
+              </Link>
+            ))}
+            
             <ThemeToggle />
+            
             {user ? (
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" className="text-slate-300 hover:text-white hover:bg-slate-700">
-                    <User className="h-4 w-4 mr-2" />
-                    {profile?.first_name || profile?.username || "User"}
+                  <Button variant="ghost" className="relative h-8 w-8 rounded-full">
+                    <User className="h-4 w-4" />
                   </Button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent className="bg-slate-800 border-slate-700">
-                  <DropdownMenuItem 
-                    className="text-slate-300 hover:text-white hover:bg-slate-700 cursor-pointer"
-                    onClick={() => navigate("/profile")}
-                  >
-                    <User className="h-4 w-4 mr-2" />
-                    Profile
+                <DropdownMenuContent className="w-56 bg-card border-border" align="end" forceMount>
+                  <DropdownMenuItem className="hover:bg-accent" onClick={() => navigate('/profile')}>
+                    <Settings className="mr-2 h-4 w-4" />
+                    <span>Profile</span>
                   </DropdownMenuItem>
-                  {profile?.is_admin && (
-                    <DropdownMenuItem 
-                      className="text-slate-300 hover:text-white hover:bg-slate-700 cursor-pointer"
-                      onClick={() => navigate("/admin/projects")}
-                    >
-                      <Settings className="h-4 w-4 mr-2" />
-                      Manage Projects
-                    </DropdownMenuItem>
-                  )}
-                  <DropdownMenuItem 
-                    className="text-slate-300 hover:text-white hover:bg-slate-700 cursor-pointer"
-                    onClick={handleSignOut}
-                  >
-                    <LogOut className="h-4 w-4 mr-2" />
-                    Sign Out
+                  <DropdownMenuItem className="hover:bg-accent" onClick={handleSignOut}>
+                    <LogOut className="mr-2 h-4 w-4" />
+                    <span>Sign out</span>
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
             ) : (
-              <Button 
-                className="bg-blue-600 hover:bg-blue-700 text-white"
-                onClick={() => setIsAuthModalOpen(true)}
-              >
+              <Button onClick={() => setIsAuthModalOpen(true)} className="bg-primary hover:bg-primary/90 text-primary-foreground">
                 Sign In
               </Button>
             )}
           </div>
 
-          <div className="md:hidden flex items-center space-x-2">
+          {/* Mobile menu button */}
+          <div className="md:hidden flex items-center">
             <ThemeToggle />
             <Button
               variant="ghost"
               onClick={() => setIsOpen(!isOpen)}
-              className="text-slate-300 hover:text-white hover:bg-slate-700"
+              className="inline-flex items-center justify-center p-2 rounded-md text-muted-foreground hover:text-foreground hover:bg-accent focus:outline-none focus:ring-2 focus:ring-inset focus:ring-blue-500 ml-2"
             >
               {isOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
             </Button>
           </div>
         </div>
+      </div>
 
-        {isOpen && (
-          <div className="md:hidden pb-4">
-            <div className="flex flex-col space-y-2">
-              <Button 
-                variant="ghost" 
-                className={`text-slate-300 hover:text-white hover:bg-slate-700 justify-start ${
-                  isActive('/') ? 'text-white bg-slate-700' : ''
-                }`}
-                onClick={() => {
-                  navigate("/");
-                  setIsOpen(false);
-                }}
+      {/* Mobile Navigation */}
+      {isOpen && (
+        <div className="md:hidden">
+          <div className="px-2 pt-2 pb-3 space-y-1 sm:px-3 bg-card border-t border-border">
+            {navItems.map((item) => (
+              <Link
+                key={item.name}
+                to={item.href}
+                className="nav-item text-muted-foreground hover:text-foreground hover:bg-accent block px-3 py-2 rounded-md text-base font-medium transition-colors"
+                onClick={() => setIsOpen(false)}
               >
-                Home
-              </Button>
-              <Button 
-                variant="ghost" 
-                className={`text-slate-300 hover:text-white hover:bg-slate-700 justify-start ${
-                  isActive('/questions') ? 'text-white bg-slate-700' : ''
-                }`}
-                onClick={() => {
-                  navigate("/questions");
-                  setIsOpen(false);
-                }}
-              >
-                Questions
-              </Button>
-              <Button 
-                variant="ghost" 
-                className={`text-slate-300 hover:text-white hover:bg-slate-700 justify-start ${
-                  isActive('/projects') ? 'text-white bg-slate-700' : ''
-                }`}
-                onClick={() => {
-                  navigate("/projects");
-                  setIsOpen(false);
-                }}
-              >
-                Projects
-              </Button>
-              <Button 
-                variant="ghost" 
-                className={`text-slate-300 hover:text-white hover:bg-slate-700 justify-start ${
-                  isActive('/pricing') ? 'text-white bg-slate-700' : ''
-                }`}
-                onClick={() => {
-                  navigate("/pricing");
-                  setIsOpen(false);
-                }}
-              >
-                Pricing
-              </Button>
-              <Button 
-                variant="ghost" 
-                className={`text-slate-300 hover:text-white hover:bg-slate-700 justify-start ${
-                  isActive('/contact') ? 'text-white bg-slate-700' : ''
-                }`}
-                onClick={() => {
-                  navigate("/contact");
-                  setIsOpen(false);
-                }}
-              >
-                Contact
-              </Button>
-              
-              {user ? (
-                <>
-                  <Button 
-                    variant="ghost" 
-                    className="text-slate-300 hover:text-white hover:bg-slate-700 justify-start"
-                    onClick={() => {
-                      navigate("/profile");
-                      setIsOpen(false);
-                    }}
+                {item.name}
+              </Link>
+            ))}
+            
+            {user ? (
+              <div className="pt-4 pb-3 border-t border-border">
+                <div className="space-y-1">
+                  <Link
+                    to="/profile"
+                    className="block px-3 py-2 rounded-md text-base font-medium text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
+                    onClick={() => setIsOpen(false)}
                   >
-                    <User className="h-4 w-4 mr-2" />
                     Profile
-                  </Button>
-                  {profile?.is_admin && (
-                    <Button 
-                      variant="ghost" 
-                      className="text-slate-300 hover:text-white hover:bg-slate-700 justify-start"
-                      onClick={() => {
-                        navigate("/admin/projects");
-                        setIsOpen(false);
-                      }}
-                    >
-                      <Settings className="h-4 w-4 mr-2" />
-                      Manage Projects
-                    </Button>
-                  )}
-                  <Button 
-                    variant="ghost" 
-                    className="text-slate-300 hover:text-white hover:bg-slate-700 justify-start"
+                  </Link>
+                  <Button
                     onClick={() => {
                       handleSignOut();
                       setIsOpen(false);
                     }}
+                    variant="ghost"
+                    className="w-full justify-start px-3 py-2 text-muted-foreground hover:text-foreground hover:bg-accent"
                   >
-                    <LogOut className="h-4 w-4 mr-2" />
-                    Sign Out
+                    Sign out
                   </Button>
-                </>
-              ) : (
+                </div>
+              </div>
+            ) : (
+              <div className="pt-4 pb-3 border-t border-border">
                 <Button 
-                  className="bg-blue-600 hover:bg-blue-700 text-white justify-start"
                   onClick={() => {
                     setIsAuthModalOpen(true);
                     setIsOpen(false);
                   }}
+                  className="w-full bg-primary hover:bg-primary/90 text-primary-foreground"
                 >
                   Sign In
                 </Button>
-              )}
-            </div>
+              </div>
+            )}
           </div>
-        )}
-      </div>
-      
+        </div>
+      )}
+
       <AuthModal isOpen={isAuthModalOpen} onClose={() => setIsAuthModalOpen(false)} />
     </nav>
   );
