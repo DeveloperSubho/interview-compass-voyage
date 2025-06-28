@@ -1,10 +1,10 @@
 
 import { useState } from "react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -12,9 +12,10 @@ interface AddTopicModalProps {
   isOpen: boolean;
   onClose: () => void;
   onTopicAdded: () => void;
+  categoryName?: string;
 }
 
-const AddTopicModal = ({ isOpen, onClose, onTopicAdded }: AddTopicModalProps) => {
+const AddTopicModal = ({ isOpen, onClose, onTopicAdded, categoryName }: AddTopicModalProps) => {
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
   const [loading, setLoading] = useState(false);
@@ -22,35 +23,26 @@ const AddTopicModal = ({ isOpen, onClose, onTopicAdded }: AddTopicModalProps) =>
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
-    if (!name.trim()) {
-      toast({
-        title: "Error",
-        description: "Topic name is required",
-        variant: "destructive",
-      });
-      return;
-    }
+    if (!name.trim() || !categoryName) return;
 
     setLoading(true);
-
     try {
-      // Get Java category ID
-      const { data: javaCategory, error: categoryError } = await supabase
+      // Get category ID first
+      const { data: categoryData, error: categoryError } = await supabase
         .from('categories')
         .select('id')
-        .eq('name', 'Java')
+        .eq('name', categoryName)
         .single();
 
       if (categoryError) throw categoryError;
 
-      // Insert new subcategory
+      // Create subcategory
       const { error } = await supabase
         .from('subcategories')
         .insert({
-          category_id: javaCategory.id,
           name: name.trim(),
-          description: description.trim() || null
+          description: description.trim(),
+          category_id: categoryData.id
         });
 
       if (error) throw error;
@@ -78,52 +70,38 @@ const AddTopicModal = ({ isOpen, onClose, onTopicAdded }: AddTopicModalProps) =>
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-md bg-slate-800 border-slate-700 text-white">
+      <DialogContent className="bg-slate-800 border-slate-700 text-white">
         <DialogHeader>
-          <DialogTitle className="text-2xl text-center text-white">Add New Java Topic</DialogTitle>
+          <DialogTitle>Add New Topic</DialogTitle>
         </DialogHeader>
-        
         <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="space-y-2">
-            <Label htmlFor="name" className="text-slate-300">Topic Name</Label>
+          <div>
+            <Label htmlFor="name">Topic Name</Label>
             <Input
               id="name"
-              type="text"
               value={name}
               onChange={(e) => setName(e.target.value)}
+              placeholder="Enter topic name"
               className="bg-slate-700 border-slate-600 text-white"
-              placeholder="e.g., Spring Framework"
               required
             />
           </div>
-          
-          <div className="space-y-2">
-            <Label htmlFor="description" className="text-slate-300">Description</Label>
+          <div>
+            <Label htmlFor="description">Description</Label>
             <Textarea
               id="description"
               value={description}
               onChange={(e) => setDescription(e.target.value)}
+              placeholder="Enter topic description"
               className="bg-slate-700 border-slate-600 text-white"
-              placeholder="Brief description of the topic"
               rows={3}
             />
           </div>
-
-          <div className="flex gap-3 pt-4">
-            <Button 
-              type="button"
-              variant="outline" 
-              onClick={onClose}
-              className="flex-1 border-slate-600 text-slate-300 hover:bg-slate-700"
-              disabled={loading}
-            >
+          <div className="flex justify-end gap-2">
+            <Button type="button" variant="outline" onClick={onClose}>
               Cancel
             </Button>
-            <Button 
-              type="submit" 
-              className="flex-1 bg-green-600 hover:bg-green-700 text-white"
-              disabled={loading}
-            >
+            <Button type="submit" disabled={loading} className="bg-green-600 hover:bg-green-700">
               {loading ? "Adding..." : "Add Topic"}
             </Button>
           </div>

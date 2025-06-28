@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -219,12 +218,12 @@ const CategoryQuestionList = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-slate-900 dark:bg-slate-900 text-white">
+      <div className="min-h-screen bg-background text-foreground">
         <Navbar />
         <div className="container mx-auto px-4 py-16">
           <div className="text-center">
             <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-400 mx-auto"></div>
-            <p className="mt-4 text-slate-400">Loading questions...</p>
+            <p className="mt-4 text-muted-foreground">Loading questions...</p>
           </div>
         </div>
         <Footer />
@@ -233,7 +232,7 @@ const CategoryQuestionList = () => {
   }
 
   return (
-    <div className="min-h-screen bg-slate-900 dark:bg-slate-900 text-white">
+    <div className="min-h-screen bg-background text-foreground">
       <Navbar />
       
       <div className="container mx-auto px-4 py-16">
@@ -241,7 +240,7 @@ const CategoryQuestionList = () => {
           <Button 
             variant="ghost" 
             onClick={() => navigate(`/questions/${category}`)}
-            className="text-slate-300 hover:text-white hover:bg-slate-800 mb-4"
+            className="text-muted-foreground hover:text-foreground hover:bg-accent mb-4"
           >
             <ArrowLeft className="h-4 w-4 mr-2" />
             Back to {category} Topics
@@ -252,7 +251,7 @@ const CategoryQuestionList = () => {
               <h1 className="text-4xl md:text-5xl font-bold mb-4 bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent">
                 {subcategoryName} Questions
               </h1>
-              <p className="text-slate-400 text-lg max-w-2xl">
+              <p className="text-muted-foreground text-lg max-w-2xl">
                 Practice and master these carefully curated questions for {subcategoryName}.
               </p>
             </div>
@@ -266,7 +265,7 @@ const CategoryQuestionList = () => {
                         setBulkDeleteMode(false);
                         setSelectedQuestions([]);
                       }}
-                      className="border-slate-600 text-slate-300 hover:bg-slate-700"
+                      className="border-border text-foreground hover:bg-accent"
                     >
                       Cancel
                     </Button>
@@ -284,7 +283,7 @@ const CategoryQuestionList = () => {
                     <Button 
                       variant="outline"
                       onClick={() => setBulkDeleteMode(true)}
-                      className="border-slate-600 text-slate-300 hover:bg-slate-700"
+                      className="border-border text-foreground hover:bg-accent"
                     >
                       <Trash className="h-4 w-4 mr-2" />
                       Bulk Delete
@@ -310,13 +309,13 @@ const CategoryQuestionList = () => {
           </div>
 
           {bulkDeleteMode && profile?.is_admin && (
-            <div className="mb-4 p-4 bg-slate-800/50 rounded-lg border border-slate-700">
+            <div className="mb-4 p-4 bg-card rounded-lg border border-border">
               <div className="flex items-center gap-4">
                 <Checkbox
                   checked={selectedQuestions.length === filteredQuestions.length && filteredQuestions.length > 0}
                   onCheckedChange={handleSelectAll}
                 />
-                <span className="text-slate-300">
+                <span className="text-foreground">
                   Select All ({selectedQuestions.length}/{filteredQuestions.length} selected)
                 </span>
               </div>
@@ -328,7 +327,7 @@ const CategoryQuestionList = () => {
           {filteredQuestions.map((question, index) => (
             <Card 
               key={question.id} 
-              className="bg-slate-800/50 border-slate-700 hover:bg-slate-800/70 transition-all duration-300"
+              className="bg-card border-border hover:bg-accent/50 transition-all duration-300"
             >
               <CardHeader>
                 <div className="flex items-start justify-between gap-4">
@@ -345,7 +344,7 @@ const CategoryQuestionList = () => {
                       onClick={() => handleQuestionClick(question.id)}
                     >
                       <div className="flex items-center gap-2 mb-2">
-                        <span className="text-slate-400 text-sm">#{index + 1}</span>
+                        <span className="text-muted-foreground text-sm">#{index + 1}</span>
                         <Badge className={`${getDifficultyColor(question.level)} border`}>
                           {question.level}
                         </Badge>
@@ -353,13 +352,13 @@ const CategoryQuestionList = () => {
                           {question.type}
                         </Badge>
                       </div>
-                      <CardTitle className="text-white text-lg hover:text-blue-400 transition-colors">
+                      <CardTitle className="text-foreground text-lg hover:text-blue-400 transition-colors">
                         {question.title}
                       </CardTitle>
                     </div>
                   </div>
                   <div className="flex items-center gap-2">
-                    <div className="flex items-center gap-1 text-slate-400">
+                    <div className="flex items-center gap-1 text-muted-foreground">
                       <Clock className="h-4 w-4" />
                       <span className="text-sm">5-15 mins</span>
                     </div>
@@ -372,7 +371,7 @@ const CategoryQuestionList = () => {
                             e.stopPropagation();
                             handleEditQuestion(question);
                           }}
-                          className="text-blue-400 hover:text-blue-300 hover:bg-slate-700 p-2"
+                          className="text-blue-400 hover:text-blue-300 hover:bg-accent p-2"
                         >
                           <Edit className="h-4 w-4" />
                         </Button>
@@ -383,7 +382,7 @@ const CategoryQuestionList = () => {
                             e.stopPropagation();
                             handleDeleteQuestion(question.id);
                           }}
-                          className="text-red-400 hover:text-red-300 hover:bg-slate-700 p-2"
+                          className="text-red-400 hover:text-red-300 hover:bg-accent p-2"
                         >
                           <Trash2 className="h-4 w-4" />
                         </Button>
@@ -399,8 +398,8 @@ const CategoryQuestionList = () => {
         {filteredQuestions.length === 0 && (
           <div className="text-center py-16">
             <div className="text-6xl mb-4">📝</div>
-            <h3 className="text-xl font-semibold text-slate-400 mb-2">No Questions Available</h3>
-            <p className="text-slate-500 mb-4">
+            <h3 className="text-xl font-semibold text-muted-foreground mb-2">No Questions Available</h3>
+            <p className="text-muted-foreground mb-4">
               {questions.length > 0 
                 ? "You need a higher tier subscription to access these questions."
                 : `Questions for ${subcategoryName} will appear here once they are added.`}
@@ -429,26 +428,26 @@ const CategoryQuestionList = () => {
         {/* Stats */}
         {filteredQuestions.length > 0 && (
           <div className="mt-16 max-w-4xl mx-auto">
-            <Card className="bg-slate-800/30 border-slate-700">
+            <Card className="bg-card border-border">
               <CardContent className="p-8">
                 <div className="grid md:grid-cols-3 gap-8 text-center">
                   <div>
                     <div className="text-3xl font-bold text-green-400 mb-2">
                       {filteredQuestions.filter(q => q.level === "Explorer").length}
                     </div>
-                    <div className="text-slate-300">Explorer Questions</div>
+                    <div className="text-foreground">Explorer Questions</div>
                   </div>
                   <div>
                     <div className="text-3xl font-bold text-yellow-400 mb-2">
                       {filteredQuestions.filter(q => q.level === "Builder").length}
                     </div>
-                    <div className="text-slate-300">Builder Questions</div>
+                    <div className="text-foreground">Builder Questions</div>
                   </div>
                   <div>
                     <div className="text-3xl font-bold text-red-400 mb-2">
                       {filteredQuestions.filter(q => q.level === "Innovator").length}
                     </div>
-                    <div className="text-slate-300">Innovator Questions</div>
+                    <div className="text-foreground">Innovator Questions</div>
                   </div>
                 </div>
               </CardContent>

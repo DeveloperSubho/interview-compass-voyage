@@ -17,6 +17,7 @@ import CategorySection from "./components/CategorySection";
 import CategoryQuestionList from "./components/CategoryQuestionList";
 import Projects from "./pages/Projects";
 import ProjectManagement from "./pages/ProjectManagement";
+import Profile from "./pages/Profile";
 import Pricing from "./pages/Pricing";
 import Contact from "./pages/Contact";
 import NotFound from "./pages/NotFound";
@@ -43,6 +44,7 @@ function App() {
                 <Route path="/questions/:category/:subcategoryId/:questionId" element={<QuestionDetail />} />
                 <Route path="/projects" element={<Projects />} />
                 <Route path="/admin/projects" element={<ProjectManagement />} />
+                <Route path="/profile" element={<Profile />} />
                 <Route path="/pricing" element={<Pricing />} />
                 <Route path="/contact" element={<Contact />} />
                 <Route path="*" element={<NotFound />} />

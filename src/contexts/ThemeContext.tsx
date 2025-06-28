@@ -29,11 +29,18 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     // Update localStorage when theme changes
     localStorage.setItem('theme', theme);
     
-    // Update document class for theme
+    // Update document class and root class for theme
+    const root = document.documentElement;
+    const body = document.body;
+    
     if (theme === 'dark') {
-      document.documentElement.classList.add('dark');
+      root.classList.add('dark');
+      root.classList.remove('light');
+      body.classList.remove('light');
     } else {
-      document.documentElement.classList.remove('dark');
+      root.classList.remove('dark');
+      root.classList.add('light');
+      body.classList.add('light');
     }
   }, [theme]);
 

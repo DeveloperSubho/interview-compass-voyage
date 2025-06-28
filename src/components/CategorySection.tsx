@@ -42,9 +42,21 @@ const CategorySection = () => {
         .from('categories')
         .select('id')
         .eq('name', category)
-        .single();
+        .maybeSingle();
 
-      if (categoryError) throw categoryError;
+      if (categoryError) {
+        console.error('Category error:', categoryError);
+        setSubcategories([]);
+        setLoading(false);
+        return;
+      }
+
+      if (!categoryData) {
+        console.log('Category not found:', category);
+        setSubcategories([]);
+        setLoading(false);
+        return;
+      }
 
       // Get subcategories for this category
       const { data: subcategoriesData, error: subcategoriesError } = await supabase
@@ -53,11 +65,16 @@ const CategorySection = () => {
         .eq('category_id', categoryData.id)
         .order('name');
 
-      if (subcategoriesError) throw subcategoriesError;
+      if (subcategoriesError) {
+        console.error('Subcategories error:', subcategoriesError);
+        setSubcategories([]);
+        setLoading(false);
+        return;
+      }
 
       // Get question counts for each subcategory
       const subcategoriesWithCounts = await Promise.all(
-        subcategoriesData.map(async (subcategory) => {
+        (subcategoriesData || []).map(async (subcategory) => {
           const { count } = await supabase
             .from('questions')
             .select('*', { count: 'exact', head: true })
@@ -73,11 +90,7 @@ const CategorySection = () => {
       setSubcategories(subcategoriesWithCounts);
     } catch (error) {
       console.error('Error fetching subcategories:', error);
-      toast({
-        title: "Error",
-        description: `Failed to load ${category} subcategories`,
-        variant: "destructive",
-      });
+      setSubcategories([]);
     } finally {
       setLoading(false);
     }
@@ -99,12 +112,12 @@ const CategorySection = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-slate-900 dark:bg-slate-900 text-white">
+      <div className="min-h-screen bg-background text-foreground">
         <Navbar />
         <div className="container mx-auto px-4 py-16">
           <div className="text-center">
             <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-400 mx-auto"></div>
-            <p className="mt-4 text-slate-400">Loading {category} subcategories...</p>
+            <p className="mt-4 text-muted-foreground">Loading {category} subcategories...</p>
           </div>
         </div>
         <Footer />
@@ -113,7 +126,7 @@ const CategorySection = () => {
   }
 
   return (
-    <div className="min-h-screen bg-slate-900 dark:bg-slate-900 text-white">
+    <div className="min-h-screen bg-background text-foreground">
       <Navbar />
       
       <div className="container mx-auto px-4 py-16">
@@ -121,7 +134,7 @@ const CategorySection = () => {
           <Button 
             variant="ghost" 
             onClick={() => navigate("/questions")}
-            className="text-slate-300 hover:text-white hover:bg-slate-800 mb-4"
+            className="text-muted-foreground hover:text-foreground hover:bg-accent mb-4"
           >
             <ArrowLeft className="h-4 w-4 mr-2" />
             Back to Categories
@@ -132,7 +145,7 @@ const CategorySection = () => {
               <h1 className="text-4xl md:text-5xl font-bold mb-4 bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent capitalize">
                 {category} Topics
               </h1>
-              <p className="text-slate-400 text-lg max-w-2xl">
+              <p className="text-muted-foreground text-lg max-w-2xl">
                 Explore different {category} topics and master your interview preparation with comprehensive questions and answers.
               </p>
             </div>
@@ -152,7 +165,7 @@ const CategorySection = () => {
           {subcategories.map((subcategory) => (
             <Card 
               key={subcategory.id} 
-              className="bg-slate-800/50 border-slate-700 hover:bg-slate-800/70 transition-all duration-300 hover:scale-105 cursor-pointer"
+              className="bg-card border-border hover:bg-accent/50 transition-all duration-300 hover:scale-105 cursor-pointer"
               onClick={() => handleSubcategoryClick(subcategory.id, subcategory.name)}
             >
               <CardHeader>
@@ -164,8 +177,8 @@ const CategorySection = () => {
                     {subcategory.questionCount} Questions
                   </Badge>
                 </div>
-                <CardTitle className="text-white">{subcategory.name}</CardTitle>
-                <CardDescription className="text-slate-400">
+                <CardTitle className="text-foreground">{subcategory.name}</CardTitle>
+                <CardDescription className="text-muted-foreground">
                   {subcategory.description}
                 </CardDescription>
               </CardHeader>
@@ -181,9 +194,9 @@ const CategorySection = () => {
 
         {subcategories.length === 0 && (
           <div className="text-center py-16">
-            <Code className="h-16 w-16 text-slate-600 mx-auto mb-4" />
-            <h3 className="text-xl font-semibold text-slate-400 mb-2">No Topics Available</h3>
-            <p className="text-slate-500">{category} topics will appear here once they are added.</p>
+            <Code className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
+            <h3 className="text-xl font-semibold text-muted-foreground mb-2">No Topics Available</h3>
+            <p className="text-muted-foreground">{category} topics will appear here once they are added.</p>
             {profile?.is_admin && (
               <Button 
                 className="mt-4 bg-green-600 hover:bg-green-700 text-white"

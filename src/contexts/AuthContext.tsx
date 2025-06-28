@@ -10,6 +10,7 @@ interface Profile {
   last_name?: string;
   avatar_url?: string;
   is_admin: boolean;
+  tier?: string;
 }
 
 interface AuthContextType {
@@ -133,16 +134,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           return { error: { message: 'Username not found' } };
         }
 
-        // Get the user's email from auth.users using RPC or admin functions
-        // For now, we'll use a workaround by getting user data from profiles
-        const { data: users, error: usersError } = await supabase.auth.admin.listUsers();
+        // Get the user's email from auth.users
+        const { data: { users }, error: usersError } = await supabase.auth.admin.listUsers();
         
         if (usersError) {
           console.error('Users lookup error:', usersError);
           return { error: { message: 'Login failed. Please try again.' } };
         }
 
-        const authUser = users.users.find(user => user.id === profileData.id);
+        const authUser = users.find(user => user.id === profileData.id);
         
         if (!authUser?.email) {
           return { error: { message: 'Unable to find account email' } };
