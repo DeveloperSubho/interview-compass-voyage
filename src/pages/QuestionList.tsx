@@ -69,7 +69,7 @@ const QuestionList = () => {
   };
 
   return (
-    <div className="min-h-screen bg-slate-900 text-white">
+    <div className="min-h-screen bg-background text-foreground">
       <Navbar />
       
       <div className="container mx-auto px-4 py-16">
@@ -77,7 +77,7 @@ const QuestionList = () => {
           <Button 
             variant="ghost" 
             onClick={() => navigate("/questions")}
-            className="text-slate-300 hover:text-white hover:bg-slate-800 mb-4"
+            className="text-muted-foreground hover:text-foreground hover:bg-accent mb-4"
           >
             <ArrowLeft className="h-4 w-4 mr-2" />
             Back to Categories
@@ -87,7 +87,7 @@ const QuestionList = () => {
             <h1 className="text-4xl md:text-5xl font-bold mb-4 bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent capitalize">
               {category?.replace(/-/g, ' ')} Questions
             </h1>
-            <p className="text-slate-400 text-lg max-w-2xl mx-auto">
+            <p className="text-muted-foreground text-lg max-w-2xl mx-auto">
               Practice and master these carefully curated questions to excel in your technical interviews.
             </p>
           </div>
@@ -97,23 +97,23 @@ const QuestionList = () => {
           {sampleQuestions.map((question, index) => (
             <Card 
               key={question.id} 
-              className="bg-slate-800/50 border-slate-700 hover:bg-slate-800/70 transition-all duration-300 cursor-pointer"
+              className="bg-card border-border hover:bg-accent/70 transition-all duration-300 cursor-pointer"
               onClick={() => handleQuestionClick(question.id)}
             >
               <CardHeader>
                 <div className="flex items-start justify-between gap-4">
                   <div className="flex-1">
                     <div className="flex items-center gap-2 mb-2">
-                      <span className="text-slate-400 text-sm">#{question.id}</span>
+                      <span className="text-muted-foreground text-sm">#{question.id}</span>
                       <Badge className={`${getDifficultyColor(question.difficulty)} border`}>
                         {question.difficulty}
                       </Badge>
                     </div>
-                    <CardTitle className="text-white text-lg hover:text-blue-400 transition-colors">
+                    <CardTitle className="text-foreground text-lg hover:text-blue-400 transition-colors">
                       {question.title}
                     </CardTitle>
                   </div>
-                  <div className="flex items-center gap-4 text-slate-400">
+                  <div className="flex items-center gap-4 text-muted-foreground">
                     <div className="flex items-center gap-1">
                       <Clock className="h-4 w-4" />
                       <span className="text-sm">{question.timeToSolve}</span>
@@ -127,7 +127,7 @@ const QuestionList = () => {
                     <Badge 
                       key={tagIndex} 
                       variant="secondary" 
-                      className="bg-slate-700 text-slate-300 text-xs"
+                      className="bg-muted text-muted-foreground text-xs"
                     >
                       {tag}
                     </Badge>
@@ -140,26 +140,26 @@ const QuestionList = () => {
 
         {/* Practice Stats */}
         <div className="mt-16 max-w-4xl mx-auto">
-          <Card className="bg-slate-800/30 border-slate-700">
+          <Card className="bg-card border-border">
             <CardContent className="p-8">
               <div className="grid md:grid-cols-3 gap-8 text-center">
                 <div>
                   <div className="text-3xl font-bold text-green-400 mb-2">
                     {sampleQuestions.filter(q => q.difficulty === "Basic").length}
                   </div>
-                  <div className="text-slate-300">Basic Questions</div>
+                  <div className="text-muted-foreground">Basic Questions</div>
                 </div>
                 <div>
                   <div className="text-3xl font-bold text-yellow-400 mb-2">
                     {sampleQuestions.filter(q => q.difficulty === "Intermediate").length}
                   </div>
-                  <div className="text-slate-300">Intermediate Questions</div>
+                  <div className="text-muted-foreground">Intermediate Questions</div>
                 </div>
                 <div>
                   <div className="text-3xl font-bold text-red-400 mb-2">
                     {sampleQuestions.filter(q => q.difficulty === "Advanced").length}
                   </div>
-                  <div className="text-slate-300">Advanced Questions</div>
+                  <div className="text-muted-foreground">Advanced Questions</div>
                 </div>
               </div>
             </CardContent>

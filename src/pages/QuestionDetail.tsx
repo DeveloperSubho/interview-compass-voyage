@@ -87,7 +87,7 @@ Always use === unless you specifically need type coercion. It makes your code mo
   };
 
   return (
-    <div className="min-h-screen bg-slate-900 text-white">
+    <div className="min-h-screen bg-background text-foreground">
       <Navbar />
       
       <div className="container mx-auto px-4 py-16">
@@ -95,7 +95,7 @@ Always use === unless you specifically need type coercion. It makes your code mo
           <Button 
             variant="ghost" 
             onClick={() => navigate(`/questions/${category}`)}
-            className="text-slate-300 hover:text-white hover:bg-slate-800 mb-4"
+            className="text-muted-foreground hover:text-foreground hover:bg-accent mb-4"
           >
             <ArrowLeft className="h-4 w-4 mr-2" />
             Back to Questions
@@ -104,24 +104,24 @@ Always use === unless you specifically need type coercion. It makes your code mo
 
         <div className="max-w-4xl mx-auto">
           {/* Question Header */}
-          <Card className="bg-slate-800/50 border-slate-700 mb-8">
+          <Card className="bg-card border-border mb-8">
             <CardHeader>
               <div className="flex items-start justify-between gap-4">
                 <div className="flex-1">
                   <div className="flex items-center gap-2 mb-2">
-                    <span className="text-slate-400 text-sm">#{sampleQuestion.id}</span>
+                    <span className="text-muted-foreground text-sm">#{sampleQuestion.id}</span>
                     <Badge className={`${getDifficultyColor(sampleQuestion.difficulty)} border`}>
                       {sampleQuestion.difficulty}
                     </Badge>
-                    <div className="flex items-center gap-1 text-slate-400">
+                    <div className="flex items-center gap-1 text-muted-foreground">
                       <Clock className="h-4 w-4" />
                       <span className="text-sm">{sampleQuestion.timeToSolve}</span>
                     </div>
                   </div>
-                  <CardTitle className="text-white text-2xl mb-2">
+                  <CardTitle className="text-foreground text-2xl mb-2">
                     {sampleQuestion.title}
                   </CardTitle>
-                  <CardDescription className="text-slate-400">
+                  <CardDescription className="text-muted-foreground">
                     {sampleQuestion.description}
                   </CardDescription>
                 </div>
@@ -131,7 +131,7 @@ Always use === unless you specifically need type coercion. It makes your code mo
                   <Badge 
                     key={tagIndex} 
                     variant="secondary" 
-                    className="bg-slate-700 text-slate-300"
+                    className="bg-muted text-muted-foreground"
                   >
                     {tag}
                   </Badge>
@@ -141,16 +141,16 @@ Always use === unless you specifically need type coercion. It makes your code mo
           </Card>
 
           {/* Question Content */}
-          <Card className="bg-slate-800/50 border-slate-700 mb-8">
+          <Card className="bg-card border-border mb-8">
             <CardHeader>
-              <CardTitle className="text-white flex items-center gap-2">
+              <CardTitle className="text-foreground flex items-center gap-2">
                 <Code className="h-5 w-5" />
                 Question Details & Answer
               </CardTitle>
             </CardHeader>
             <CardContent>
               <div className="prose prose-invert max-w-none">
-                <div className="whitespace-pre-wrap text-slate-300 leading-relaxed">
+                <div className="whitespace-pre-wrap text-muted-foreground leading-relaxed">
                   {sampleQuestion.content}
                 </div>
               </div>
@@ -158,9 +158,9 @@ Always use === unless you specifically need type coercion. It makes your code mo
           </Card>
 
           {/* Hints Section */}
-          <Card className="bg-slate-800/50 border-slate-700 mb-8">
+          <Card className="bg-card border-border mb-8">
             <CardHeader>
-              <CardTitle className="text-white flex items-center gap-2">
+              <CardTitle className="text-foreground flex items-center gap-2">
                 💡 Hints
               </CardTitle>
             </CardHeader>
@@ -171,7 +171,7 @@ Always use === unless you specifically need type coercion. It makes your code mo
                     <div className="h-6 w-6 bg-blue-600 rounded-full flex items-center justify-center text-white text-sm font-semibold flex-shrink-0 mt-0.5">
                       {index + 1}
                     </div>
-                    <p className="text-slate-300">{hint}</p>
+                    <p className="text-muted-foreground">{hint}</p>
                   </div>
                 ))}
               </div>
@@ -182,7 +182,7 @@ Always use === unless you specifically need type coercion. It makes your code mo
           <div className="flex justify-between items-center">
             <Button 
               variant="outline" 
-              className="border-slate-600 text-slate-300 hover:bg-slate-800"
+              className="border-border text-foreground hover:bg-accent"
               onClick={() => navigate(`/questions/${category}`)}
             >
               <ArrowLeft className="h-4 w-4 mr-2" />

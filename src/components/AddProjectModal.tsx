@@ -44,6 +44,14 @@ const AddProjectModal = ({ isOpen, onClose, onProjectSaved, editingProject }: Ad
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
 
+  const projectTypes = [
+    "Java",
+    "Spring Boot", 
+    "ReactJS",
+    "Full-Stack",
+    "Database"
+  ];
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
@@ -147,9 +155,9 @@ const AddProjectModal = ({ isOpen, onClose, onProjectSaved, editingProject }: Ad
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-2xl bg-slate-800 border-slate-700 text-white max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-w-2xl bg-card border-border text-foreground max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle className="text-2xl text-center text-white">
+          <DialogTitle className="text-2xl text-center text-foreground">
             {editingProject ? "Edit Project" : "Add New Project"}
           </DialogTitle>
         </DialogHeader>
@@ -157,40 +165,43 @@ const AddProjectModal = ({ isOpen, onClose, onProjectSaved, editingProject }: Ad
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="title" className="text-slate-300">Title *</Label>
+              <Label htmlFor="title" className="text-muted-foreground">Title *</Label>
               <Input
                 id="title"
                 type="text"
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
-                className="bg-slate-700 border-slate-600 text-white"
+                className="bg-input border-border text-foreground"
                 placeholder="Project title"
                 required
               />
             </div>
             
             <div className="space-y-2">
-              <Label htmlFor="type" className="text-slate-300">Type *</Label>
-              <Input
-                id="type"
-                type="text"
-                value={type}
-                onChange={(e) => setType(e.target.value)}
-                className="bg-slate-700 border-slate-600 text-white"
-                placeholder="e.g., Web Application"
-                required
-              />
+              <Label htmlFor="type" className="text-muted-foreground">Type *</Label>
+              <Select value={type} onValueChange={setType} required>
+                <SelectTrigger className="bg-input border-border text-foreground">
+                  <SelectValue placeholder="Select project type" />
+                </SelectTrigger>
+                <SelectContent className="bg-card border-border">
+                  {projectTypes.map((projectType) => (
+                    <SelectItem key={projectType} value={projectType}>
+                      {projectType}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
           </div>
 
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="level" className="text-slate-300">Level</Label>
+              <Label htmlFor="level" className="text-muted-foreground">Level</Label>
               <Select value={level} onValueChange={setLevel}>
-                <SelectTrigger className="bg-slate-700 border-slate-600 text-white">
+                <SelectTrigger className="bg-input border-border text-foreground">
                   <SelectValue />
                 </SelectTrigger>
-                <SelectContent className="bg-slate-700 border-slate-600">
+                <SelectContent className="bg-card border-border">
                   <SelectItem value="Explorer">Explorer</SelectItem>
                   <SelectItem value="Builder">Builder</SelectItem>
                   <SelectItem value="Innovator">Innovator</SelectItem>
@@ -199,50 +210,50 @@ const AddProjectModal = ({ isOpen, onClose, onProjectSaved, editingProject }: Ad
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="duration" className="text-slate-300">Duration</Label>
+              <Label htmlFor="duration" className="text-muted-foreground">Duration</Label>
               <Input
                 id="duration"
                 type="text"
                 value={duration}
                 onChange={(e) => setDuration(e.target.value)}
-                className="bg-slate-700 border-slate-600 text-white"
+                className="bg-input border-border text-foreground"
                 placeholder="e.g., 2-3 weeks"
               />
             </div>
           </div>
           
           <div className="space-y-2">
-            <Label htmlFor="description" className="text-slate-300">Description</Label>
+            <Label htmlFor="description" className="text-muted-foreground">Description</Label>
             <Textarea
               id="description"
               value={description}
               onChange={(e) => setDescription(e.target.value)}
-              className="bg-slate-700 border-slate-600 text-white"
+              className="bg-input border-border text-foreground"
               placeholder="Project description"
               rows={3}
             />
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="githubUrl" className="text-slate-300">GitHub URL</Label>
+            <Label htmlFor="githubUrl" className="text-muted-foreground">GitHub URL</Label>
             <Input
               id="githubUrl"
               type="url"
               value={githubUrl}
               onChange={(e) => setGithubUrl(e.target.value)}
-              className="bg-slate-700 border-slate-600 text-white"
+              className="bg-input border-border text-foreground"
               placeholder="https://github.com/username/project"
             />
           </div>
 
           <div className="space-y-2">
-            <Label className="text-slate-300">Technologies</Label>
+            <Label className="text-muted-foreground">Technologies</Label>
             <div className="flex gap-2">
               <Input
                 value={newTech}
                 onChange={(e) => setNewTech(e.target.value)}
                 onKeyPress={(e) => e.key === 'Enter' && (e.preventDefault(), addTechnology())}
-                className="bg-slate-700 border-slate-600 text-white flex-1"
+                className="bg-input border-border text-foreground flex-1"
                 placeholder="Add technology"
               />
               <Button type="button" onClick={addTechnology} className="bg-blue-600 hover:bg-blue-700">
@@ -260,13 +271,13 @@ const AddProjectModal = ({ isOpen, onClose, onProjectSaved, editingProject }: Ad
           </div>
 
           <div className="space-y-2">
-            <Label className="text-slate-300">Key Features</Label>
+            <Label className="text-muted-foreground">Key Features</Label>
             <div className="flex gap-2">
               <Input
                 value={newFeature}
                 onChange={(e) => setNewFeature(e.target.value)}
                 onKeyPress={(e) => e.key === 'Enter' && (e.preventDefault(), addFeature())}
-                className="bg-slate-700 border-slate-600 text-white flex-1"
+                className="bg-input border-border text-foreground flex-1"
                 placeholder="Add key feature"
               />
               <Button type="button" onClick={addFeature} className="bg-green-600 hover:bg-green-700">
@@ -288,7 +299,7 @@ const AddProjectModal = ({ isOpen, onClose, onProjectSaved, editingProject }: Ad
               type="button"
               variant="outline" 
               onClick={onClose}
-              className="flex-1 border-slate-600 text-slate-300 hover:bg-slate-700"
+              className="flex-1 border-border text-foreground hover:bg-accent"
               disabled={loading}
             >
               Cancel

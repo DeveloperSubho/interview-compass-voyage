@@ -69,10 +69,8 @@ const JavaQuestionDetail = () => {
   };
 
   const renderAnswerWithImages = (answer: string) => {
-    // Split by line breaks and process each line
     const lines = answer.split('\n');
     return lines.map((line, index) => {
-      // Check if line contains an image URL
       const imageUrlPattern = /(https?:\/\/[^\s]+\.(jpg|jpeg|png|gif|webp))/gi;
       const matches = line.match(imageUrlPattern);
       
@@ -87,7 +85,7 @@ const JavaQuestionDetail = () => {
                 key={imgIndex}
                 src={url} 
                 alt="Answer illustration" 
-                className="max-w-full h-auto rounded-lg border border-slate-600 my-2"
+                className="max-w-full h-auto rounded-lg border border-border my-2"
                 onError={(e) => {
                   const target = e.target as HTMLImageElement;
                   target.style.display = 'none';
@@ -104,12 +102,12 @@ const JavaQuestionDetail = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-slate-900 text-white">
+      <div className="min-h-screen bg-background text-foreground">
         <Navbar />
         <div className="container mx-auto px-4 py-16">
           <div className="text-center">
             <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-400 mx-auto"></div>
-            <p className="mt-4 text-slate-400">Loading question...</p>
+            <p className="mt-4 text-muted-foreground">Loading question...</p>
           </div>
         </div>
         <Footer />
@@ -119,11 +117,11 @@ const JavaQuestionDetail = () => {
 
   if (!question) {
     return (
-      <div className="min-h-screen bg-slate-900 text-white">
+      <div className="min-h-screen bg-background text-foreground">
         <Navbar />
         <div className="container mx-auto px-4 py-16">
           <div className="text-center">
-            <h2 className="text-2xl font-bold text-slate-400 mb-4">Question Not Found</h2>
+            <h2 className="text-2xl font-bold text-muted-foreground mb-4">Question Not Found</h2>
             <Button onClick={() => navigate("/questions/java")}>
               Back to Java Topics
             </Button>
@@ -135,7 +133,7 @@ const JavaQuestionDetail = () => {
   }
 
   return (
-    <div className="min-h-screen bg-slate-900 text-white">
+    <div className="min-h-screen bg-background text-foreground">
       <Navbar />
       
       <div className="container mx-auto px-4 py-16">
@@ -143,7 +141,7 @@ const JavaQuestionDetail = () => {
           <Button 
             variant="ghost" 
             onClick={() => navigate(`/questions/java/${subcategoryId}`)}
-            className="text-slate-300 hover:text-white hover:bg-slate-800 mb-4"
+            className="text-muted-foreground hover:text-foreground hover:bg-accent mb-4"
           >
             <ArrowLeft className="h-4 w-4 mr-2" />
             Back to Questions
@@ -152,7 +150,7 @@ const JavaQuestionDetail = () => {
 
         <div className="max-w-4xl mx-auto">
           {/* Question Header */}
-          <Card className="bg-slate-800/50 border-slate-700 mb-8">
+          <Card className="bg-card border-border mb-8">
             <CardHeader>
               <div className="flex items-start justify-between gap-4">
                 <div className="flex-1">
@@ -163,15 +161,15 @@ const JavaQuestionDetail = () => {
                     <Badge variant="secondary" className="bg-blue-600/20 text-blue-300 border-blue-600/30">
                       {question.type}
                     </Badge>
-                    <div className="flex items-center gap-1 text-slate-400">
+                    <div className="flex items-center gap-1 text-muted-foreground">
                       <Clock className="h-4 w-4" />
                       <span className="text-sm">5-15 mins</span>
                     </div>
                   </div>
-                  <CardTitle className="text-white text-2xl mb-2">
+                  <CardTitle className="text-foreground text-2xl mb-2">
                     {question.title}
                   </CardTitle>
-                  <CardDescription className="text-slate-400">
+                  <CardDescription className="text-muted-foreground">
                     {question.content}
                   </CardDescription>
                 </div>
@@ -180,16 +178,16 @@ const JavaQuestionDetail = () => {
           </Card>
 
           {/* Question Answer */}
-          <Card className="bg-slate-800/50 border-slate-700 mb-8">
+          <Card className="bg-card border-border mb-8">
             <CardHeader>
-              <CardTitle className="text-white flex items-center gap-2">
+              <CardTitle className="text-foreground flex items-center gap-2">
                 <Code className="h-5 w-5" />
                 Answer & Explanation
               </CardTitle>
             </CardHeader>
             <CardContent>
               <div className="prose prose-invert max-w-none">
-                <div className="text-slate-300 leading-relaxed">
+                <div className="text-muted-foreground leading-relaxed">
                   {renderAnswerWithImages(question.answer)}
                 </div>
               </div>
@@ -200,7 +198,7 @@ const JavaQuestionDetail = () => {
           <div className="flex justify-start items-center">
             <Button 
               variant="outline" 
-              className="border-slate-600 text-slate-300 hover:bg-slate-800"
+              className="border-border text-foreground hover:bg-accent"
               onClick={() => navigate(`/questions/java/${subcategoryId}`)}
             >
               <ArrowLeft className="h-4 w-4 mr-2" />

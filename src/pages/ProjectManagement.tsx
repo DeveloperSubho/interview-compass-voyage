@@ -23,7 +23,6 @@ interface Project {
   duration: string;
   key_features: string[];
   created_at: string;
-  section?: string;
 }
 
 const ProjectManagement = () => {
@@ -54,7 +53,17 @@ const ProjectManagement = () => {
         .order('created_at', { ascending: false });
 
       if (section) {
-        query = query.eq('section', section);
+        // Map section parameter to project type
+        const typeMapping: { [key: string]: string } = {
+          'java': 'Java',
+          'spring': 'Spring Boot',
+          'react': 'ReactJS',
+          'fullstack': 'Full-Stack',
+          'database': 'Database'
+        };
+        
+        const projectType = typeMapping[section] || section;
+        query = query.eq('type', projectType);
       }
 
       const { data, error } = await query;
@@ -136,7 +145,16 @@ const ProjectManagement = () => {
 
   const getSectionTitle = (section: string | null) => {
     if (!section) return "All Projects";
-    return section.charAt(0).toUpperCase() + section.slice(1) + " Projects";
+    
+    const titleMapping: { [key: string]: string } = {
+      'java': 'Java',
+      'spring': 'Spring Boot',
+      'react': 'ReactJS',
+      'fullstack': 'Full-Stack',
+      'database': 'Database'
+    };
+    
+    return `${titleMapping[section] || section} Projects`;
   };
 
   if (!profile?.is_admin) {
@@ -213,7 +231,7 @@ const ProjectManagement = () => {
                   <Badge className={`${getLevelColor(selectedProject.level)} border`}>
                     {selectedProject.level}
                   </Badge>
-                  <Badge variant="secondary" className="bg-muted text-muted-foreground">
+                  <Badge variant="secondary" className="bg-muted text-foreground">
                     {selectedProject.type}
                   </Badge>
                 </div>
@@ -229,7 +247,7 @@ const ProjectManagement = () => {
                   <span className="text-muted-foreground text-sm">Technologies:</span>
                   <div className="flex flex-wrap gap-2 mt-2">
                     {selectedProject.technologies.map((tech) => (
-                      <Badge key={tech} variant="secondary" className="bg-muted text-muted-foreground">
+                      <Badge key={tech} variant="secondary" className="bg-muted text-foreground">
                         {tech}
                       </Badge>
                     ))}
@@ -316,101 +334,101 @@ const ProjectManagement = () => {
           </div>
         </div>
 
-        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {projects.map((project) => (
-            <Card 
-              key={project.id} 
-              className="bg-card border-border hover:bg-accent/50 transition-all duration-300"
-            >
-              <CardHeader>
-                <div className="flex items-start justify-between gap-4">
-                  <div className="flex-1">
-                    <CardTitle className="text-foreground text-lg mb-2">{project.title}</CardTitle>
-                    <div className="flex gap-2 mb-2">
-                      <Badge className={`${getLevelColor(project.level)} border`}>
-                        {project.level}
-                      </Badge>
-                      <Badge variant="secondary" className="bg-muted text-muted-foreground">
-                        {project.type}
-                      </Badge>
+        {projects.length > 0 ? (
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {projects.map((project) => (
+              <Card 
+                key={project.id} 
+                className="bg-card border-border hover:bg-accent/50 transition-all duration-300"
+              >
+                <CardHeader>
+                  <div className="flex items-start justify-between gap-4">
+                    <div className="flex-1">
+                      <CardTitle className="text-foreground text-lg mb-2">{project.title}</CardTitle>
+                      <div className="flex gap-2 mb-2">
+                        <Badge className={`${getLevelColor(project.level)} border`}>
+                          {project.level}
+                        </Badge>
+                        <Badge variant="secondary" className="bg-muted text-foreground">
+                          {project.type}
+                        </Badge>
+                      </div>
+                    </div>
+                    <div className="flex gap-1">
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        onClick={() => handleViewProject(project)}
+                        className="text-blue-400 hover:text-blue-300 hover:bg-accent p-2"
+                      >
+                        <Eye className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        onClick={() => handleEditProject(project)}
+                        className="text-blue-400 hover:text-blue-300 hover:bg-accent p-2"
+                      >
+                        <Edit className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        onClick={() => handleDeleteProject(project.id)}
+                        className="text-red-400 hover:text-red-300 hover:bg-accent p-2"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
                     </div>
                   </div>
-                  <div className="flex gap-1">
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <p className="text-muted-foreground text-sm line-clamp-2">
+                    {project.description}
+                  </p>
+                  
+                  {project.duration && (
+                    <div className="text-sm">
+                      <span className="text-muted-foreground">Duration: </span>
+                      <span className="text-foreground">{project.duration}</span>
+                    </div>
+                  )}
+
+                  {project.technologies.length > 0 && (
+                    <div className="flex flex-wrap gap-1">
+                      {project.technologies.slice(0, 3).map((tech) => (
+                        <Badge key={tech} variant="secondary" className="bg-muted text-foreground text-xs">
+                          {tech}
+                        </Badge>
+                      ))}
+                      {project.technologies.length > 3 && (
+                        <Badge variant="secondary" className="bg-muted text-foreground text-xs">
+                          +{project.technologies.length - 3} more
+                        </Badge>
+                      )}
+                    </div>
+                  )}
+
+                  {project.github_url && (
                     <Button
                       size="sm"
-                      variant="ghost"
-                      onClick={() => handleViewProject(project)}
-                      className="text-blue-400 hover:text-blue-300 hover:bg-accent p-2"
+                      variant="outline"
+                      onClick={() => window.open(project.github_url, '_blank')}
+                      className="w-full border-border text-foreground hover:bg-accent"
                     >
-                      <Eye className="h-4 w-4" />
+                      <ExternalLink className="h-4 w-4 mr-2" />
+                      View on GitHub
                     </Button>
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      onClick={() => handleEditProject(project)}
-                      className="text-blue-400 hover:text-blue-300 hover:bg-accent p-2"
-                    >
-                      <Edit className="h-4 w-4" />
-                    </Button>
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      onClick={() => handleDeleteProject(project.id)}
-                      className="text-red-400 hover:text-red-300 hover:bg-accent p-2"
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
-                  </div>
-                </div>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <p className="text-muted-foreground text-sm line-clamp-2">
-                  {project.description}
-                </p>
-                
-                {project.duration && (
-                  <div className="text-sm">
-                    <span className="text-muted-foreground">Duration: </span>
-                    <span className="text-foreground">{project.duration}</span>
-                  </div>
-                )}
-
-                {project.technologies.length > 0 && (
-                  <div className="flex flex-wrap gap-1">
-                    {project.technologies.slice(0, 3).map((tech) => (
-                      <Badge key={tech} variant="secondary" className="bg-muted text-muted-foreground text-xs">
-                        {tech}
-                      </Badge>
-                    ))}
-                    {project.technologies.length > 3 && (
-                      <Badge variant="secondary" className="bg-muted text-muted-foreground text-xs">
-                        +{project.technologies.length - 3} more
-                      </Badge>
-                    )}
-                  </div>
-                )}
-
-                {project.github_url && (
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    onClick={() => window.open(project.github_url, '_blank')}
-                    className="w-full border-border text-foreground hover:bg-accent"
-                  >
-                    <ExternalLink className="h-4 w-4 mr-2" />
-                    View on GitHub
-                  </Button>
-                )}
-              </CardContent>
-            </Card>
-          ))}
-        </div>
-
-        {projects.length === 0 && (
+                  )}
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        ) : (
           <div className="text-center py-16">
             <div className="text-6xl mb-4">🚀</div>
             <h3 className="text-xl font-semibold text-muted-foreground mb-2">
-              No {section ? getSectionTitle(section) : 'Projects'} Available
+              No {getSectionTitle(section)} Available
             </h3>
             <p className="text-muted-foreground mb-4">Projects will appear here once they are added.</p>
             <Button 

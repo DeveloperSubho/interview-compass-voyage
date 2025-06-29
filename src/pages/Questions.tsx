@@ -88,24 +88,10 @@ const Questions = () => {
     fetchCategoriesWithCounts();
   }, []);
 
-  // Highlight current route in navbar
-  useEffect(() => {
-    const navItems = document.querySelectorAll('.nav-item');
-    navItems.forEach(item => {
-      item.classList.remove('bg-slate-800', 'text-white');
-    });
-    
-    const questionsNavItem = document.querySelector('[href="/questions"]');
-    if (questionsNavItem) {
-      questionsNavItem.classList.add('bg-slate-800', 'text-white');
-    }
-  }, [location.pathname]);
-
   const fetchCategoriesWithCounts = async () => {
     try {
       const categoriesWithCounts = await Promise.all(
         categories.map(async (category) => {
-          // Get category from database
           const { data: dbCategory } = await supabase
             .from('categories')
             .select('id')
@@ -114,7 +100,6 @@ const Questions = () => {
 
           if (dbCategory) {
             if (category.name === 'Java') {
-              // Get Java subcategories and their question counts
               const { data: subcategories } = await supabase
                 .from('subcategories')
                 .select('id')
@@ -133,7 +118,6 @@ const Questions = () => {
                 };
               }
             } else {
-              // For other categories, get subcategories and question counts
               const { data: subcategories } = await supabase
                 .from('subcategories')
                 .select('id')
@@ -184,12 +168,12 @@ const Questions = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-slate-900 dark:bg-slate-900 text-white">
+      <div className="min-h-screen bg-background text-foreground">
         <Navbar />
         <div className="container mx-auto px-4 py-16">
           <div className="text-center">
             <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-400 mx-auto"></div>
-            <p className="mt-4 text-slate-400">Loading categories...</p>
+            <p className="mt-4 text-muted-foreground">Loading categories...</p>
           </div>
         </div>
         <Footer />
@@ -198,14 +182,14 @@ const Questions = () => {
   }
 
   return (
-    <div className="min-h-screen bg-slate-900 dark:bg-slate-900 text-white">
+    <div className="min-h-screen bg-background text-foreground">
       <Navbar />
       
       <div className="container mx-auto px-4 py-16">
         <h1 className="text-4xl md:text-5xl font-bold mb-8 bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent">
           Explore Interview Questions
         </h1>
-        <p className="text-slate-400 text-lg max-w-3xl mb-12">
+        <p className="text-muted-foreground text-lg max-w-3xl mb-12">
           Sharpen your skills with our curated questions across various domains. Each category is designed to help you master key concepts and techniques.
         </p>
 
@@ -213,7 +197,7 @@ const Questions = () => {
           {categories.map((category) => (
             <Card 
               key={category.id} 
-              className="bg-slate-800/50 border-slate-700 hover:bg-slate-800/70 transition-all duration-300 hover:scale-105 cursor-pointer"
+              className="bg-card border-border hover:bg-accent/70 transition-all duration-300 hover:scale-105 cursor-pointer"
               onClick={() => handleCategoryClick(category.name)}
             >
               <CardHeader>
@@ -225,8 +209,8 @@ const Questions = () => {
                     {category.questionCount} Questions
                   </Badge>
                 </div>
-                <CardTitle className="text-white">{category.name}</CardTitle>
-                <CardDescription className="text-slate-400">
+                <CardTitle className="text-foreground">{category.name}</CardTitle>
+                <CardDescription className="text-muted-foreground">
                   {category.description}
                 </CardDescription>
               </CardHeader>

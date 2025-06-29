@@ -79,7 +79,7 @@ const Pricing = () => {
   };
 
   return (
-    <div className="min-h-screen bg-slate-900 text-white">
+    <div className="min-h-screen bg-background text-foreground">
       <Navbar />
       
       <div className="container mx-auto px-4 py-16">
@@ -87,18 +87,18 @@ const Pricing = () => {
           <h1 className="text-4xl md:text-5xl font-bold mb-4 bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent">
             Choose Your Plan
           </h1>
-          <p className="text-slate-400 text-lg mb-8">
+          <p className="text-muted-foreground text-lg mb-8">
             Select the perfect plan for your interview preparation journey
           </p>
           
           {/* Pricing Toggle */}
-          <div className="inline-flex bg-slate-800 rounded-lg p-1 mb-12">
+          <div className="inline-flex bg-card rounded-lg p-1 mb-12 border border-border">
             <button
               onClick={() => setSelectedTier("monthly")}
               className={`px-6 py-2 rounded-md text-sm font-medium transition-all ${
                 selectedTier === "monthly"
                   ? "bg-[#555879] text-white"
-                  : "text-slate-400 hover:text-white"
+                  : "text-muted-foreground hover:text-foreground"
               }`}
             >
               Monthly
@@ -108,7 +108,7 @@ const Pricing = () => {
               className={`px-6 py-2 rounded-md text-sm font-medium transition-all ${
                 selectedTier === "yearly"
                   ? "bg-[#555879] text-white"
-                  : "text-slate-400 hover:text-white"
+                  : "text-muted-foreground hover:text-foreground"
               }`}
             >
               Annual
@@ -119,8 +119,8 @@ const Pricing = () => {
         
         <div className="grid md:grid-cols-3 gap-8 max-w-5xl mx-auto">
           {pricingTiers.map((tier, index) => (
-            <Card key={index} className={`relative bg-slate-800/50 border-slate-700 hover:scale-105 transition-all duration-300 ${
-              tier.popular ? "ring-2 ring-[#555879] bg-slate-800/70" : ""
+            <Card key={index} className={`relative bg-card border-border hover:scale-105 transition-all duration-300 ${
+              tier.popular ? "ring-2 ring-[#555879] bg-card/70" : ""
             }`}>
               {tier.popular && (
                 <div className="absolute -top-4 left-1/2 transform -translate-x-1/2">
@@ -131,19 +131,19 @@ const Pricing = () => {
                 </div>
               )}
               <CardHeader className="text-center pb-8">
-                <CardTitle className="text-2xl text-white">{tier.name}</CardTitle>
-                <CardDescription className="text-slate-400 mb-4">
+                <CardTitle className="text-2xl text-foreground">{tier.name}</CardTitle>
+                <CardDescription className="text-muted-foreground mb-4">
                   {tier.description}
                 </CardDescription>
-                <div className="text-4xl font-bold text-white">
+                <div className="text-4xl font-bold text-foreground">
                   {tier.price}
-                  <span className="text-lg text-slate-400 font-normal">{tier.period}</span>
+                  <span className="text-lg text-muted-foreground font-normal">{tier.period}</span>
                 </div>
               </CardHeader>
               <CardContent className="space-y-4">
                 <ul className="space-y-3">
                   {tier.features.map((feature, featureIndex) => (
-                    <li key={featureIndex} className="flex items-center text-slate-300">
+                    <li key={featureIndex} className="flex items-center text-foreground">
                       <CheckCircle className="h-5 w-5 text-green-500 mr-3 flex-shrink-0" />
                       {feature}
                     </li>
@@ -153,7 +153,7 @@ const Pricing = () => {
                   className={`w-full mt-8 ${
                     tier.popular 
                       ? "bg-[#555879] hover:bg-[#98A1BC] text-white" 
-                      : "bg-slate-700 hover:bg-slate-600 text-white"
+                      : "bg-muted hover:bg-muted/80 text-foreground"
                   }`}
                   onClick={() => handleUpgrade(tier.name)}
                 >
@@ -166,7 +166,7 @@ const Pricing = () => {
 
         {/* CTA Section */}
         <div className="mt-16 text-center">
-          <Card className="bg-gradient-to-r from-[#555879]/20 to-[#98A1BC]/20 border-slate-700 max-w-2xl mx-auto bg-[#9294b2]">
+          <Card className="bg-gradient-to-r from-[#555879]/20 to-[#98A1BC]/20 border-border max-w-2xl mx-auto bg-[#9294b2]">
             <CardContent className="p-8">
               <h3 className="text-2xl font-bold text-white mb-4">
                 Ready to Start Your Journey?

@@ -2,7 +2,7 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Code, Database, Globe, Layers, Server, Lock, ExternalLink } from "lucide-react";
+import { Code, Database, Globe, Layers, Server, Lock, ExternalLink, Plus } from "lucide-react";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import AuthModal from "@/components/AuthModal";
@@ -22,7 +22,6 @@ interface Project {
   technologies: string[];
   duration?: string;
   key_features: string[];
-  section?: string;
 }
 
 const Projects = () => {
@@ -76,7 +75,7 @@ const Projects = () => {
       description: "Console applications, algorithms, data structures",
       difficulty: ["Explorer", "Builder"],
       tier: "Explorer",
-      section: "java"
+      type: "Java"
     },
     {
       icon: Layers,
@@ -84,7 +83,7 @@ const Projects = () => {
       description: "REST APIs, microservices, enterprise applications",
       difficulty: ["Builder", "Innovator"],
       tier: "Builder",
-      section: "spring"
+      type: "Spring Boot"
     },
     {
       icon: Globe,
@@ -92,7 +91,7 @@ const Projects = () => {
       description: "Interactive web applications, component libraries",
       difficulty: ["Explorer", "Builder"],
       tier: "Explorer",
-      section: "react"
+      type: "ReactJS"
     },
     {
       icon: Server,
@@ -100,7 +99,7 @@ const Projects = () => {
       description: "Complete web applications with frontend and backend",
       difficulty: ["Innovator"],
       tier: "Innovator",
-      section: "fullstack"
+      type: "Full-Stack"
     },
     {
       icon: Database,
@@ -108,7 +107,7 @@ const Projects = () => {
       description: "Database design, optimization, data modeling",
       difficulty: ["Builder", "Innovator"],
       tier: "Builder",
-      section: "database"
+      type: "Database"
     }
   ];
 
@@ -176,7 +175,7 @@ const Projects = () => {
 
     // Admin can access project management page with section filter
     if (profile?.is_admin) {
-      navigate(`/admin/projects?section=${category.section}`);
+      navigate(`/admin/projects?section=${category.type.toLowerCase()}`);
       return;
     }
 
@@ -235,7 +234,7 @@ const Projects = () => {
         {/* Project Categories with their respective projects */}
         <div className="space-y-12">
           {categories.map((category, index) => {
-            const categoryProjects = projects.filter(p => p.section === category.section);
+            const categoryProjects = projects.filter(p => p.type === category.type);
             
             return (
               <div key={index}>
@@ -260,6 +259,7 @@ const Projects = () => {
                         onClick={() => handleCategoryClick(category)}
                         className="border-border text-foreground hover:bg-accent"
                       >
+                        <Plus className="h-4 w-4 mr-2" />
                         Manage Projects
                       </Button>
                     )}
@@ -367,6 +367,7 @@ const Projects = () => {
                           className="bg-green-600 hover:bg-green-700 text-white"
                           onClick={() => handleCategoryClick(category)}
                         >
+                          <Plus className="h-4 w-4 mr-2" />
                           Add Projects
                         </Button>
                       )}
