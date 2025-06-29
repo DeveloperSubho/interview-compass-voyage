@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -21,9 +20,13 @@ const AuthModal = ({ isOpen, onClose }: AuthModalProps) => {
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
   const [username, setUsername] = useState("");
+  const [mobile, setMobile] = useState("");
+  const [otp, setOtp] = useState("");
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [otpSent, setOtpSent] = useState(false);
+  const [authMode, setAuthMode] = useState<'email' | 'mobile'>('email');
   const { toast } = useToast();
   const { signIn, signUp, signInWithProvider } = useAuth();
 
@@ -51,6 +54,63 @@ const AuthModal = ({ isOpen, onClose }: AuthModalProps) => {
       toast({
         title: "Error",
         description: "An unexpected error occurred",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleMobileOTPRequest = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+
+    try {
+      // This is a placeholder - in a real implementation, you'd call your OTP service
+      // For now, we'll simulate sending OTP
+      setTimeout(() => {
+        setOtpSent(true);
+        setLoading(false);
+        toast({
+          title: "OTP Sent",
+          description: "Please check your mobile for the OTP",
+        });
+      }, 1000);
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to send OTP",
+        variant: "destructive",
+      });
+      setLoading(false);
+    }
+  };
+
+  const handleMobileOTPVerify = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+
+    try {
+      // This is a placeholder - in a real implementation, you'd verify the OTP
+      // For now, we'll simulate OTP verification
+      if (otp === "123456") {
+        toast({
+          title: "Success",
+          description: "Signed in successfully!",
+        });
+        onClose();
+        resetForm();
+      } else {
+        toast({
+          title: "Error",
+          description: "Invalid OTP",
+          variant: "destructive",
+        });
+      }
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to verify OTP",
         variant: "destructive",
       });
     } finally {
@@ -134,8 +194,12 @@ const AuthModal = ({ isOpen, onClose }: AuthModalProps) => {
     setFirstName("");
     setLastName("");
     setUsername("");
+    setMobile("");
+    setOtp("");
     setShowPassword(false);
     setShowConfirmPassword(false);
+    setOtpSent(false);
+    setAuthMode('email');
   };
 
   return (
@@ -152,54 +216,137 @@ const AuthModal = ({ isOpen, onClose }: AuthModalProps) => {
           </TabsList>
           
           <TabsContent value="signin" className="space-y-4">
-            <form onSubmit={handleSignIn} className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="signin-email">Email or Username</Label>
-                <Input
-                  id="signin-email"
-                  type="text"
-                  placeholder="Enter your email or username"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  className="bg-background border-border text-foreground"
-                  required
-                />
-              </div>
-              <div className="space-y-2 relative">
-                <Label htmlFor="signin-password">Password</Label>
-                <div className="relative">
+            <div className="grid grid-cols-2 gap-4">
+              <Button
+                type="button"
+                variant={authMode === 'email' ? 'default' : 'outline'}
+                onClick={() => setAuthMode('email')}
+                className="text-sm"
+              >
+                Email/Username
+              </Button>
+              <Button
+                type="button"
+                variant={authMode === 'mobile' ? 'default' : 'outline'}
+                onClick={() => setAuthMode('mobile')}
+                className="text-sm"
+              >
+                Mobile OTP
+              </Button>
+            </div>
+
+            {authMode === 'email' ? (
+              <form onSubmit={handleSignIn} className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="signin-email">Email or Username</Label>
                   <Input
-                    id="signin-password"
-                    type={showPassword ? "text" : "password"}
-                    placeholder="Enter your password"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    className="bg-background border-border text-foreground pr-10"
+                    id="signin-email"
+                    type="text"
+                    placeholder="Enter your email or username"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    className="bg-background border-border text-foreground"
                     required
                   />
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="sm"
-                    className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
-                    onClick={() => setShowPassword(!showPassword)}
-                  >
-                    {showPassword ? (
-                      <EyeOff className="h-4 w-4 text-muted-foreground" />
-                    ) : (
-                      <Eye className="h-4 w-4 text-muted-foreground" />
-                    )}
-                  </Button>
                 </div>
+                <div className="space-y-2 relative">
+                  <Label htmlFor="signin-password">Password</Label>
+                  <div className="relative">
+                    <Input
+                      id="signin-password"
+                      type={showPassword ? "text" : "password"}
+                      placeholder="Enter your password"
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      className="bg-background border-border text-foreground pr-10"
+                      required
+                    />
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
+                      onClick={() => setShowPassword(!showPassword)}
+                    >
+                      {showPassword ? (
+                        <EyeOff className="h-4 w-4 text-muted-foreground" />
+                      ) : (
+                        <Eye className="h-4 w-4 text-muted-foreground" />
+                      )}
+                    </Button>
+                  </div>
+                </div>
+                <Button 
+                  type="submit" 
+                  className="w-full bg-primary hover:bg-primary/90 text-primary-foreground" 
+                  disabled={loading}
+                >
+                  {loading ? "Signing in..." : "Sign In"}
+                </Button>
+              </form>
+            ) : (
+              <div className="space-y-4">
+                {!otpSent ? (
+                  <form onSubmit={handleMobileOTPRequest} className="space-y-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="mobile">Mobile Number</Label>
+                      <Input
+                        id="mobile"
+                        type="tel"
+                        placeholder="Enter your mobile number"
+                        value={mobile}
+                        onChange={(e) => setMobile(e.target.value)}
+                        className="bg-background border-border text-foreground"
+                        required
+                      />
+                    </div>
+                    <Button 
+                      type="submit" 
+                      className="w-full bg-primary hover:bg-primary/90 text-primary-foreground" 
+                      disabled={loading}
+                    >
+                      {loading ? "Sending OTP..." : "Send OTP"}
+                    </Button>
+                  </form>
+                ) : (
+                  <form onSubmit={handleMobileOTPVerify} className="space-y-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="otp">Enter OTP</Label>
+                      <Input
+                        id="otp"
+                        type="text"
+                        placeholder="Enter 6-digit OTP"
+                        value={otp}
+                        onChange={(e) => setOtp(e.target.value)}
+                        className="bg-background border-border text-foreground"
+                        maxLength={6}
+                        required
+                      />
+                      <p className="text-xs text-muted-foreground">
+                        OTP sent to {mobile}. For demo, use: 123456
+                      </p>
+                    </div>
+                    <div className="flex gap-2">
+                      <Button 
+                        type="button"
+                        variant="outline"
+                        onClick={() => setOtpSent(false)}
+                        className="flex-1"
+                      >
+                        Change Number
+                      </Button>
+                      <Button 
+                        type="submit" 
+                        className="flex-1 bg-primary hover:bg-primary/90 text-primary-foreground" 
+                        disabled={loading}
+                      >
+                        {loading ? "Verifying..." : "Verify OTP"}
+                      </Button>
+                    </div>
+                  </form>
+                )}
               </div>
-              <Button 
-                type="submit" 
-                className="w-full bg-primary hover:bg-primary/90 text-primary-foreground" 
-                disabled={loading}
-              >
-                {loading ? "Signing in..." : "Sign In"}
-              </Button>
-            </form>
+            )}
 
             <div className="relative">
               <div className="absolute inset-0 flex items-center">

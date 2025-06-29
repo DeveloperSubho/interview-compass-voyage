@@ -29,19 +29,17 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     // Update localStorage when theme changes
     localStorage.setItem('theme', theme);
     
-    // Update document class and root class for theme
-    const root = document.documentElement;
+    // Update html element classes for theme
+    const html = document.documentElement;
     const body = document.body;
     
-    if (theme === 'dark') {
-      root.classList.add('dark');
-      root.classList.remove('light');
-      body.classList.remove('light');
-    } else {
-      root.classList.remove('dark');
-      root.classList.add('light');
-      body.classList.add('light');
-    }
+    // Remove all existing theme classes
+    html.classList.remove('dark', 'light');
+    body.classList.remove('dark', 'light');
+    
+    // Add the current theme class
+    html.classList.add(theme);
+    body.classList.add(theme);
   }, [theme]);
 
   const toggleTheme = () => {

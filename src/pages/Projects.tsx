@@ -22,6 +22,7 @@ interface Project {
   technologies: string[];
   duration?: string;
   key_features: string[];
+  section?: string;
 }
 
 const Projects = () => {
@@ -73,46 +74,51 @@ const Projects = () => {
       icon: Code,
       title: "Java",
       description: "Console applications, algorithms, data structures",
-      projectCount: projects.filter(p => p.type.toLowerCase().includes('java')).length,
+      projectCount: projects.filter(p => p.section === 'java').length,
       difficulty: ["Explorer", "Builder"],
       tier: "Explorer",
-      projects: ["Calculator App", "Banking System", "Library Management"]
+      projects: ["Calculator App", "Banking System", "Library Management"],
+      section: "java"
     },
     {
       icon: Layers,
       title: "Spring Boot",
       description: "REST APIs, microservices, enterprise applications",
-      projectCount: projects.filter(p => p.type.toLowerCase().includes('spring')).length,
+      projectCount: projects.filter(p => p.section === 'spring').length,
       difficulty: ["Builder", "Innovator"],
       tier: "Builder",
-      projects: ["E-commerce API", "Task Management", "Chat Application"]
+      projects: ["E-commerce API", "Task Management", "Chat Application"],
+      section: "spring"
     },
     {
       icon: Globe,
       title: "ReactJS",
       description: "Interactive web applications, component libraries",
-      projectCount: projects.filter(p => p.type.toLowerCase().includes('react')).length,
+      projectCount: projects.filter(p => p.section === 'react').length,
       difficulty: ["Explorer", "Builder"],
       tier: "Explorer",
-      projects: ["Portfolio Website", "Todo App", "Weather Dashboard"]
+      projects: ["Portfolio Website", "Todo App", "Weather Dashboard"],
+      section: "react"
     },
     {
       icon: Server,
       title: "Full-Stack",
       description: "Complete web applications with frontend and backend",
-      projectCount: projects.filter(p => p.type.toLowerCase().includes('full')).length,
+      projectCount: projects.filter(p => p.section === 'fullstack').length,
       difficulty: ["Innovator"],
       tier: "Innovator",
-      projects: ["Social Media Platform", "E-learning Portal", "Project Management Tool"]
+      projects: ["Social Media Platform", "E-learning Portal", "Project Management Tool"],
+      section: "fullstack"
     },
     {
       icon: Database,
       title: "Database",
       description: "Database design, optimization, data modeling",
-      projectCount: projects.filter(p => p.type.toLowerCase().includes('database')).length,
+      projectCount: projects.filter(p => p.section === 'database').length,
       difficulty: ["Builder", "Innovator"],
       tier: "Builder",
-      projects: ["Inventory System", "Analytics Dashboard", "Data Pipeline"]
+      projects: ["Inventory System", "Analytics Dashboard", "Data Pipeline"],
+      section: "database"
     }
   ];
 
@@ -178,9 +184,9 @@ const Projects = () => {
       return;
     }
 
-    // Admin can access project management page
+    // Admin can access project management page with section filter
     if (profile?.is_admin) {
-      navigate("/admin/projects");
+      navigate(`/admin/projects?section=${category.section}`);
       return;
     }
 
