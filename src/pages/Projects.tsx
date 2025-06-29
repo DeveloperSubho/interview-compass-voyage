@@ -2,7 +2,7 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Code, Database, Globe, Layers, Server, Lock, Star, ExternalLink } from "lucide-react";
+import { Code, Database, Globe, Layers, Server, Lock, ExternalLink } from "lucide-react";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import AuthModal from "@/components/AuthModal";
@@ -74,50 +74,40 @@ const Projects = () => {
       icon: Code,
       title: "Java",
       description: "Console applications, algorithms, data structures",
-      projectCount: projects.filter(p => p.section === 'java').length,
       difficulty: ["Explorer", "Builder"],
       tier: "Explorer",
-      projects: ["Calculator App", "Banking System", "Library Management"],
       section: "java"
     },
     {
       icon: Layers,
       title: "Spring Boot",
       description: "REST APIs, microservices, enterprise applications",
-      projectCount: projects.filter(p => p.section === 'spring').length,
       difficulty: ["Builder", "Innovator"],
       tier: "Builder",
-      projects: ["E-commerce API", "Task Management", "Chat Application"],
       section: "spring"
     },
     {
       icon: Globe,
       title: "ReactJS",
       description: "Interactive web applications, component libraries",
-      projectCount: projects.filter(p => p.section === 'react').length,
       difficulty: ["Explorer", "Builder"],
       tier: "Explorer",
-      projects: ["Portfolio Website", "Todo App", "Weather Dashboard"],
       section: "react"
     },
     {
       icon: Server,
       title: "Full-Stack",
       description: "Complete web applications with frontend and backend",
-      projectCount: projects.filter(p => p.section === 'fullstack').length,
       difficulty: ["Innovator"],
       tier: "Innovator",
-      projects: ["Social Media Platform", "E-learning Portal", "Project Management Tool"],
       section: "fullstack"
     },
     {
       icon: Database,
       title: "Database",
       description: "Database design, optimization, data modeling",
-      projectCount: projects.filter(p => p.section === 'database').length,
       difficulty: ["Builder", "Innovator"],
       tier: "Builder",
-      projects: ["Inventory System", "Analytics Dashboard", "Data Pipeline"],
       section: "database"
     }
   ];
@@ -213,9 +203,6 @@ const Projects = () => {
     }
   };
 
-  // Show all projects but filter clickable access
-  const displayProjects = projects;
-
   if (loading) {
     return (
       <div className="min-h-screen bg-background text-foreground">
@@ -245,173 +232,150 @@ const Projects = () => {
           </p>
         </div>
 
-        {/* Featured Projects */}
-        {displayProjects.length > 0 && (
-          <div className="mb-16">
-            <h2 className="text-2xl font-bold text-foreground mb-8 flex items-center">
-              <Star className="h-6 w-6 mr-2 text-yellow-500" />
-              Featured Projects
-            </h2>
-            <div className="grid md:grid-cols-2 gap-6 max-w-6xl mx-auto">
-              {displayProjects.slice(0, 4).map((project) => (
-                <Card key={project.id} className={`bg-card border-border transition-all duration-300 ${
-                  canAccessProject(project.level) ? 'hover:bg-accent/50 cursor-pointer' : 'opacity-75 cursor-not-allowed'
-                }`}>
-                  <CardHeader>
-                    <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-4">
-                      <div className="flex-1">
-                        <CardTitle className="text-foreground text-xl mb-2">{project.title}</CardTitle>
-                        <CardDescription className="text-muted-foreground">
-                          {project.description}
-                        </CardDescription>
-                      </div>
-                      <div className="flex flex-col gap-2">
-                        <Badge className={`${getTierColor(project.level)} text-white`}>
-                          {project.level}
-                        </Badge>
-                        <Badge className={`${getDifficultyColor(project.level)} border`}>
-                          {project.type}
-                        </Badge>
-                        {!canAccessProject(project.level) && !profile?.is_admin && (
-                          <Badge className="bg-orange-500/20 text-orange-300 border-orange-500/30">
-                            Upgrade Required
-                          </Badge>
-                        )}
-                      </div>
-                    </div>
-                  </CardHeader>
-                  <CardContent className="space-y-4">
-                    <div className="flex flex-wrap gap-2">
-                      {project.technologies.map((tech, techIndex) => (
-                        <Badge key={techIndex} variant="secondary" className="bg-muted text-muted-foreground">
-                          {tech}
-                        </Badge>
-                      ))}
-                    </div>
-                    
-                    {project.duration && (
-                      <div className="text-sm">
-                        <span className="text-muted-foreground">Duration: </span>
-                        <span className="text-foreground">{project.duration}</span>
-                      </div>
-                    )}
-                    
-                    <div className="space-y-2">
-                      <span className="text-muted-foreground text-sm">Key Features:</span>
-                      <div className="flex flex-wrap gap-2">
-                        {project.key_features.slice(0, 3).map((feature, featureIndex) => (
-                          <Badge key={featureIndex} className="bg-[#555879]/20 text-[#98A1BC] border-[#555879]/30 border text-xs">
-                            {feature}
-                          </Badge>
-                        ))}
-                        {project.key_features.length > 3 && (
-                          <Badge className="bg-[#555879]/20 text-[#98A1BC] border-[#555879]/30 border text-xs">
-                            +{project.key_features.length - 3} more
-                          </Badge>
-                        )}
-                      </div>
-                    </div>
-                    
-                    <Button 
-                      className={`w-full ${
-                        canAccessProject(project.level) 
-                          ? "bg-[#555879] hover:bg-[#98A1BC] text-white" 
-                          : "bg-muted hover:bg-muted/80 text-muted-foreground cursor-not-allowed"
-                      }`}
-                      onClick={() => handleProjectClick(project)}
-                      disabled={!canAccessProject(project.level) && !profile?.is_admin}
-                    >
-                      {project.github_url && canAccessProject(project.level) ? (
-                        <>
-                          <ExternalLink className="h-4 w-4 mr-2" />
-                          View on GitHub
-                        </>
-                      ) : canAccessProject(project.level) ? (
-                        "Start Project"
-                      ) : (
-                        <>
-                          <Lock className="h-4 w-4 mr-2" />
-                          Upgrade Required
-                        </>
-                      )}
-                    </Button>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {/* Project Categories */}
-        <div>
-          <h2 className="text-2xl font-bold text-foreground mb-8">Project Categories</h2>
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-6xl mx-auto">
-            {categories.map((category, index) => (
-              <Card key={index} className="bg-card border-border hover:bg-accent/50 transition-all duration-300 hover:scale-105">
-                <CardHeader>
-                  <div className="flex items-start justify-between mb-4">
-                    <div className="h-12 w-12 bg-gradient-to-r from-[#555879] to-[#98A1BC] rounded-lg flex items-center justify-center">
+        {/* Project Categories with their respective projects */}
+        <div className="space-y-12">
+          {categories.map((category, index) => {
+            const categoryProjects = projects.filter(p => p.section === category.section);
+            
+            return (
+              <div key={index}>
+                <div className="flex items-center justify-between mb-6">
+                  <div className="flex items-center">
+                    <div className="h-12 w-12 bg-gradient-to-r from-[#555879] to-[#98A1BC] rounded-lg flex items-center justify-center mr-4">
                       <category.icon className="h-6 w-6 text-white" />
                     </div>
+                    <div>
+                      <h2 className="text-2xl font-bold text-foreground">{category.title}</h2>
+                      <p className="text-muted-foreground">{category.description}</p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2">
                     <Badge className={`${getTierColor(category.tier)} text-white`}>
                       {category.tier}
                     </Badge>
-                  </div>
-                  <CardTitle className="text-foreground">{category.title}</CardTitle>
-                  <CardDescription className="text-muted-foreground">
-                    {category.description}
-                  </CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="flex items-center justify-between">
-                    <span className="text-foreground text-sm">Projects</span>
-                    <span className="text-blue-400 font-semibold">{category.projectCount}</span>
-                  </div>
-                  
-                  <div className="flex flex-wrap gap-2">
-                    {category.difficulty.map((level, levelIndex) => (
-                      <Badge 
-                        key={levelIndex} 
-                        className={`${getDifficultyColor(level)} border`}
+                    {profile?.is_admin && (
+                      <Button 
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleCategoryClick(category)}
+                        className="border-border text-foreground hover:bg-accent"
                       >
-                        {level}
-                      </Badge>
+                        Manage Projects
+                      </Button>
+                    )}
+                  </div>
+                </div>
+
+                {categoryProjects.length > 0 ? (
+                  <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    {categoryProjects.map((project) => (
+                      <Card key={project.id} className={`bg-card border-border transition-all duration-300 ${
+                        canAccessProject(project.level) ? 'hover:bg-accent/50 cursor-pointer' : 'opacity-75 cursor-not-allowed'
+                      }`}>
+                        <CardHeader>
+                          <div className="flex flex-col gap-4">
+                            <div className="flex-1">
+                              <CardTitle className="text-foreground text-xl mb-2">{project.title}</CardTitle>
+                              <CardDescription className="text-muted-foreground">
+                                {project.description}
+                              </CardDescription>
+                            </div>
+                            <div className="flex flex-wrap gap-2">
+                              <Badge className={`${getTierColor(project.level)} text-white`}>
+                                {project.level}
+                              </Badge>
+                              <Badge className={`${getDifficultyColor(project.level)} border`}>
+                                {project.type}
+                              </Badge>
+                              {!canAccessProject(project.level) && !profile?.is_admin && (
+                                <Badge className="bg-orange-500/20 text-orange-300 border-orange-500/30">
+                                  Upgrade Required
+                                </Badge>
+                              )}
+                            </div>
+                          </div>
+                        </CardHeader>
+                        <CardContent className="space-y-4">
+                          <div className="flex flex-wrap gap-2">
+                            {project.technologies.map((tech, techIndex) => (
+                              <Badge key={techIndex} variant="secondary" className="bg-muted text-muted-foreground">
+                                {tech}
+                              </Badge>
+                            ))}
+                          </div>
+                          
+                          {project.duration && (
+                            <div className="text-sm">
+                              <span className="text-muted-foreground">Duration: </span>
+                              <span className="text-foreground">{project.duration}</span>
+                            </div>
+                          )}
+                          
+                          <div className="space-y-2">
+                            <span className="text-muted-foreground text-sm">Key Features:</span>
+                            <div className="flex flex-wrap gap-2">
+                              {project.key_features.slice(0, 3).map((feature, featureIndex) => (
+                                <Badge key={featureIndex} className="bg-[#555879]/20 text-[#98A1BC] border-[#555879]/30 border text-xs">
+                                  {feature}
+                                </Badge>
+                              ))}
+                              {project.key_features.length > 3 && (
+                                <Badge className="bg-[#555879]/20 text-[#98A1BC] border-[#555879]/30 border text-xs">
+                                  +{project.key_features.length - 3} more
+                                </Badge>
+                              )}
+                            </div>
+                          </div>
+                          
+                          <Button 
+                            className={`w-full ${
+                              canAccessProject(project.level) 
+                                ? "bg-[#555879] hover:bg-[#98A1BC] text-white" 
+                                : "bg-muted hover:bg-muted/80 text-muted-foreground cursor-not-allowed"
+                            }`}
+                            onClick={() => handleProjectClick(project)}
+                            disabled={!canAccessProject(project.level) && !profile?.is_admin}
+                          >
+                            {project.github_url && canAccessProject(project.level) ? (
+                              <>
+                                <ExternalLink className="h-4 w-4 mr-2" />
+                                View on GitHub
+                              </>
+                            ) : canAccessProject(project.level) ? (
+                              "Start Project"
+                            ) : (
+                              <>
+                                <Lock className="h-4 w-4 mr-2" />
+                                Upgrade Required
+                              </>
+                            )}
+                          </Button>
+                        </CardContent>
+                      </Card>
                     ))}
                   </div>
-                  
-                  <div className="space-y-2">
-                    <span className="text-muted-foreground text-sm">Example Projects:</span>
-                    <ul className="text-xs text-foreground space-y-1">
-                      {category.projects.map((project, projectIndex) => (
-                        <li key={projectIndex} className="flex items-center">
-                          <div className="h-1 w-1 bg-blue-400 rounded-full mr-2"></div>
-                          {project}
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                  
-                  <Button 
-                    className={`w-full ${
-                      canAccessProject(category.tier) || profile?.is_admin
-                        ? "bg-[#555879] hover:bg-[#98A1BC] text-white" 
-                        : "bg-muted hover:bg-muted/80 text-muted-foreground"
-                    }`}
-                    onClick={() => handleCategoryClick(category)}
-                  >
-                    {canAccessProject(category.tier) || profile?.is_admin ? (
-                      profile?.is_admin ? "Manage Projects" : "Explore Projects"
-                    ) : (
-                      <>
-                        <Lock className="h-4 w-4 mr-2" />
-                        Upgrade to Access
-                      </>
-                    )}
-                  </Button>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
+                ) : (
+                  <Card className="bg-card border-border">
+                    <CardContent className="text-center py-16">
+                      <div className="text-6xl mb-4">🚀</div>
+                      <h3 className="text-xl font-semibold text-muted-foreground mb-2">
+                        No {category.title} Projects Available
+                      </h3>
+                      <p className="text-muted-foreground mb-4">Projects will appear here once they are added.</p>
+                      {profile?.is_admin && (
+                        <Button 
+                          className="bg-green-600 hover:bg-green-700 text-white"
+                          onClick={() => handleCategoryClick(category)}
+                        >
+                          Add Projects
+                        </Button>
+                      )}
+                    </CardContent>
+                  </Card>
+                )}
+              </div>
+            );
+          })}
         </div>
 
         {/* CTA Section */}

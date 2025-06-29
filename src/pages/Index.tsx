@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -96,18 +97,18 @@ const Index = () => {
   const isActive = (path: string) => location.pathname === path;
 
   return (
-    <div className="min-h-screen bg-slate-900 text-white">
+    <div className="min-h-screen bg-background text-foreground">
       <Navbar />
       
       {/* Hero Section */}
-      <section className="relative overflow-hidden bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 py-20 lg:py-32">
+      <section className="relative overflow-hidden bg-gradient-to-br from-background via-muted/50 to-background py-20 lg:py-32">
         <svg className="absolute inset-0" width="60" height="60" viewBox="0 0 60 60" fill="none" opacity="50"></svg>
         <div className="container mx-auto px-4 relative">
           <div className="text-center max-w-4xl mx-auto">
             <h1 className="text-5xl md:text-7xl font-bold mb-6 bg-gradient-to-r from-blue-400 via-purple-400 to-cyan-400 bg-clip-text text-transparent" style={{ lineHeight: '1.2' }}>
               InterviewVoyage
             </h1>
-            <p className="text-xl md:text-2xl text-slate-300 mb-8 leading-relaxed">
+            <p className="text-xl md:text-2xl text-muted-foreground mb-8 leading-relaxed">
               Prepare for your dream job with our comprehensive collection of interview questions and real-world projects from top tech companies.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
@@ -132,7 +133,7 @@ const Index = () => {
       </section>
 
       {/* Stats Section */}
-      <section className="py-16 bg-slate-800/50">
+      <section className="py-16 bg-muted/30">
         <div className="container mx-auto px-4">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
             {stats.map((stat, index) => (
@@ -140,7 +141,7 @@ const Index = () => {
                 <div className="text-3xl md:text-4xl font-bold text-blue-400 mb-2">
                   {stat.number}
                 </div>
-                <div className="text-slate-400">
+                <div className="text-muted-foreground">
                   {stat.label}
                 </div>
               </div>
@@ -153,25 +154,25 @@ const Index = () => {
       <section className="py-20">
         <div className="container mx-auto px-4">
           <div className="text-center mb-16">
-            <h2 className="text-3xl md:text-4xl font-bold mb-4">
+            <h2 className="text-3xl md:text-4xl font-bold mb-4 text-foreground">
               Everything You Need to Succeed
             </h2>
-            <p className="text-slate-400 text-lg max-w-2xl mx-auto">
+            <p className="text-muted-foreground text-lg max-w-2xl mx-auto">
               Our comprehensive platform provides all the tools and resources you need to ace your technical interviews.
             </p>
           </div>
           
           <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
             {features.map((feature, index) => (
-              <Card key={index} className="bg-slate-800/50 border-slate-700 hover:bg-slate-800/70 transition-all duration-300 hover:scale-105 group">
+              <Card key={index} className="bg-card border-border hover:bg-accent/70 transition-all duration-300 hover:scale-105 group">
                 <CardHeader className="text-center">
                   <div className={`h-16 w-16 rounded-2xl bg-gradient-to-r ${feature.color} flex items-center justify-center mx-auto mb-4 group-hover:scale-110 transition-transform duration-300`}>
                     <feature.icon className="h-8 w-8 text-white" />
                   </div>
-                  <CardTitle className="text-white text-xl">{feature.title}</CardTitle>
+                  <CardTitle className="text-foreground text-xl">{feature.title}</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <CardDescription className="text-slate-400 text-center">
+                  <CardDescription className="text-muted-foreground text-center">
                     {feature.description}
                   </CardDescription>
                 </CardContent>
@@ -182,32 +183,32 @@ const Index = () => {
       </section>
 
       {/* Testimonials Section */}
-      <section className="py-20 bg-slate-800/30">
+      <section className="py-20 bg-muted/30">
         <div className="container mx-auto px-4">
           <div className="text-center mb-16">
-            <h2 className="text-3xl md:text-4xl font-bold mb-4">
+            <h2 className="text-3xl md:text-4xl font-bold mb-4 text-foreground">
               Success Stories
             </h2>
-            <p className="text-slate-400 text-lg max-w-2xl mx-auto">
+            <p className="text-muted-foreground text-lg max-w-2xl mx-auto">
               Join thousands of developers who landed their dream jobs with InterviewVoyage.
             </p>
           </div>
           
           <div className="grid md:grid-cols-3 gap-8">
             {testimonials.map((testimonial, index) => (
-              <Card key={index} className="bg-slate-800/50 border-slate-700">
+              <Card key={index} className="bg-card border-border">
                 <CardContent className="p-6">
                   <div className="flex mb-4">
                     {[...Array(testimonial.rating)].map((_, i) => (
                       <Star key={i} className="h-5 w-5 fill-yellow-400 text-yellow-400" />
                     ))}
                   </div>
-                  <p className="text-slate-300 mb-4 italic">
+                  <p className="text-muted-foreground mb-4 italic">
                     "{testimonial.content}"
                   </p>
                   <div>
-                    <p className="text-white font-semibold">{testimonial.name}</p>
-                    <p className="text-slate-400 text-sm">{testimonial.role}</p>
+                    <p className="text-foreground font-semibold">{testimonial.name}</p>
+                    <p className="text-muted-foreground text-sm">{testimonial.role}</p>
                   </div>
                 </CardContent>
               </Card>
