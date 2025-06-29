@@ -36,6 +36,84 @@ export type Database = {
         }
         Relationships: []
       }
+      coding_categories: {
+        Row: {
+          created_at: string
+          description: string | null
+          id: string
+          name: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          name: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          name?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      coding_questions: {
+        Row: {
+          category: string
+          created_at: string
+          description: string
+          difficulty: string
+          github_link: string | null
+          id: string
+          is_paid: boolean
+          level_unlock: string
+          slug: string
+          solution: string
+          status: string
+          tags: string[]
+          title: string
+          updated_at: string
+          video_link: string | null
+        }
+        Insert: {
+          category: string
+          created_at?: string
+          description: string
+          difficulty: string
+          github_link?: string | null
+          id?: string
+          is_paid?: boolean
+          level_unlock?: string
+          slug: string
+          solution: string
+          status?: string
+          tags?: string[]
+          title: string
+          updated_at?: string
+          video_link?: string | null
+        }
+        Update: {
+          category?: string
+          created_at?: string
+          description?: string
+          difficulty?: string
+          github_link?: string | null
+          id?: string
+          is_paid?: boolean
+          level_unlock?: string
+          slug?: string
+          solution?: string
+          status?: string
+          tags?: string[]
+          title?: string
+          updated_at?: string
+          video_link?: string | null
+        }
+        Relationships: []
+      }
       pages: {
         Row: {
           category_id: string | null

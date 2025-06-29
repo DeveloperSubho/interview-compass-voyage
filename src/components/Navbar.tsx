@@ -1,158 +1,161 @@
-
 import { useState } from "react";
-import { Menu, X, User, LogOut, Settings } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Link, useNavigate } from "react-router-dom";
-import AuthModal from "./AuthModal";
-import { useAuth } from "@/contexts/AuthContext";
-import ThemeToggle from "./ThemeToggle";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+import { Link } from "react-router-dom";
+import { Menu } from "lucide-react";
 
-const Navbar = () => {
+import { siteConfig } from "@/config/site";
+import { cn } from "@/lib/utils";
+import { useAuth } from "@/contexts/AuthContext";
+import { useTheme } from "@/contexts/ThemeContext";
+import { ModeToggle } from "@/components/ModeToggle";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Button } from "@/components/ui/button";
+import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
+import AuthModal from "@/components/AuthModal";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { useNavigate } from 'react-router-dom';
+
+interface Props {
+  className?: string;
+}
+
+const Navbar = ({ className }: Props) => {
+  const navigate = useNavigate();
+  const { user, signOut } = useAuth();
+  const { theme } = useTheme();
   const [isOpen, setIsOpen] = useState(false);
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
-  const { user, profile, signOut } = useAuth();
-  const navigate = useNavigate();
 
   const handleSignOut = async () => {
-    await signOut();
-    navigate('/');
+    try {
+      await signOut();
+      navigate('/');
+    } catch (error) {
+      console.error("Sign out failed:", error);
+    }
   };
 
-  const navItems = [
-    { name: "Home", href: "/" },
-    { name: "Questions", href: "/questions" },
-    { name: "Projects", href: "/projects" },
-    { name: "Pricing", href: "/pricing" },
-    { name: "Contact", href: "/contact" },
-  ];
-
   return (
-    <nav className="bg-background border-b border-border sticky top-0 z-50">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex justify-between h-16">
-          <div className="flex items-center">
-            <Link to="/" className="flex-shrink-0 flex items-center">
-              <span className="text-xl font-bold bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent">
-                InterviewVoyage
-              </span>
-            </Link>
-          </div>
+    <div className={cn("bg-background border-b sticky top-0 z-50", className)}>
+      <div className="container flex items-center justify-between py-4">
+        <Link to="/" className="flex items-center font-semibold">
+          {siteConfig.name}
+        </Link>
 
-          {/* Desktop Navigation */}
-          <div className="hidden md:flex items-center space-x-8">
-            {navItems.map((item) => (
-              <Link
-                key={item.name}
-                to={item.href}
-                className="nav-item text-muted-foreground hover:text-foreground px-3 py-2 rounded-md text-sm font-medium transition-colors"
-              >
-                {item.name}
-              </Link>
-            ))}
-            
-            <ThemeToggle />
-            
-            {user ? (
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" className="relative h-8 w-8 rounded-full">
-                    <User className="h-4 w-4" />
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent className="w-56 bg-card border-border" align="end" forceMount>
-                  <DropdownMenuItem className="hover:bg-accent" onClick={() => navigate('/profile')}>
-                    <Settings className="mr-2 h-4 w-4" />
-                    <span>Profile</span>
-                  </DropdownMenuItem>
-                  <DropdownMenuItem className="hover:bg-accent" onClick={handleSignOut}>
-                    <LogOut className="mr-2 h-4 w-4" />
-                    <span>Sign out</span>
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
-            ) : (
-              <Button onClick={() => setIsAuthModalOpen(true)} className="bg-primary hover:bg-primary/90 text-primary-foreground">
-                Sign In
-              </Button>
-            )}
-          </div>
+      <nav className="hidden md:flex items-center space-x-8">
+        <Link
+          to="/"
+          className="text-foreground hover:text-blue-400 transition-colors font-medium"
+        >
+          Home
+        </Link>
+        <Link
+          to="/questions"
+          className="text-foreground hover:text-blue-400 transition-colors font-medium"
+        >
+          Questions
+        </Link>
+        <Link
+          to="/coding"
+          className="text-foreground hover:text-blue-400 transition-colors font-medium"
+        >
+          Coding
+        </Link>
+        <Link
+          to="/projects"
+          className="text-foreground hover:text-blue-400 transition-colors font-medium"
+        >
+          Projects
+        </Link>
+        <Link
+          to="/pricing"
+          className="text-foreground hover:text-blue-400 transition-colors font-medium"
+        >
+          Pricing
+        </Link>
+      </nav>
 
-          {/* Mobile menu button */}
-          <div className="md:hidden flex items-center">
-            <ThemeToggle />
-            <Button
-              variant="ghost"
-              onClick={() => setIsOpen(!isOpen)}
-              className="inline-flex items-center justify-center p-2 rounded-md text-muted-foreground hover:text-foreground hover:bg-accent focus:outline-none focus:ring-2 focus:ring-inset focus:ring-blue-500 ml-2"
-            >
-              {isOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
+        <div className="flex items-center space-x-4">
+          <ModeToggle />
+          {user ? (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" className="h-8 w-8 p-0 rounded-full">
+                  <Avatar className="h-8 w-8">
+                    <AvatarImage src={user?.user_metadata?.avatar_url} alt={user?.user_metadata?.full_name} />
+                    <AvatarFallback>{user?.user_metadata?.full_name?.charAt(0)}</AvatarFallback>
+                  </Avatar>
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent className="w-56" align="end" forceMount>
+                <DropdownMenuLabel>My Account</DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={() => navigate('/profile')}>Profile</DropdownMenuItem>
+                <DropdownMenuItem onClick={handleSignOut}>Sign out</DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          ) : (
+            <Button variant="outline" onClick={() => setIsAuthModalOpen(true)}>
+              Sign In
             </Button>
-          </div>
+          )}
         </div>
-      </div>
 
-      {/* Mobile Navigation */}
-      {isOpen && (
-        <div className="md:hidden">
-          <div className="px-2 pt-2 pb-3 space-y-1 sm:px-3 bg-card border-t border-border">
-            {navItems.map((item) => (
+        <Sheet>
+          <SheetTrigger asChild>
+            <Button variant="outline" size="icon" className="md:hidden">
+              <Menu className="h-4 w-4" />
+            </Button>
+          </SheetTrigger>
+          <SheetContent side="right">
+            <div className="flex flex-col space-y-4 mt-4">
               <Link
-                key={item.name}
-                to={item.href}
-                className="nav-item text-muted-foreground hover:text-foreground hover:bg-accent block px-3 py-2 rounded-md text-base font-medium transition-colors"
+                to="/"
+                className="text-foreground hover:text-blue-400 transition-colors font-medium"
                 onClick={() => setIsOpen(false)}
               >
-                {item.name}
+                Home
               </Link>
-            ))}
-            
-            {user ? (
-              <div className="pt-4 pb-3 border-t border-border">
-                <div className="space-y-1">
-                  <Link
-                    to="/profile"
-                    className="block px-3 py-2 rounded-md text-base font-medium text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
-                    onClick={() => setIsOpen(false)}
-                  >
-                    Profile
-                  </Link>
-                  <Button
-                    onClick={() => {
-                      handleSignOut();
-                      setIsOpen(false);
-                    }}
-                    variant="ghost"
-                    className="w-full justify-start px-3 py-2 text-muted-foreground hover:text-foreground hover:bg-accent"
-                  >
-                    Sign out
-                  </Button>
-                </div>
-              </div>
-            ) : (
-              <div className="pt-4 pb-3 border-t border-border">
-                <Button 
-                  onClick={() => {
-                    setIsAuthModalOpen(true);
-                    setIsOpen(false);
-                  }}
-                  className="w-full bg-primary hover:bg-primary/90 text-primary-foreground"
-                >
+              <Link
+                to="/questions"
+                className="text-foreground hover:text-blue-400 transition-colors font-medium"
+                onClick={() => setIsOpen(false)}
+              >
+                Questions
+              </Link>
+              <Link
+                to="/coding"
+                className="text-foreground hover:text-blue-400 transition-colors font-medium"
+                onClick={() => setIsOpen(false)}
+              >
+                Coding
+              </Link>
+              <Link
+                to="/projects"
+                className="text-foreground hover:text-blue-400 transition-colors font-medium"
+                onClick={() => setIsOpen(false)}
+              >
+                Projects
+              </Link>
+              <Link
+                to="/pricing"
+                className="text-foreground hover:text-blue-400 transition-colors font-medium"
+                onClick={() => setIsOpen(false)}
+              >
+                Pricing
+              </Link>
+
+              {!user && (
+                <Button variant="outline" onClick={() => setIsAuthModalOpen(true)}>
                   Sign In
                 </Button>
-              </div>
-            )}
-          </div>
-        </div>
-      )}
+              )}
+            </div>
+          </SheetContent>
+        </Sheet>
 
-      <AuthModal isOpen={isAuthModalOpen} onClose={() => setIsAuthModalOpen(false)} />
-    </nav>
+        <AuthModal isOpen={isAuthModalOpen} onClose={() => setIsAuthModalOpen(false)} />
+      </div>
+    </div>
   );
 };
 

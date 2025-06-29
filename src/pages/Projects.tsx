@@ -1,206 +1,96 @@
 
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Code, Database, Globe, Layers, Server, Lock, ExternalLink, Plus } from "lucide-react";
+import { FolderOpen, Code, Database, Layers, Coffee, Zap } from "lucide-react";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
-import AuthModal from "@/components/AuthModal";
-import { useAuth } from "@/contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
-import { useToast } from "@/hooks/use-toast";
-import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/hooks/use-toast";
 
-interface Project {
-  id: string;
-  title: string;
+interface ProjectCategory {
+  name: string;
+  icon: React.ReactNode;
   description: string;
-  github_url?: string;
-  type: string;
-  level: string;
-  technologies: string[];
-  duration?: string;
-  key_features: string[];
+  count: number;
+  color: string;
 }
 
 const Projects = () => {
-  const { user, profile } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
-  const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
-  const [projects, setProjects] = useState<Project[]>([]);
+  const [projectCounts, setProjectCounts] = useState<Record<string, number>>({});
   const [loading, setLoading] = useState(true);
 
-  // Get user's subscription tier
-  const userTier = profile?.tier || 'Explorer';
-
-  const getTierAccess = (userTier: string) => {
-    switch (userTier) {
-      case 'Explorer':
-        return ['Explorer'];
-      case 'Builder':
-        return ['Explorer', 'Builder'];
-      case 'Innovator':
-        return ['Explorer', 'Builder', 'Innovator'];
-      default:
-        return ['Explorer'];
-    }
-  };
-
   useEffect(() => {
-    fetchProjects();
+    fetchProjectCounts();
   }, []);
 
-  const fetchProjects = async () => {
+  const fetchProjectCounts = async () => {
     try {
       const { data, error } = await supabase
         .from('projects')
-        .select('*')
-        .order('created_at', { ascending: false });
+        .select('type');
 
       if (error) throw error;
-      setProjects(data || []);
+
+      const counts: Record<string, number> = {};
+      data?.forEach(project => {
+        counts[project.type] = (counts[project.type] || 0) + 1;
+      });
+
+      setProjectCounts(counts);
     } catch (error) {
-      console.error('Error fetching projects:', error);
+      console.error('Error fetching project counts:', error);
+      toast({
+        title: "Error",
+        description: "Failed to load project statistics",
+        variant: "destructive",
+      });
     } finally {
       setLoading(false);
     }
   };
 
-  const categories = [
+  const projectCategories: ProjectCategory[] = [
     {
-      icon: Code,
-      title: "Java",
-      description: "Console applications, algorithms, data structures",
-      difficulty: ["Explorer", "Builder"],
-      tier: "Explorer",
-      type: "Java"
+      name: "Java",
+      icon: <Coffee className="h-8 w-8" />,
+      description: "Core Java projects focusing on fundamentals and advanced concepts",
+      count: projectCounts["Java"] || 0,
+      color: "from-orange-500 to-red-500"
     },
     {
-      icon: Layers,
-      title: "Spring Boot",
-      description: "REST APIs, microservices, enterprise applications",
-      difficulty: ["Builder", "Innovator"],
-      tier: "Builder",
-      type: "Spring Boot"
+      name: "Spring Boot",
+      icon: <Zap className="h-8 w-8" />,
+      description: "Enterprise-level Spring Boot applications and microservices",
+      count: projectCounts["Spring Boot"] || 0,
+      color: "from-green-500 to-emerald-500"
     },
     {
-      icon: Globe,
-      title: "ReactJS",
-      description: "Interactive web applications, component libraries",
-      difficulty: ["Explorer", "Builder"],
-      tier: "Explorer",
-      type: "ReactJS"
+      name: "ReactJS",
+      icon: <Code className="h-8 w-8" />,
+      description: "Modern React applications with hooks, context, and state management",
+      count: projectCounts["ReactJS"] || 0,
+      color: "from-blue-500 to-cyan-500"
     },
     {
-      icon: Server,
-      title: "Full-Stack",
-      description: "Complete web applications with frontend and backend",
-      difficulty: ["Innovator"],
-      tier: "Innovator",
-      type: "Full-Stack"
+      name: "Full-Stack",
+      icon: <Layers className="h-8 w-8" />,
+      description: "Complete full-stack applications combining frontend and backend",
+      count: projectCounts["Full-Stack"] || 0,
+      color: "from-purple-500 to-pink-500"
     },
     {
-      icon: Database,
-      title: "Database",
-      description: "Database design, optimization, data modeling",
-      difficulty: ["Builder", "Innovator"],
-      tier: "Builder",
-      type: "Database"
+      name: "Database",
+      icon: <Database className="h-8 w-8" />,
+      description: "Database design, optimization, and data management projects",
+      count: projectCounts["Database"] || 0,
+      color: "from-indigo-500 to-blue-500"
     }
   ];
-
-  const getTierColor = (tier: string) => {
-    switch (tier) {
-      case "Explorer":
-        return "bg-green-600";
-      case "Builder":
-        return "bg-[#555879]";
-      case "Innovator":
-        return "bg-purple-600";
-      default:
-        return "bg-gray-600";
-    }
-  };
-
-  const getDifficultyColor = (difficulty: string) => {
-    switch (difficulty) {
-      case "Explorer":
-        return "bg-green-500/20 text-green-300 border-green-500/30";
-      case "Builder":
-        return "bg-yellow-500/20 text-yellow-300 border-yellow-500/30";
-      case "Innovator":
-        return "bg-red-500/20 text-red-300 border-red-500/30";
-      default:
-        return "bg-gray-500/20 text-gray-300 border-gray-500/30";
-    }
-  };
-
-  const canAccessProject = (projectLevel: string) => {
-    const accessibleTiers = getTierAccess(userTier);
-    return profile?.is_admin || accessibleTiers.includes(projectLevel);
-  };
-
-  const handleProjectClick = (project: Project) => {
-    if (!user) {
-      setIsAuthModalOpen(true);
-      return;
-    }
-
-    if (canAccessProject(project.level)) {
-      if (project.github_url) {
-        window.open(project.github_url, '_blank');
-      } else {
-        toast({
-          title: "Project Available",
-          description: `${project.title} is accessible to you.`,
-        });
-      }
-    } else {
-      toast({
-        title: "Upgrade Required",
-        description: `Upgrade to ${project.level} tier to access this project.`,
-        variant: "destructive",
-      });
-      navigate("/pricing");
-    }
-  };
-
-  const handleCategoryClick = (category: any) => {
-    if (!user) {
-      setIsAuthModalOpen(true);
-      return;
-    }
-
-    // Admin can access project management page with section filter
-    if (profile?.is_admin) {
-      navigate(`/admin/projects?section=${category.type.toLowerCase()}`);
-      return;
-    }
-
-    if (canAccessProject(category.tier)) {
-      toast({
-        title: "Coming Soon",
-        description: `${category.title} projects will be available soon!`,
-      });
-    } else {
-      toast({
-        title: "Upgrade Required",
-        description: `Upgrade to ${category.tier} tier to access these projects.`,
-        variant: "destructive",
-      });
-      navigate("/pricing");
-    }
-  };
-
-  const handleCtaClick = () => {
-    if (!user) {
-      setIsAuthModalOpen(true);
-    } else {
-      navigate("/pricing");
-    }
-  };
 
   if (loading) {
     return (
@@ -222,196 +112,99 @@ const Projects = () => {
       <Navbar />
       
       <div className="container mx-auto px-4 py-16">
-        <div className="text-center mb-12">
+        <div className="text-center mb-16">
           <h1 className="text-4xl md:text-5xl font-bold mb-4 bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent">
-            Real-World Projects
+            Practice Projects
           </h1>
-          <p className="text-muted-foreground text-lg max-w-2xl mx-auto">
-            Build impressive projects that showcase your skills and boost your portfolio with industry-relevant technologies.
+          <p className="text-muted-foreground text-lg max-w-2xl mx-auto mb-8">
+            Build real-world projects to enhance your skills and create an impressive portfolio. 
+            Choose from various categories and difficulty levels.
           </p>
         </div>
 
-        {/* Project Categories with their respective projects */}
-        <div className="space-y-12">
-          {categories.map((category, index) => {
-            const categoryProjects = projects.filter(p => p.type === category.type);
-            
-            return (
-              <div key={index}>
-                <div className="flex items-center justify-between mb-6">
-                  <div className="flex items-center">
-                    <div className="h-12 w-12 bg-gradient-to-r from-[#555879] to-[#98A1BC] rounded-lg flex items-center justify-center mr-4">
-                      <category.icon className="h-6 w-6 text-white" />
+        <div className="max-w-6xl mx-auto">
+          {projectCategories.filter(category => category.count > 0).length === 0 ? (
+            <Card className="bg-card border-border text-center py-12">
+              <CardContent>
+                <FolderOpen className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
+                <h3 className="text-lg font-semibold text-muted-foreground mb-2">
+                  No Projects Available
+                </h3>
+                <p className="text-muted-foreground">
+                  Projects will be added soon. Check back later for exciting practice opportunities!
+                </p>
+              </CardContent>
+            </Card>
+          ) : (
+            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+              {projectCategories.map((category) => (
+                <Card 
+                  key={category.name} 
+                  className="bg-card border-border hover:bg-accent/70 transition-all duration-300 cursor-pointer group"
+                  onClick={() => navigate(`/projects/${category.name}`)}
+                >
+                  <CardHeader className="text-center pb-4">
+                    <div className={`w-16 h-16 bg-gradient-to-r ${category.color} rounded-lg flex items-center justify-center mx-auto mb-4 group-hover:scale-110 transition-transform`}>
+                      <div className="text-white">
+                        {category.icon}
+                      </div>
                     </div>
-                    <div>
-                      <h2 className="text-2xl font-bold text-foreground">{category.title}</h2>
-                      <p className="text-muted-foreground">{category.description}</p>
+                    <CardTitle className="text-xl text-foreground group-hover:text-blue-400 transition-colors">
+                      {category.name}
+                    </CardTitle>
+                    <CardDescription className="text-muted-foreground">
+                      {category.description}
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent className="text-center">
+                    <div className="flex items-center justify-between mb-4">
+                      <Badge variant="secondary" className="bg-muted text-muted-foreground">
+                        {category.count} {category.count === 1 ? 'Project' : 'Projects'}
+                      </Badge>
                     </div>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <Badge className={`${getTierColor(category.tier)} text-white`}>
-                      {category.tier}
-                    </Badge>
-                    {profile?.is_admin && (
-                      <Button 
-                        variant="outline"
-                        size="sm"
-                        onClick={() => handleCategoryClick(category)}
-                        className="border-border text-foreground hover:bg-accent"
-                      >
-                        <Plus className="h-4 w-4 mr-2" />
-                        Manage Projects
-                      </Button>
-                    )}
-                  </div>
-                </div>
-
-                {categoryProjects.length > 0 ? (
-                  <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-                    {categoryProjects.map((project) => (
-                      <Card key={project.id} className={`bg-card border-border transition-all duration-300 ${
-                        canAccessProject(project.level) ? 'hover:bg-accent/50 cursor-pointer' : 'opacity-75 cursor-not-allowed'
-                      }`}>
-                        <CardHeader>
-                          <div className="flex flex-col gap-4">
-                            <div className="flex-1">
-                              <CardTitle className="text-foreground text-xl mb-2">{project.title}</CardTitle>
-                              <CardDescription className="text-muted-foreground">
-                                {project.description}
-                              </CardDescription>
-                            </div>
-                            <div className="flex flex-wrap gap-2">
-                              <Badge className={`${getTierColor(project.level)} text-white`}>
-                                {project.level}
-                              </Badge>
-                              <Badge className={`${getDifficultyColor(project.level)} border`}>
-                                {project.type}
-                              </Badge>
-                              {!canAccessProject(project.level) && !profile?.is_admin && (
-                                <Badge className="bg-orange-500/20 text-orange-300 border-orange-500/30">
-                                  Upgrade Required
-                                </Badge>
-                              )}
-                            </div>
-                          </div>
-                        </CardHeader>
-                        <CardContent className="space-y-4">
-                          <div className="flex flex-wrap gap-2">
-                            {project.technologies.map((tech, techIndex) => (
-                              <Badge key={techIndex} variant="secondary" className="bg-muted text-muted-foreground">
-                                {tech}
-                              </Badge>
-                            ))}
-                          </div>
-                          
-                          {project.duration && (
-                            <div className="text-sm">
-                              <span className="text-muted-foreground">Duration: </span>
-                              <span className="text-foreground">{project.duration}</span>
-                            </div>
-                          )}
-                          
-                          <div className="space-y-2">
-                            <span className="text-muted-foreground text-sm">Key Features:</span>
-                            <div className="flex flex-wrap gap-2">
-                              {project.key_features.slice(0, 3).map((feature, featureIndex) => (
-                                <Badge key={featureIndex} className="bg-[#555879]/20 text-[#98A1BC] border-[#555879]/30 border text-xs">
-                                  {feature}
-                                </Badge>
-                              ))}
-                              {project.key_features.length > 3 && (
-                                <Badge className="bg-[#555879]/20 text-[#98A1BC] border-[#555879]/30 border text-xs">
-                                  +{project.key_features.length - 3} more
-                                </Badge>
-                              )}
-                            </div>
-                          </div>
-                          
-                          <Button 
-                            className={`w-full ${
-                              canAccessProject(project.level) 
-                                ? "bg-[#555879] hover:bg-[#98A1BC] text-white" 
-                                : "bg-muted hover:bg-muted/80 text-muted-foreground cursor-not-allowed"
-                            }`}
-                            onClick={() => handleProjectClick(project)}
-                            disabled={!canAccessProject(project.level) && !profile?.is_admin}
-                          >
-                            {project.github_url && canAccessProject(project.level) ? (
-                              <>
-                                <ExternalLink className="h-4 w-4 mr-2" />
-                                View on GitHub
-                              </>
-                            ) : canAccessProject(project.level) ? (
-                              "Start Project"
-                            ) : (
-                              <>
-                                <Lock className="h-4 w-4 mr-2" />
-                                Upgrade Required
-                              </>
-                            )}
-                          </Button>
-                        </CardContent>
-                      </Card>
-                    ))}
-                  </div>
-                ) : (
-                  <Card className="bg-card border-border">
-                    <CardContent className="text-center py-16">
-                      <div className="text-6xl mb-4">🚀</div>
-                      <h3 className="text-xl font-semibold text-muted-foreground mb-2">
-                        No {category.title} Projects Available
-                      </h3>
-                      <p className="text-muted-foreground mb-4">Projects will appear here once they are added.</p>
-                      {profile?.is_admin && (
-                        <Button 
-                          className="bg-green-600 hover:bg-green-700 text-white"
-                          onClick={() => handleCategoryClick(category)}
-                        >
-                          <Plus className="h-4 w-4 mr-2" />
-                          Add Projects
-                        </Button>
-                      )}
-                    </CardContent>
-                  </Card>
-                )}
-              </div>
-            );
-          })}
+                    <Button 
+                      variant="outline" 
+                      className="w-full border-border text-foreground hover:bg-accent"
+                      disabled={category.count === 0}
+                    >
+                      {category.count === 0 ? 'Coming Soon' : 'Explore Projects'}
+                    </Button>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          )}
         </div>
 
-        {/* CTA Section */}
+        {/* Call to Action */}
         <div className="mt-16 text-center">
-          <Card className="bg-[#9294b2] border-none max-w-2xl mx-auto">
+          <Card className="bg-gradient-to-r from-[#555879]/20 to-[#98A1BC]/20 border-border max-w-2xl mx-auto">
             <CardContent className="p-8">
-              <h3 className="text-2xl font-bold text-white mb-4">
-                Ready to Build Impressive Projects?
+              <h3 className="text-2xl font-bold text-foreground mb-4">
+                Ready to Build Something Amazing?
               </h3>
-              <p className="text-white/90 mb-6">
-                Get access to all project categories and build a portfolio that stands out to employers.
+              <p className="text-muted-foreground mb-6">
+                Start with projects that match your skill level and gradually work your way up to more complex challenges.
               </p>
-              <div className="flex flex-col sm:flex-row gap-4 justify-center">
-                <Button 
-                  variant="outline" 
-                  className="bg-white text-[#555879] hover:bg-white/10 hover:border-white"
-                  onClick={() => navigate("/pricing")}
-                >
-                  View Pricing
-                </Button>
-                <Button 
-                  variant="outline" 
-                  className="border-white/30 text-[#555879] hover:bg-white/10 hover:border-white"
-                  onClick={handleCtaClick}
-                >
-                  {!user ? "Sign Up Free" : "Start Free Trial"}
-                </Button>
-              </div>
+              <Button 
+                variant="outline" 
+                className="bg-[#555879] hover:bg-[#98A1BC] text-white px-8 py-3"
+                onClick={() => {
+                  const availableCategory = projectCategories.find(cat => cat.count > 0);
+                  if (availableCategory) {
+                    navigate(`/projects/${availableCategory.name}`);
+                  }
+                }}
+                disabled={projectCategories.every(cat => cat.count === 0)}
+              >
+                Start Building
+              </Button>
             </CardContent>
           </Card>
         </div>
       </div>
 
       <Footer />
-      <AuthModal isOpen={isAuthModalOpen} onClose={() => setIsAuthModalOpen(false)} />
     </div>
   );
 };

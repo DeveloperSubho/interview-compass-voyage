@@ -16,7 +16,11 @@ import JavaQuestionDetail from "./pages/JavaQuestionDetail";
 import CategorySection from "./components/CategorySection";
 import CategoryQuestionList from "./components/CategoryQuestionList";
 import Projects from "./pages/Projects";
-import ProjectManagement from "./pages/ProjectManagement";
+import ProjectCategory from "./pages/ProjectCategory";
+import ProjectDetail from "./pages/ProjectDetail";
+import CodingQuestions from "./pages/CodingQuestions";
+import CodingQuestionList from "./pages/CodingQuestionList";
+import CodingQuestionDetail from "./pages/CodingQuestionDetail";
 import Profile from "./pages/Profile";
 import Pricing from "./pages/Pricing";
 import Contact from "./pages/Contact";
@@ -42,8 +46,12 @@ function App() {
                 <Route path="/questions/:category" element={<CategorySection />} />
                 <Route path="/questions/:category/:subcategoryId" element={<CategoryQuestionList />} />
                 <Route path="/questions/:category/:subcategoryId/:questionId" element={<QuestionDetail />} />
+                <Route path="/coding" element={<CodingQuestions />} />
+                <Route path="/coding/:category" element={<CodingQuestionList />} />
+                <Route path="/coding/:category/:slug" element={<CodingQuestionDetail />} />
                 <Route path="/projects" element={<Projects />} />
-                <Route path="/admin/projects" element={<ProjectManagement />} />
+                <Route path="/projects/:type" element={<ProjectCategory />} />
+                <Route path="/projects/:type/:id" element={<ProjectDetail />} />
                 <Route path="/profile" element={<Profile />} />
                 <Route path="/pricing" element={<Pricing />} />
                 <Route path="/contact" element={<Contact />} />

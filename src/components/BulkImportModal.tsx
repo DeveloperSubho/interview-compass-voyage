@@ -1,99 +1,90 @@
 
 import { useState } from "react";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { useToast } from "@/hooks/use-toast";
+import { Label } from "@/components/ui/label";
 import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/contexts/AuthContext";
+import { useToast } from "@/hooks/use-toast";
 
 interface BulkImportModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onImportComplete: () => void;
+  onSuccess: () => void;
   subcategoryId: string;
-  subcategoryName: string;
 }
 
-interface ImportQuestion {
-  title: string;
-  content: string;
-  answer: string;
-  type: string;
-  level: "Basic" | "Intermediate" | "Advanced";
-}
-
-const BulkImportModal = ({ 
-  isOpen, 
-  onClose, 
-  onImportComplete, 
-  subcategoryId, 
-  subcategoryName 
-}: BulkImportModalProps) => {
-  const [jsonData, setJsonData] = useState("");
-  const [loading, setLoading] = useState(false);
+const BulkImportModal = ({ isOpen, onClose, onSuccess, subcategoryId }: BulkImportModalProps) => {
+  const { user } = useAuth();
   const { toast } = useToast();
+  const [loading, setLoading] = useState(false);
+  const [csvData, setCsvData] = useState("");
 
-  const exampleFormat = `[
-  {
-    "title": "What is encapsulation in Java?",
-    "content": "Explain the concept of encapsulation in object-oriented programming.",
-    "answer": "Encapsulation is one of the fundamental principles of object-oriented programming...",
-    "type": "Basic Java",
-    "level": "Basic"
-  },
-  {
-    "title": "Explain Java Stream API",
-    "content": "What is Stream API and how does it work in Java 8+?",
-    "answer": "Stream API provides a functional approach to processing collections...",
-    "type": "Advanced Java", 
-    "level": "Intermediate"
-  }
-]`;
-
-  const handleImport = async () => {
-    if (!jsonData.trim()) {
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!user || !csvData.trim()) {
       toast({
         title: "Error",
-        description: "Please provide JSON data to import",
+        description: "Please provide CSV data to import",
         variant: "destructive",
       });
       return;
     }
 
     setLoading(true);
-
     try {
-      const questions: ImportQuestion[] = JSON.parse(jsonData);
+      const lines = csvData.trim().split('\n');
       
-      if (!Array.isArray(questions)) {
-        throw new Error("JSON must be an array of questions");
+      if (lines.length === 0) {
+        toast({
+          title: "Error",
+          description: "No data to import",
+          variant: "destructive",
+        });
+        return;
       }
 
-      // Validate each question
-      for (const question of questions) {
-        if (!question.title || !question.content || !question.answer || !question.type || !question.level) {
-          throw new Error("Each question must have title, content, answer, type, and level");
-        }
+      const questions = [];
+      
+      for (let i = 0; i < lines.length; i++) {
+        const line = lines[i].trim();
+        if (!line) continue;
         
-        if (!["Basic", "Intermediate", "Advanced"].includes(question.level)) {
-          throw new Error("Level must be 'Basic', 'Intermediate', or 'Advanced'");
+        const columns = line.split(',').map(col => col.trim().replace(/^"|"$/g, ''));
+        
+        if (columns.length < 5) {
+          toast({
+            title: "Error",
+            description: `Invalid format at line ${i + 1}. Expected: Title, Content, Answer, Type, Level`,
+            variant: "destructive",
+          });
+          return;
         }
+
+        questions.push({
+          title: columns[0],
+          content: columns[1],
+          answer: columns[2],
+          type: columns[3],
+          level: columns[4],
+          subcategory_id: subcategoryId,
+          created_by: user.id,
+        });
       }
 
-      // Insert questions into database
-      const questionsToInsert = questions.map(q => ({
-        subcategory_id: subcategoryId,
-        title: q.title,
-        content: q.content,
-        answer: q.answer,
-        type: q.type,
-        level: q.level
-      }));
+      if (questions.length === 0) {
+        toast({
+          title: "Error",
+          description: "No valid questions found to import",
+          variant: "destructive",
+        });
+        return;
+      }
 
       const { error } = await supabase
         .from('questions')
-        .insert(questionsToInsert);
+        .insert(questions);
 
       if (error) throw error;
 
@@ -102,14 +93,13 @@ const BulkImportModal = ({
         description: `Successfully imported ${questions.length} questions`,
       });
 
-      setJsonData("");
-      onImportComplete();
-      onClose();
+      setCsvData("");
+      onSuccess();
     } catch (error) {
       console.error('Error importing questions:', error);
       toast({
         title: "Error",
-        description: error instanceof Error ? error.message : "Failed to import questions",
+        description: "Failed to import questions",
         variant: "destructive",
       });
     } finally {
@@ -117,69 +107,46 @@ const BulkImportModal = ({
     }
   };
 
+  const handleClose = () => {
+    setCsvData("");
+    onClose();
+  };
+
   return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-4xl bg-slate-800 border-slate-700 text-white max-h-[90vh] overflow-y-auto">
+    <Dialog open={isOpen} onOpenChange={handleClose}>
+      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle className="text-2xl text-center text-white">
-            Bulk Import Questions for {subcategoryName}
-          </DialogTitle>
+          <DialogTitle>Bulk Import Questions</DialogTitle>
+          <DialogDescription>
+            Import multiple questions at once using CSV format. Each line should contain: Title, Content, Answer, Type, Level
+          </DialogDescription>
         </DialogHeader>
-        
-        <div className="space-y-4">
-          <div className="space-y-2">
-            <Label className="text-slate-300">JSON Format Example:</Label>
-            <div className="bg-slate-900 p-4 rounded-lg">
-              <pre className="text-xs text-slate-300 overflow-x-auto whitespace-pre-wrap">
-                {exampleFormat}
-              </pre>
-            </div>
-          </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="jsonData" className="text-slate-300">
-              Paste your JSON data here:
-            </Label>
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div>
+            <Label htmlFor="csvData">CSV Data</Label>
             <Textarea
-              id="jsonData"
-              value={jsonData}
-              onChange={(e) => setJsonData(e.target.value)}
-              className="bg-slate-700 border-slate-600 text-white font-mono text-sm"
-              placeholder="Paste your JSON array of questions here..."
-              rows={12}
+              id="csvData"
+              value={csvData}
+              onChange={(e) => setCsvData(e.target.value)}
+              placeholder="Example:&#10;What is Java?, Java is a programming language, Java is an object-oriented programming language..., Technical, Basic&#10;Explain OOP, Object-oriented programming concepts, OOP includes encapsulation inheritance..., Conceptual, Intermediate"
+              rows={10}
+              required
             />
+            <p className="text-sm text-muted-foreground mt-2">
+              Format: Title, Content, Answer, Type, Level (one question per line)
+            </p>
           </div>
 
-          <div className="bg-slate-900/50 p-4 rounded-lg">
-            <h4 className="text-sm font-semibold text-slate-300 mb-2">Required Fields:</h4>
-            <ul className="text-xs text-slate-400 space-y-1">
-              <li>• <strong>title</strong>: Question title</li>
-              <li>• <strong>content</strong>: Question description/details</li>
-              <li>• <strong>answer</strong>: Complete answer with explanations</li>
-              <li>• <strong>type</strong>: One of: Basic Java, Advanced Java, Collection Framework, etc.</li>
-              <li>• <strong>level</strong>: Must be "Basic", "Intermediate", or "Advanced"</li>
-            </ul>
-          </div>
-
-          <div className="flex gap-3 pt-4">
-            <Button 
-              type="button"
-              variant="outline" 
-              onClick={onClose}
-              className="flex-1 border-slate-600 text-slate-300 hover:bg-slate-700"
-              disabled={loading}
-            >
+          <div className="flex justify-end space-x-2 pt-4">
+            <Button type="button" variant="outline" onClick={handleClose}>
               Cancel
             </Button>
-            <Button 
-              onClick={handleImport}
-              className="flex-1 bg-blue-600 hover:bg-blue-700 text-white"
-              disabled={loading}
-            >
+            <Button type="submit" disabled={loading || !csvData.trim()}>
               {loading ? "Importing..." : "Import Questions"}
             </Button>
           </div>
-        </div>
+        </form>
       </DialogContent>
     </Dialog>
   );
