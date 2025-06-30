@@ -1,11 +1,10 @@
-
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { ArrowLeft, Code, ExternalLink, Github, Play, Search, Filter } from "lucide-react";
+import { ArrowLeft, Code, ExternalLink, Github, Play, Search, Filter, Plus, Trash2, Edit } from "lucide-react";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import { useNavigate, useParams } from "react-router-dom";
@@ -52,6 +51,10 @@ const CodingQuestionList = () => {
   const [tagsFilter, setTagsFilter] = useState("all");
   const [currentPage, setCurrentPage] = useState(1);
   const [availableTags, setAvailableTags] = useState<string[]>([]);
+  const [isQuestionModalOpen, setIsQuestionModalOpen] = useState(false);
+  const [isBulkImportOpen, setIsBulkImportOpen] = useState(false);
+  const [editingQuestion, setEditingQuestion] = useState<CodingQuestion | null>(null);
+  const [selectedQuestions, setSelectedQuestions] = useState<string[]>([]);
   const questionsPerPage = 10;
 
   useEffect(() => {
@@ -151,6 +154,96 @@ const CodingQuestionList = () => {
     }
   };
 
+  const handleAddQuestion = () => {
+    setEditingQuestion(null);
+    setIsQuestionModalOpen(true);
+  };
+
+  const handleEditQuestion = (question: CodingQuestion, e: React.MouseEvent) => {
+    e.stopPropagation();
+    setEditingQuestion(question);
+    setIsQuestionModalOpen(true);
+  };
+
+  const handleDeleteQuestion = async (questionId: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (!confirm('Are you sure you want to delete this question?')) return;
+
+    try {
+      const { error } = await supabase
+        .from('coding_questions')
+        .delete()
+        .eq('id', questionId);
+
+      if (error) throw error;
+
+      setQuestions(questions.filter(q => q.id !== questionId));
+      toast({
+        title: "Success",
+        description: "Question deleted successfully",
+      });
+    } catch (error) {
+      console.error('Error deleting question:', error);
+      toast({
+        title: "Error",
+        description: "Failed to delete question",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleBulkDelete = async () => {
+    if (selectedQuestions.length === 0) {
+      toast({
+        title: "Error",
+        description: "Please select questions to delete",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (!confirm(`Are you sure you want to delete ${selectedQuestions.length} questions?`)) return;
+
+    try {
+      const { error } = await supabase
+        .from('coding_questions')
+        .delete()
+        .in('id', selectedQuestions);
+
+      if (error) throw error;
+
+      setQuestions(questions.filter(q => !selectedQuestions.includes(q.id)));
+      setSelectedQuestions([]);
+      toast({
+        title: "Success",
+        description: `${selectedQuestions.length} questions deleted successfully`,
+      });
+    } catch (error) {
+      console.error('Error deleting questions:', error);
+      toast({
+        title: "Error",
+        description: "Failed to delete questions",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const toggleQuestionSelection = (questionId: string) => {
+    setSelectedQuestions(prev => 
+      prev.includes(questionId) 
+        ? prev.filter(id => id !== questionId)
+        : [...prev, questionId]
+    );
+  };
+
+  const toggleSelectAll = () => {
+    if (selectedQuestions.length === currentQuestions.length) {
+      setSelectedQuestions([]);
+    } else {
+      setSelectedQuestions(currentQuestions.map(q => q.id));
+    }
+  };
+
   // Pagination logic
   const totalPages = Math.ceil(filteredQuestions.length / questionsPerPage);
   const startIndex = (currentPage - 1) * questionsPerPage;
@@ -187,13 +280,33 @@ const CodingQuestionList = () => {
             Back to Categories
           </Button>
           
-          <div className="text-center mb-8">
-            <h1 className="text-4xl md:text-5xl font-bold mb-4 bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent capitalize">
-              {category?.replace(/-/g, ' ')} Questions
-            </h1>
-            <p className="text-muted-foreground text-lg max-w-2xl mx-auto">
-              Practice coding problems with detailed solutions and explanations.
-            </p>
+          <div className="flex justify-between items-center mb-8">
+            <div>
+              <h1 className="text-4xl md:text-5xl font-bold mb-4 bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent capitalize">
+                {category?.replace(/-/g, ' ')} Questions
+              </h1>
+              <p className="text-muted-foreground text-lg max-w-2xl">
+                Practice coding problems with detailed solutions and explanations.
+              </p>
+            </div>
+            {isAdmin && (
+              <div className="flex gap-2">
+                <Button onClick={handleAddQuestion}>
+                  <Plus className="h-4 w-4 mr-2" />
+                  Add Question
+                </Button>
+                <Button onClick={() => setIsBulkImportOpen(true)} variant="outline">
+                  <Plus className="h-4 w-4 mr-2" />
+                  Bulk Import
+                </Button>
+                {selectedQuestions.length > 0 && (
+                  <Button onClick={handleBulkDelete} variant="destructive">
+                    <Trash2 className="h-4 w-4 mr-2" />
+                    Delete Selected ({selectedQuestions.length})
+                  </Button>
+                )}
+              </div>
+            )}
           </div>
         </div>
 
@@ -270,10 +383,36 @@ const CodingQuestionList = () => {
                     ? "No questions available in this category yet."
                     : "No questions match your current filters."}
                 </p>
+                {isAdmin && questions.length === 0 && (
+                  <div className="mt-4 space-x-2">
+                    <Button onClick={handleAddQuestion}>
+                      <Plus className="h-4 w-4 mr-2" />
+                      Add First Question
+                    </Button>
+                    <Button onClick={() => setIsBulkImportOpen(true)} variant="outline">
+                      <Plus className="h-4 w-4 mr-2" />
+                      Bulk Import
+                    </Button>
+                  </div>
+                )}
               </CardContent>
             </Card>
           ) : (
             <>
+              {isAdmin && (
+                <div className="mb-4 flex items-center gap-2">
+                  <input
+                    type="checkbox"
+                    checked={selectedQuestions.length === currentQuestions.length && currentQuestions.length > 0}
+                    onChange={toggleSelectAll}
+                    className="rounded"
+                  />
+                  <span className="text-sm text-muted-foreground">
+                    Select all ({currentQuestions.length})
+                  </span>
+                </div>
+              )}
+              
               <div className="space-y-4 mb-8">
                 {currentQuestions.map((question) => (
                   <Card 
@@ -283,26 +422,39 @@ const CodingQuestionList = () => {
                   >
                     <CardHeader>
                       <div className="flex items-start justify-between gap-4">
-                        <div className="flex-1">
-                          <div className="flex items-center gap-2 mb-2 flex-wrap">
-                            <Badge className={`${getDifficultyColor(question.difficulty)} border`}>
-                              {question.difficulty}
-                            </Badge>
-                            <Badge className={`${getStatusColor(question.status)} border`}>
-                              {question.status}
-                            </Badge>
-                            {question.is_paid && (
-                              <Badge className="bg-yellow-500/20 text-yellow-300 border-yellow-500/30">
-                                Premium
+                        <div className="flex items-start gap-4 flex-1">
+                          {isAdmin && (
+                            <input
+                              type="checkbox"
+                              checked={selectedQuestions.includes(question.id)}
+                              onChange={(e) => {
+                                e.stopPropagation();
+                                toggleQuestionSelection(question.id);
+                              }}
+                              className="mt-1 rounded"
+                            />
+                          )}
+                          <div className="flex-1">
+                            <div className="flex items-center gap-2 mb-2 flex-wrap">
+                              <Badge className={`${getDifficultyColor(question.difficulty)} border`}>
+                                {question.difficulty}
                               </Badge>
-                            )}
+                              <Badge className={`${getStatusColor(question.status)} border`}>
+                                {question.status}
+                              </Badge>
+                              {question.is_paid && (
+                                <Badge className="bg-yellow-500/20 text-yellow-300 border-yellow-500/30">
+                                  Premium
+                                </Badge>
+                              )}
+                            </div>
+                            <CardTitle className="text-foreground text-lg hover:text-blue-400 transition-colors mb-2">
+                              {question.title}
+                            </CardTitle>
+                            <CardDescription className="text-muted-foreground line-clamp-2">
+                              {question.description}
+                            </CardDescription>
                           </div>
-                          <CardTitle className="text-foreground text-lg hover:text-blue-400 transition-colors mb-2">
-                            {question.title}
-                          </CardTitle>
-                          <CardDescription className="text-muted-foreground line-clamp-2">
-                            {question.description}
-                          </CardDescription>
                         </div>
                         <div className="flex items-center gap-2">
                           {question.github_link && (
@@ -328,6 +480,24 @@ const CodingQuestionList = () => {
                             >
                               <Play className="h-4 w-4" />
                             </Button>
+                          )}
+                          {isAdmin && (
+                            <>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={(e) => handleEditQuestion(question, e)}
+                              >
+                                <Edit className="h-4 w-4" />
+                              </Button>
+                              <Button
+                                variant="destructive"
+                                size="sm"
+                                onClick={(e) => handleDeleteQuestion(question.id, e)}
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            </>
                           )}
                         </div>
                       </div>
@@ -420,6 +590,27 @@ const CodingQuestionList = () => {
           </Card>
         </div>
       </div>
+
+      <CodingQuestionModal
+        isOpen={isQuestionModalOpen}
+        onClose={() => setIsQuestionModalOpen(false)}
+        onSuccess={() => {
+          setIsQuestionModalOpen(false);
+          fetchQuestions();
+        }}
+        editingQuestion={editingQuestion}
+        categoryName={category?.replace(/-/g, ' ') || ''}
+      />
+
+      <CodingBulkImportModal
+        isOpen={isBulkImportOpen}
+        onClose={() => setIsBulkImportOpen(false)}
+        onSuccess={() => {
+          setIsBulkImportOpen(false);
+          fetchQuestions();
+        }}
+        categoryName={category?.replace(/-/g, ' ') || ''}
+      />
 
       <Footer />
     </div>

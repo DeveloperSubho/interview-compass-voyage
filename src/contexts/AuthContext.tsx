@@ -18,6 +18,7 @@ interface AuthContextType {
   session: Session | null;
   profile: Profile | null;
   loading: boolean;
+  isAdmin: boolean;
   signUp: (email: string, password: string, firstName?: string, lastName?: string, username?: string) => Promise<{ error: any }>;
   signIn: (emailOrUsername: string, password: string) => Promise<{ error: any }>;
   signOut: () => Promise<void>;
@@ -211,6 +212,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     session,
     profile,
     loading,
+    isAdmin: profile?.is_admin || false,
     signUp,
     signIn,
     signOut,

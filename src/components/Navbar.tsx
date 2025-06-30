@@ -1,6 +1,7 @@
+
 import { useState } from "react";
-import { Link } from "react-router-dom";
-import { Menu } from "lucide-react";
+import { Link, useLocation } from "react-router-dom";
+import { Menu, Crown } from "lucide-react";
 
 import { siteConfig } from "@/config/site";
 import { cn } from "@/lib/utils";
@@ -20,7 +21,8 @@ interface Props {
 
 const Navbar = ({ className }: Props) => {
   const navigate = useNavigate();
-  const { user, signOut } = useAuth();
+  const location = useLocation();
+  const { user, isAdmin, signOut } = useAuth();
   const { theme } = useTheme();
   const [isOpen, setIsOpen] = useState(false);
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
@@ -34,6 +36,20 @@ const Navbar = ({ className }: Props) => {
     }
   };
 
+  const isActivePath = (path: string) => {
+    if (path === '/') {
+      return location.pathname === '/';
+    }
+    return location.pathname.startsWith(path);
+  };
+
+  const getLinkClass = (path: string) => {
+    return cn(
+      "text-foreground hover:text-blue-400 transition-colors font-medium",
+      isActivePath(path) && "text-blue-400"
+    );
+  };
+
   return (
     <div className={cn("bg-background border-b sticky top-0 z-50", className)}>
       <div className="container flex items-center justify-between py-4">
@@ -41,53 +57,44 @@ const Navbar = ({ className }: Props) => {
           {siteConfig.name}
         </Link>
 
-      <nav className="hidden md:flex items-center space-x-8">
-        <Link
-          to="/"
-          className="text-foreground hover:text-blue-400 transition-colors font-medium"
-        >
-          Home
-        </Link>
-        <Link
-          to="/questions"
-          className="text-foreground hover:text-blue-400 transition-colors font-medium"
-        >
-          Questions
-        </Link>
-        <Link
-          to="/coding"
-          className="text-foreground hover:text-blue-400 transition-colors font-medium"
-        >
-          Coding
-        </Link>
-        <Link
-          to="/projects"
-          className="text-foreground hover:text-blue-400 transition-colors font-medium"
-        >
-          Projects
-        </Link>
-        <Link
-          to="/pricing"
-          className="text-foreground hover:text-blue-400 transition-colors font-medium"
-        >
-          Pricing
-        </Link>
-      </nav>
+        <nav className="hidden md:flex items-center space-x-8">
+          <Link to="/" className={getLinkClass("/")}>
+            Home
+          </Link>
+          <Link to="/questions" className={getLinkClass("/questions")}>
+            Questions
+          </Link>
+          <Link to="/coding" className={getLinkClass("/coding")}>
+            Coding
+          </Link>
+          <Link to="/projects" className={getLinkClass("/projects")}>
+            Projects
+          </Link>
+          <Link to="/pricing" className={getLinkClass("/pricing")}>
+            Pricing
+          </Link>
+        </nav>
 
         <div className="flex items-center space-x-4">
           <ModeToggle />
           {user ? (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="ghost" className="h-8 w-8 p-0 rounded-full">
+                <Button variant="ghost" className="h-8 w-8 p-0 rounded-full relative">
                   <Avatar className="h-8 w-8">
                     <AvatarImage src={user?.user_metadata?.avatar_url} alt={user?.user_metadata?.full_name} />
-                    <AvatarFallback>{user?.user_metadata?.full_name?.charAt(0)}</AvatarFallback>
+                    <AvatarFallback>{user?.user_metadata?.full_name?.charAt(0) || user?.email?.charAt(0)}</AvatarFallback>
                   </Avatar>
+                  {isAdmin && (
+                    <Crown className="h-3 w-3 text-yellow-400 absolute -top-1 -right-1" />
+                  )}
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent className="w-56" align="end" forceMount>
-                <DropdownMenuLabel>My Account</DropdownMenuLabel>
+                <DropdownMenuLabel className="flex items-center gap-2">
+                  My Account
+                  {isAdmin && <Crown className="h-4 w-4 text-yellow-400" />}
+                </DropdownMenuLabel>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem onClick={() => navigate('/profile')}>Profile</DropdownMenuItem>
                 <DropdownMenuItem onClick={handleSignOut}>Sign out</DropdownMenuItem>
@@ -110,35 +117,35 @@ const Navbar = ({ className }: Props) => {
             <div className="flex flex-col space-y-4 mt-4">
               <Link
                 to="/"
-                className="text-foreground hover:text-blue-400 transition-colors font-medium"
+                className={getLinkClass("/")}
                 onClick={() => setIsOpen(false)}
               >
                 Home
               </Link>
               <Link
                 to="/questions"
-                className="text-foreground hover:text-blue-400 transition-colors font-medium"
+                className={getLinkClass("/questions")}
                 onClick={() => setIsOpen(false)}
               >
                 Questions
               </Link>
               <Link
                 to="/coding"
-                className="text-foreground hover:text-blue-400 transition-colors font-medium"
+                className={getLinkClass("/coding")}
                 onClick={() => setIsOpen(false)}
               >
                 Coding
               </Link>
               <Link
                 to="/projects"
-                className="text-foreground hover:text-blue-400 transition-colors font-medium"
+                className={getLinkClass("/projects")}
                 onClick={() => setIsOpen(false)}
               >
                 Projects
               </Link>
               <Link
                 to="/pricing"
-                className="text-foreground hover:text-blue-400 transition-colors font-medium"
+                className={getLinkClass("/pricing")}
                 onClick={() => setIsOpen(false)}
               >
                 Pricing
