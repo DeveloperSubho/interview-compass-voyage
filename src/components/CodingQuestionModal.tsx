@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -90,7 +91,7 @@ const CodingQuestionModal = ({ isOpen, onClose, onSuccess, editingQuestion, cate
       const questionData = {
         ...formData,
         slug,
-        tags: Array.isArray(formData.tags) ? formData.tags : formData.tags.toString().split(',').map(tag => tag.trim()).filter(tag => tag)
+        tags: Array.isArray(formData.tags) ? formData.tags : []
       };
 
       if (editingQuestion) {
@@ -225,7 +226,7 @@ const CodingQuestionModal = ({ isOpen, onClose, onSuccess, editingQuestion, cate
             <Label htmlFor="tags">Tags (comma-separated)</Label>
             <Input
               id="tags"
-              value={Array.isArray(formData.tags) ? formData.tags.join(', ') : String(formData.tags || '')}
+              value={Array.isArray(formData.tags) ? formData.tags.join(', ') : ''}
               onChange={(e) => handleTagsChange(e.target.value)}
               placeholder="Array, String, Dynamic Programming"
             />

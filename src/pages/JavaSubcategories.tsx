@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -32,7 +33,7 @@ const iconMap = {
 
 const JavaSubcategories = () => {
   const navigate = useNavigate();
-  const { user, isAdmin } = useAuth();
+  const { user, profile } = useAuth();
   const { toast } = useToast();
   const [subcategories, setSubcategories] = useState<Subcategory[]>([]);
   const [loading, setLoading] = useState(true);
@@ -44,10 +45,25 @@ const JavaSubcategories = () => {
 
   const fetchSubcategories = async () => {
     try {
+      // First get the Java category
+      const { data: categoryData, error: categoryError } = await supabase
+        .from('categories')
+        .select('id')
+        .eq('name', 'Java')
+        .single();
+
+      if (categoryError || !categoryData) {
+        console.error('Java category not found:', categoryError);
+        setSubcategories([]);
+        setLoading(false);
+        return;
+      }
+
+      // Then get subcategories for Java
       const { data: subcategoriesData, error: subcategoriesError } = await supabase
         .from('subcategories')
         .select('*')
-        .eq('category', 'Java')
+        .eq('category_id', categoryData.id)
         .order('created_at', { ascending: true });
 
       if (subcategoriesError) throw subcategoriesError;
@@ -62,7 +78,6 @@ const JavaSubcategories = () => {
 
           return {
             ...subcategory,
-            icon: subcategory.icon || 'Code', // Provide default icon
             questionCount: count || 0
           };
         })
@@ -162,7 +177,7 @@ const JavaSubcategories = () => {
                 Choose a Java topic to practice your knowledge and skills.
               </p>
             </div>
-            {isAdmin && (
+            {profile?.is_admin && (
               <Button onClick={() => setIsAddModalOpen(true)} className="ml-4">
                 <Plus className="h-4 w-4 mr-2" />
                 Add Topic
@@ -182,7 +197,7 @@ const JavaSubcategories = () => {
                 <p className="text-muted-foreground mb-4">
                   There are no Java topics available yet.
                 </p>
-                {isAdmin && (
+                {profile?.is_admin && (
                   <Button onClick={() => setIsAddModalOpen(true)}>
                     <Plus className="h-4 w-4 mr-2" />
                     Add First Topic
@@ -193,7 +208,7 @@ const JavaSubcategories = () => {
           ) : (
             <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
               {subcategories.map((subcategory) => {
-                const IconComponent = iconMap[subcategory.icon as keyof typeof iconMap] || Code;
+                const IconComponent = Code;
                 
                 return (
                   <Card 
@@ -217,7 +232,7 @@ const JavaSubcategories = () => {
                         <Badge variant="secondary" className="bg-muted text-muted-foreground">
                           {subcategory.questionCount} {subcategory.questionCount === 1 ? 'Question' : 'Questions'}
                         </Badge>
-                        {isAdmin && (
+                        {profile?.is_admin && (
                           <Button
                             variant="destructive"
                             size="sm"
@@ -250,7 +265,7 @@ const JavaSubcategories = () => {
         isOpen={isAddModalOpen} 
         onClose={() => setIsAddModalOpen(false)} 
         onTopicAdded={handleTopicAdded}
-        category="Java"
+        categoryName="Java"
       />
 
       <Footer />

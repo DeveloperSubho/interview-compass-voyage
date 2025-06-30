@@ -38,90 +38,50 @@ const CategorySection = () => {
 
   const fetchSubcategories = async () => {
     try {
-      // For Java, query the subcategories table directly using the category field
-      if (category?.toLowerCase() === 'java') {
-        const { data: subcategoriesData, error: subcategoriesError } = await supabase
-          .from('subcategories')
-          .select('*')
-          .eq('category', 'Java')
-          .order('created_at', { ascending: true });
+      // Get the category first
+      const { data: categoryData, error: categoryError } = await supabase
+        .from('categories')
+        .select('id')
+        .eq('name', category)
+        .single();
 
-        if (subcategoriesError) {
-          console.error('Subcategories error:', subcategoriesError);
-          setSubcategories([]);
-          setLoading(false);
-          return;
-        }
-
-        // Get question counts for each subcategory
-        const subcategoriesWithCounts = await Promise.all(
-          (subcategoriesData || []).map(async (subcategory) => {
-            const { count } = await supabase
-              .from('questions')
-              .select('*', { count: 'exact', head: true })
-              .eq('subcategory_id', subcategory.id);
-            
-            return {
-              ...subcategory,
-              questionCount: count || 0
-            };
-          })
-        );
-
-        setSubcategories(subcategoriesWithCounts);
-      } else {
-        // For other categories, use the categories table approach
-        const { data: categoryData, error: categoryError } = await supabase
-          .from('categories')
-          .select('id')
-          .eq('name', category)
-          .maybeSingle();
-
-        if (categoryError) {
-          console.error('Category error:', categoryError);
-          setSubcategories([]);
-          setLoading(false);
-          return;
-        }
-
-        if (!categoryData) {
-          console.log('Category not found:', category);
-          setSubcategories([]);
-          setLoading(false);
-          return;
-        }
-
-        // Get subcategories for this category
-        const { data: subcategoriesData, error: subcategoriesError } = await supabase
-          .from('subcategories')
-          .select('*')
-          .eq('category_id', categoryData.id)
-          .order('name');
-
-        if (subcategoriesError) {
-          console.error('Subcategories error:', subcategoriesError);
-          setSubcategories([]);
-          setLoading(false);
-          return;
-        }
-
-        // Get question counts for each subcategory
-        const subcategoriesWithCounts = await Promise.all(
-          (subcategoriesData || []).map(async (subcategory) => {
-            const { count } = await supabase
-              .from('questions')
-              .select('*', { count: 'exact', head: true })
-              .eq('subcategory_id', subcategory.id);
-            
-            return {
-              ...subcategory,
-              questionCount: count || 0
-            };
-          })
-        );
-
-        setSubcategories(subcategoriesWithCounts);
+      if (categoryError || !categoryData) {
+        console.log('Category not found:', category);
+        setSubcategories([]);
+        setLoading(false);
+        return;
       }
+
+      // Get subcategories for this category
+      const { data: subcategoriesData, error: subcategoriesError } = await supabase
+        .from('subcategories')
+        .select('*')
+        .eq('category_id', categoryData.id)
+        .order('name');
+
+      if (subcategoriesError) {
+        console.error('Subcategories error:', subcategoriesError);
+        setSubcategories([]);
+        setLoading(false);
+        return;
+      }
+
+      // Get question counts for each subcategory
+      const subcategoriesWithCounts = await Promise.all(
+        (subcategoriesData || []).map(async (subcategory) => {
+          const { count } = await supabase
+            .from('questions')
+            .select('*', { count: 'exact', head: true })
+            .eq('subcategory_id', subcategory.id);
+          
+          return {
+            ...subcategory,
+            questionCount: count || 0
+          };
+        })
+      );
+
+      setSubcategories(subcategoriesWithCounts);
     } catch (error) {
       console.error('Error fetching subcategories:', error);
       setSubcategories([]);
