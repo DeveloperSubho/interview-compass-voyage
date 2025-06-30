@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -16,7 +15,7 @@ interface Subcategory {
   id: string;
   name: string;
   description: string;
-  icon: string;
+  icon?: string;
   questionCount: number;
   created_at: string;
 }
@@ -63,6 +62,7 @@ const JavaSubcategories = () => {
 
           return {
             ...subcategory,
+            icon: subcategory.icon || 'Code', // Provide default icon
             questionCount: count || 0
           };
         })
@@ -116,6 +116,11 @@ const JavaSubcategories = () => {
         variant: "destructive",
       });
     }
+  };
+
+  const handleTopicAdded = () => {
+    setIsAddModalOpen(false);
+    fetchSubcategories();
   };
 
   if (loading) {
@@ -244,10 +249,7 @@ const JavaSubcategories = () => {
       <AddTopicModal 
         isOpen={isAddModalOpen} 
         onClose={() => setIsAddModalOpen(false)} 
-        onSuccess={() => {
-          setIsAddModalOpen(false);
-          fetchSubcategories();
-        }}
+        onTopicAdded={handleTopicAdded}
         category="Java"
       />
 
