@@ -54,7 +54,9 @@ const Navbar = ({ className }: Props) => {
     <div className={cn("bg-background border-b sticky top-0 z-50", className)}>
       <div className="container flex items-center justify-between py-4">
         <Link to="/" className="flex items-center font-semibold">
-          {siteConfig.name}
+            <span className="text-xl font-bold bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent">
+                {siteConfig.name}
+            </span>
         </Link>
 
         <nav className="hidden md:flex items-center space-x-8">

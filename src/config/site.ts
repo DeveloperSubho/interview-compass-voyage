@@ -1,11 +1,11 @@
 
 export const siteConfig = {
-  name: "InterviewAce",
+  name: "InterviewVoyage",
   description: "Master your technical interviews with our comprehensive question bank and practice projects.",
-  url: "https://interviewace.com",
-  ogImage: "https://interviewace.com/og.jpg",
+  url: "https://interviewvoyage.com",
+  ogImage: "https://interviewvoyage.com/og.jpg",
   links: {
-    twitter: "https://twitter.com/interviewace",
-    github: "https://github.com/interviewace",
+    twitter: "https://twitter.com/interviewvoyage",
+    github: "https://github.com/interviewvoyage",
   },
 }

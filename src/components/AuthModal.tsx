@@ -238,7 +238,7 @@ const AuthModal = ({ isOpen, onClose }: AuthModalProps) => {
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>Welcome to InterviewAce</DialogTitle>
+          <DialogTitle>Welcome to InterviewVoyage</DialogTitle>
         </DialogHeader>
         
         <Tabs defaultValue="signin" className="w-full">
