@@ -5,11 +5,12 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { ArrowLeft, Code, ExternalLink, Github, Play, Search, Filter, Plus, Trash2, Edit } from "lucide-react";
+import { ArrowLeft, Code, ExternalLink, Github, Play, Search, Filter, Plus, Trash2, Edit, Lock } from "lucide-react";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import CodingQuestionModal from "@/components/CodingQuestionModal";
 import CodingBulkImportModal from "@/components/CodingBulkImportModal";
+import ProtectedContent from "@/components/ProtectedContent";
 import { useNavigate, useParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
@@ -37,13 +38,14 @@ interface CodingQuestion {
   video_link: string | null;
   is_paid: boolean;
   level_unlock: string;
+  pricing_tier: string;
   created_at: string;
 }
 
 const CodingQuestionList = () => {
   const navigate = useNavigate();
   const { category } = useParams();
-  const { user, isAdmin } = useAuth();
+  const { user, isAdmin, hasAccess } = useAuth();
   const { toast } = useToast();
   const [questions, setQuestions] = useState<CodingQuestion[]>([]);
   const [filteredQuestions, setFilteredQuestions] = useState<CodingQuestion[]>([]);
@@ -52,6 +54,7 @@ const CodingQuestionList = () => {
   const [difficultyFilter, setDifficultyFilter] = useState("all");
   const [statusFilter, setStatusFilter] = useState("all");
   const [tagsFilter, setTagsFilter] = useState("all");
+  const [pricingTierFilter, setPricingTierFilter] = useState("all");
   const [currentPage, setCurrentPage] = useState(1);
   const [availableTags, setAvailableTags] = useState<string[]>([]);
   const [isQuestionModalOpen, setIsQuestionModalOpen] = useState(false);
@@ -59,6 +62,14 @@ const CodingQuestionList = () => {
   const [editingQuestion, setEditingQuestion] = useState<CodingQuestion | null>(null);
   const [selectedQuestions, setSelectedQuestions] = useState<string[]>([]);
   const questionsPerPage = 10;
+
+  const handleSignInClick = () => {
+    // This would be handled by parent component or context
+    toast({
+      title: "Sign in required",
+      description: "Please sign in to access this content",
+    });
+  };
 
   useEffect(() => {
     if (category) {
@@ -68,7 +79,7 @@ const CodingQuestionList = () => {
 
   useEffect(() => {
     applyFilters();
-  }, [questions, searchTerm, difficultyFilter, statusFilter, tagsFilter]);
+  }, [questions, searchTerm, difficultyFilter, statusFilter, tagsFilter, pricingTierFilter]);
 
   const fetchQuestions = async () => {
     try {
@@ -127,6 +138,11 @@ const CodingQuestionList = () => {
       filtered = filtered.filter(question => question.tags.includes(tagsFilter));
     }
 
+    // Pricing tier filter
+    if (pricingTierFilter !== "all") {
+      filtered = filtered.filter(question => question.pricing_tier === pricingTierFilter);
+    }
+
     setFilteredQuestions(filtered);
     setCurrentPage(1);
   };
@@ -152,6 +168,19 @@ const CodingQuestionList = () => {
         return "bg-yellow-500/20 text-yellow-300 border-yellow-500/30";
       case "Unsolved":
         return "bg-gray-500/20 text-gray-300 border-gray-500/30";
+      default:
+        return "bg-gray-500/20 text-gray-300 border-gray-500/30";
+    }
+  };
+
+  const getPricingTierColor = (tier: string) => {
+    switch (tier) {
+      case "Explorer":
+        return "bg-blue-500/20 text-blue-300 border-blue-500/30";
+      case "Voyager":
+        return "bg-purple-500/20 text-purple-300 border-purple-500/30";
+      case "Innovator":
+        return "bg-orange-500/20 text-orange-300 border-orange-500/30";
       default:
         return "bg-gray-500/20 text-gray-300 border-gray-500/30";
     }
@@ -247,6 +276,15 @@ const CodingQuestionList = () => {
     }
   };
 
+  const handleQuestionClick = (question: CodingQuestion) => {
+    // Check if user has access to this question
+    if (!hasAccess(question.pricing_tier)) {
+      handleSignInClick();
+      return;
+    }
+    navigate(`/coding/${category}/${question.slug}`);
+  };
+
   // Pagination logic
   const totalPages = Math.ceil(filteredQuestions.length / questionsPerPage);
   const startIndex = (currentPage - 1) * questionsPerPage;
@@ -289,7 +327,7 @@ const CodingQuestionList = () => {
                 {category?.replace(/-/g, ' ')} Questions
               </h1>
               <p className="text-muted-foreground text-lg max-w-2xl">
-                Practice coding problems with detailed solutions and explanations.
+                Practice coding problems with detailed explanations and solutions.
               </p>
             </div>
             {isAdmin && (
@@ -323,7 +361,7 @@ const CodingQuestionList = () => {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="grid md:grid-cols-2 lg:grid-cols-5 gap-4">
+              <div className="grid md:grid-cols-2 lg:grid-cols-6 gap-4">
                 <div className="lg:col-span-2">
                   <div className="relative">
                     <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -344,6 +382,17 @@ const CodingQuestionList = () => {
                     <SelectItem value="Easy">Easy</SelectItem>
                     <SelectItem value="Medium">Medium</SelectItem>
                     <SelectItem value="Hard">Hard</SelectItem>
+                  </SelectContent>
+                </Select>
+                <Select value={pricingTierFilter} onValueChange={setPricingTierFilter}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Pricing Tier" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Tiers</SelectItem>
+                    <SelectItem value="Explorer">Explorer</SelectItem>
+                    <SelectItem value="Voyager">Voyager</SelectItem>
+                    <SelectItem value="Innovator">Innovator</SelectItem>
                   </SelectContent>
                 </Select>
                 <Select value={statusFilter} onValueChange={setStatusFilter}>
@@ -386,18 +435,6 @@ const CodingQuestionList = () => {
                     ? "No questions available in this category yet."
                     : "No questions match your current filters."}
                 </p>
-                {isAdmin && questions.length === 0 && (
-                  <div className="mt-4 space-x-2">
-                    <Button onClick={handleAddQuestion}>
-                      <Plus className="h-4 w-4 mr-2" />
-                      Add First Question
-                    </Button>
-                    <Button onClick={() => setIsBulkImportOpen(true)} variant="outline">
-                      <Plus className="h-4 w-4 mr-2" />
-                      Bulk Import
-                    </Button>
-                  </div>
-                )}
               </CardContent>
             </Card>
           ) : (
@@ -417,109 +454,122 @@ const CodingQuestionList = () => {
               )}
               
               <div className="space-y-4 mb-8">
-                {currentQuestions.map((question) => (
-                  <Card 
-                    key={question.id} 
-                    className="bg-card border-border hover:bg-accent/70 transition-all duration-300 cursor-pointer"
-                    onClick={() => navigate(`/coding/${category}/${question.slug}`)}
-                  >
-                    <CardHeader>
-                      <div className="flex items-start justify-between gap-4">
-                        <div className="flex items-start gap-4 flex-1">
-                          {isAdmin && (
-                            <input
-                              type="checkbox"
-                              checked={selectedQuestions.includes(question.id)}
-                              onChange={(e) => {
-                                e.stopPropagation();
-                                toggleQuestionSelection(question.id);
-                              }}
-                              className="mt-1 rounded"
-                            />
-                          )}
-                          <div className="flex-1">
-                            <div className="flex items-center gap-2 mb-2 flex-wrap">
-                              <Badge className={`${getDifficultyColor(question.difficulty)} border`}>
-                                {question.difficulty}
-                              </Badge>
-                              <Badge className={`${getStatusColor(question.status)} border`}>
-                                {question.status}
-                              </Badge>
-                              {question.is_paid && (
-                                <Badge className="bg-yellow-500/20 text-yellow-300 border-yellow-500/30">
-                                  Premium
+                {currentQuestions.map((question) => {
+                  const requiresUpgrade = !hasAccess(question.pricing_tier);
+                  
+                  return (
+                    <Card 
+                      key={question.id} 
+                      className={`bg-card border-border hover:bg-accent/70 transition-all duration-300 cursor-pointer ${requiresUpgrade ? 'opacity-75' : ''}`}
+                      onClick={() => handleQuestionClick(question)}
+                    >
+                      <CardHeader>
+                        <div className="flex items-start justify-between gap-4">
+                          <div className="flex items-start gap-4 flex-1">
+                            {isAdmin && (
+                              <input
+                                type="checkbox"
+                                checked={selectedQuestions.includes(question.id)}
+                                onChange={(e) => {
+                                  e.stopPropagation();
+                                  toggleQuestionSelection(question.id);
+                                }}
+                                className="mt-1 rounded"
+                              />
+                            )}
+                            <div className="flex-1">
+                              <div className="flex items-center gap-2 mb-2 flex-wrap">
+                                <Badge className={`${getDifficultyColor(question.difficulty)} border`}>
+                                  {question.difficulty}
                                 </Badge>
-                              )}
+                                <Badge className={`${getPricingTierColor(question.pricing_tier)} border`}>
+                                  {question.pricing_tier}
+                                </Badge>
+                                <Badge className={`${getStatusColor(question.status)} border`}>
+                                  {question.status}
+                                </Badge>
+                                {question.is_paid && (
+                                  <Badge className="bg-yellow-500/20 text-yellow-300 border-yellow-500/30">
+                                    Premium
+                                  </Badge>
+                                )}
+                                {requiresUpgrade && (
+                                  <Badge className="bg-red-500/20 text-red-300 border-red-500/30">
+                                    <Lock className="h-3 w-3 mr-1" />
+                                    Locked
+                                  </Badge>
+                                )}
+                              </div>
+                              <CardTitle className="text-foreground text-lg hover:text-blue-400 transition-colors mb-2">
+                                {question.title}
+                              </CardTitle>
+                              <CardDescription className="text-muted-foreground line-clamp-2">
+                                {question.description}
+                              </CardDescription>
                             </div>
-                            <CardTitle className="text-foreground text-lg hover:text-blue-400 transition-colors mb-2">
-                              {question.title}
-                            </CardTitle>
-                            <CardDescription className="text-muted-foreground line-clamp-2">
-                              {question.description}
-                            </CardDescription>
                           </div>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          {question.github_link && (
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                window.open(question.github_link!, '_blank');
-                              }}
-                            >
-                              <Github className="h-4 w-4" />
-                            </Button>
-                          )}
-                          {question.video_link && (
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                window.open(question.video_link!, '_blank');
-                              }}
-                            >
-                              <Play className="h-4 w-4" />
-                            </Button>
-                          )}
-                          {isAdmin && (
-                            <>
+                          <div className="flex items-center gap-2">
+                            {question.github_link && (
                               <Button
                                 variant="ghost"
                                 size="sm"
-                                onClick={(e) => handleEditQuestion(question, e)}
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  window.open(question.github_link!, '_blank');
+                                }}
                               >
-                                <Edit className="h-4 w-4" />
+                                <Github className="h-4 w-4" />
                               </Button>
+                            )}
+                            {question.video_link && (
                               <Button
-                                variant="destructive"
+                                variant="ghost"
                                 size="sm"
-                                onClick={(e) => handleDeleteQuestion(question.id, e)}
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  window.open(question.video_link!, '_blank');
+                                }}
                               >
-                                <Trash2 className="h-4 w-4" />
+                                <Play className="h-4 w-4" />
                               </Button>
-                            </>
-                          )}
+                            )}
+                            {isAdmin && (
+                              <>
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={(e) => handleEditQuestion(question, e)}
+                                >
+                                  <Edit className="h-4 w-4" />
+                                </Button>
+                                <Button
+                                  variant="destructive"
+                                  size="sm"
+                                  onClick={(e) => handleDeleteQuestion(question.id, e)}
+                                >
+                                  <Trash2 className="h-4 w-4" />
+                                </Button>
+                              </>
+                            )}
+                          </div>
                         </div>
-                      </div>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="flex flex-wrap gap-2">
-                        {question.tags.map((tag, index) => (
-                          <Badge 
-                            key={index} 
-                            variant="secondary" 
-                            className="bg-muted text-muted-foreground text-xs"
-                          >
-                            {tag}
-                          </Badge>
-                        ))}
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))}
+                      </CardHeader>
+                      <CardContent>
+                        <div className="flex flex-wrap gap-2">
+                          {question.tags.map((tag, index) => (
+                            <Badge 
+                              key={index} 
+                              variant="secondary" 
+                              className="bg-muted text-muted-foreground text-xs"
+                            >
+                              {tag}
+                            </Badge>
+                          ))}
+                        </div>
+                      </CardContent>
+                    </Card>
+                  );
+                })}
               </div>
 
               {/* Pagination */}

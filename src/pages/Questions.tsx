@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { BookOpen, Code, Database, Globe, Layers, Server, Zap } from "lucide-react";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
+import AuthModal from "@/components/AuthModal";
 import { useNavigate, useLocation } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
@@ -22,7 +23,8 @@ interface Category {
 const Questions = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const { profile } = useAuth();
+  const { user } = useAuth();
+  const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const [categories, setCategories] = useState<Category[]>([
     {
       id: "1",
@@ -99,42 +101,22 @@ const Questions = () => {
             .single();
 
           if (dbCategory) {
-            if (category.name === 'Java') {
-              const { data: subcategories } = await supabase
-                .from('subcategories')
-                .select('id')
-                .eq('category_id', dbCategory.id);
+            const { data: subcategories } = await supabase
+              .from('subcategories')
+              .select('id')
+              .eq('category_id', dbCategory.id);
 
-              if (subcategories && subcategories.length > 0) {
-                const subcategoryIds = subcategories.map(sub => sub.id);
-                const { count } = await supabase
-                  .from('questions')
-                  .select('*', { count: 'exact', head: true })
-                  .in('subcategory_id', subcategoryIds);
+            if (subcategories && subcategories.length > 0) {
+              const subcategoryIds = subcategories.map(sub => sub.id);
+              const { count } = await supabase
+                .from('questions')
+                .select('*', { count: 'exact', head: true })
+                .in('subcategory_id', subcategoryIds);
 
-                return {
-                  ...category,
-                  questionCount: count || 0
-                };
-              }
-            } else {
-              const { data: subcategories } = await supabase
-                .from('subcategories')
-                .select('id')
-                .eq('category_id', dbCategory.id);
-
-              if (subcategories && subcategories.length > 0) {
-                const subcategoryIds = subcategories.map(sub => sub.id);
-                const { count } = await supabase
-                  .from('questions')
-                  .select('*', { count: 'exact', head: true })
-                  .in('subcategory_id', subcategoryIds);
-
-                return {
-                  ...category,
-                  questionCount: count || 0
-                };
-              }
+              return {
+                ...category,
+                questionCount: count || 0
+              };
             }
           }
           
@@ -155,9 +137,15 @@ const Questions = () => {
 
   const handleCategoryClick = (categoryName: string) => {
     if (categoryName === "Java") {
+      // Java has special routing - always allow access to subcategories page
       navigate("/questions/java");
     } else {
-      navigate(`/questions/${categoryName.toLowerCase()}`);
+      // For other categories, check if user is logged in
+      if (!user) {
+        setIsAuthModalOpen(true);
+      } else {
+        navigate(`/questions/${categoryName.toLowerCase().replace(/\s+/g, '-')}`);
+      }
     }
   };
 
@@ -224,6 +212,11 @@ const Questions = () => {
           ))}
         </div>
       </div>
+
+      <AuthModal 
+        isOpen={isAuthModalOpen}
+        onClose={() => setIsAuthModalOpen(false)}
+      />
 
       <Footer />
     </div>

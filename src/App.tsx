@@ -6,6 +6,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { ThemeProvider } from "@/contexts/ThemeContext";
+import { useState } from "react";
 import Index from "./pages/Index";
 import Questions from "./pages/Questions";
 import QuestionList from "./pages/QuestionList";
@@ -25,10 +26,17 @@ import Profile from "./pages/Profile";
 import Pricing from "./pages/Pricing";
 import Contact from "./pages/Contact";
 import NotFound from "./pages/NotFound";
+import AuthModal from "./components/AuthModal";
 
 const queryClient = new QueryClient();
 
 function App() {
+  const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
+
+  const handleSignInClick = () => {
+    setIsAuthModalOpen(true);
+  };
+
   return (
     <QueryClientProvider client={queryClient}>
       <ThemeProvider>
@@ -43,7 +51,7 @@ function App() {
                 <Route path="/questions/java" element={<JavaSubcategories />} />
                 <Route path="/questions/java/:subcategoryId" element={<JavaQuestionList />} />
                 <Route path="/questions/java/:subcategoryId/:questionId" element={<JavaQuestionDetail />} />
-                <Route path="/questions/:category" element={<CategorySection />} />
+                <Route path="/questions/:category" element={<CategorySection onSignInClick={handleSignInClick} />} />
                 <Route path="/questions/:category/:subcategoryId" element={<CategoryQuestionList />} />
                 <Route path="/questions/:category/:subcategoryId/:questionId" element={<QuestionDetail />} />
                 <Route path="/coding" element={<CodingQuestions />} />
@@ -58,6 +66,10 @@ function App() {
                 <Route path="*" element={<NotFound />} />
               </Routes>
             </BrowserRouter>
+            <AuthModal 
+              isOpen={isAuthModalOpen}
+              onClose={() => setIsAuthModalOpen(false)}
+            />
           </TooltipProvider>
         </AuthProvider>
       </ThemeProvider>

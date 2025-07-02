@@ -1,15 +1,18 @@
+
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Plus, Upload, BookOpen, Lock } from "lucide-react";
-import { Link } from "react-router-dom";
+import { Plus, Upload, BookOpen, Lock, ArrowLeft } from "lucide-react";
+import { Link, useNavigate, useParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 import AddTopicModal from "./AddTopicModal";
 import BulkImportModal from "./BulkImportModal";
 import ProtectedContent from "./ProtectedContent";
+import Navbar from "./Navbar";
+import Footer from "./Footer";
 
 interface Category {
   id: string;
@@ -42,7 +45,9 @@ interface CategorySectionProps {
 const CategorySection = ({ onSignInClick }: CategorySectionProps) => {
   const { isAdmin, hasAccess } = useAuth();
   const { toast } = useToast();
-  const [categories, setCategories] = useState<Category[]>([]);
+  const navigate = useNavigate();
+  const { category } = useParams();
+  const [currentCategory, setCurrentCategory] = useState<Category | null>(null);
   const [subcategories, setSubcategories] = useState<Subcategory[]>([]);
   const [questions, setQuestions] = useState<Question[]>([]);
   const [loading, setLoading] = useState(true);
@@ -50,39 +55,61 @@ const CategorySection = ({ onSignInClick }: CategorySectionProps) => {
   const [isBulkImportModalOpen, setIsBulkImportModalOpen] = useState(false);
 
   useEffect(() => {
-    fetchData();
-  }, []);
+    if (category) {
+      fetchCategoryData();
+    }
+  }, [category]);
 
-  const fetchData = async () => {
+  const fetchCategoryData = async () => {
     setLoading(true);
     try {
-      const { data: categoriesData, error: categoriesError } = await supabase
+      const categoryName = category?.replace(/-/g, ' ') || '';
+      
+      // Fetch the category first
+      const { data: categoryData, error: categoryError } = await supabase
         .from('categories')
         .select('*')
-        .order('created_at', { ascending: false });
+        .ilike('name', categoryName)
+        .single();
 
-      if (categoriesError) throw categoriesError;
-      setCategories(categoriesData || []);
+      if (categoryError) {
+        console.error("Category not found:", categoryName);
+        toast({
+          title: "Error",
+          description: "Category not found",
+          variant: "destructive",
+        });
+        return;
+      }
 
+      setCurrentCategory(categoryData);
+
+      // Fetch subcategories for this category
       const { data: subcategoriesData, error: subcategoriesError } = await supabase
         .from('subcategories')
         .select('*')
+        .eq('category_id', categoryData.id)
         .order('created_at', { ascending: false });
 
       if (subcategoriesError) throw subcategoriesError;
       setSubcategories(subcategoriesData || []);
 
-      const { data: questionsData, error: questionsError } = await supabase
-        .from('questions')
-        .select('*');
+      // Fetch questions for all subcategories
+      if (subcategoriesData && subcategoriesData.length > 0) {
+        const subcategoryIds = subcategoriesData.map(sub => sub.id);
+        const { data: questionsData, error: questionsError } = await supabase
+          .from('questions')
+          .select('*')
+          .in('subcategory_id', subcategoryIds);
 
-      if (questionsError) throw questionsError;
-      setQuestions(questionsData || []);
+        if (questionsError) throw questionsError;
+        setQuestions(questionsData || []);
+      }
     } catch (error) {
-      console.error("Error fetching data:", error);
+      console.error("Error fetching category data:", error);
       toast({
         title: "Error",
-        description: "Failed to load data",
+        description: "Failed to load category data",
         variant: "destructive",
       });
     } finally {
@@ -93,7 +120,7 @@ const CategorySection = ({ onSignInClick }: CategorySectionProps) => {
   const handleSuccess = () => {
     setIsAddTopicModalOpen(false);
     setIsBulkImportModalOpen(false);
-    fetchData();
+    fetchCategoryData();
   };
 
   const getQuestionCount = (subcategoryId: string) => {
@@ -107,103 +134,155 @@ const CategorySection = ({ onSignInClick }: CategorySectionProps) => {
 
   if (loading) {
     return (
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {[...Array(6)].map((_, i) => (
-          <Card key={i} className="animate-pulse">
-            <CardHeader>
-              <div className="h-4 bg-gray-200 rounded w-3/4"></div>
-              <div className="h-3 bg-gray-200 rounded w-1/2"></div>
-            </CardHeader>
-            <CardContent>
-              <div className="h-3 bg-gray-200 rounded w-full mb-2"></div>
-              <div className="h-3 bg-gray-200 rounded w-2/3"></div>
-            </CardContent>
-          </Card>
-        ))}
+      <div className="min-h-screen bg-background text-foreground">
+        <Navbar />
+        <div className="container mx-auto px-4 py-16">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-400 mx-auto"></div>
+            <p className="mt-4 text-muted-foreground">Loading...</p>
+          </div>
+        </div>
+        <Footer />
+      </div>
+    );
+  }
+
+  if (!currentCategory) {
+    return (
+      <div className="min-h-screen bg-background text-foreground">
+        <Navbar />
+        <div className="container mx-auto px-4 py-16">
+          <div className="text-center">
+            <h1 className="text-2xl font-bold mb-4">Category Not Found</h1>
+            <Button onClick={() => navigate('/questions')}>
+              Back to Questions
+            </Button>
+          </div>
+        </div>
+        <Footer />
       </div>
     );
   }
 
   return (
-    <div className="space-y-6">
-      {isAdmin && (
-        <div className="flex gap-2">
-          <Button onClick={() => setIsAddTopicModalOpen(true)}>
-            <Plus className="h-4 w-4 mr-2" />
-            Add Category
+    <div className="min-h-screen bg-background text-foreground">
+      <Navbar />
+      
+      <div className="container mx-auto px-4 py-16">
+        <div className="mb-8">
+          <Button 
+            variant="ghost" 
+            onClick={() => navigate("/questions")}
+            className="text-muted-foreground hover:text-foreground hover:bg-accent mb-4"
+          >
+            <ArrowLeft className="h-4 w-4 mr-2" />
+            Back to Questions
           </Button>
-          <Button variant="outline" onClick={() => setIsBulkImportModalOpen(true)}>
-            <Upload className="h-4 w-4 mr-2" />
-            Bulk Import
-          </Button>
+          
+          <div className="text-center mb-12">
+            <h1 className="text-4xl md:text-5xl font-bold mb-4 bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent capitalize">
+              {currentCategory.name} Questions
+            </h1>
+            <p className="text-muted-foreground text-lg max-w-2xl mx-auto">
+              {currentCategory.description || `Explore ${currentCategory.name} topics and questions`}
+            </p>
+          </div>
         </div>
-      )}
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {categories.map((category) => {
-          const categorySubcategories = subcategories.filter(sub => sub.category_id === category.id);
-          const totalQuestions = categorySubcategories.reduce((sum, sub) => sum + getQuestionCount(sub.id), 0);
-          const requiresUpgrade = category.tier && !canAccessContent(category.tier);
+        <div className="space-y-6">
+          {isAdmin && (
+            <div className="flex gap-2">
+              <Button onClick={() => setIsAddTopicModalOpen(true)}>
+                <Plus className="h-4 w-4 mr-2" />
+                Add Subcategory
+              </Button>
+              <Button variant="outline" onClick={() => setIsBulkImportModalOpen(true)}>
+                <Upload className="h-4 w-4 mr-2" />
+                Bulk Import
+              </Button>
+            </div>
+          )}
 
-          return (
-            <Card key={category.id} className={`hover:shadow-lg transition-shadow ${requiresUpgrade ? 'opacity-75' : ''}`}>
-              <CardHeader>
-                <div className="flex items-start justify-between">
-                  <div className="flex-1">
-                    <CardTitle className="flex items-center gap-2">
-                      {category.name}
-                      {requiresUpgrade && <Lock className="h-4 w-4 text-muted-foreground" />}
-                    </CardTitle>
-                    <CardDescription className="mt-2">
-                      {category.description || "Explore various topics and questions"}
-                    </CardDescription>
-                  </div>
-                  {category.tier && (
-                    <Badge variant={requiresUpgrade ? "secondary" : "default"}>
-                      {category.tier}
-                    </Badge>
-                  )}
-                </div>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-3">
-                  <div className="flex items-center text-sm text-muted-foreground">
-                    <BookOpen className="h-4 w-4 mr-1" />
-                    {totalQuestions} questions • {categorySubcategories.length} subcategories
-                  </div>
-                  
-                  <ProtectedContent 
-                    requiredTier={category.tier || undefined}
-                    onSignInClick={onSignInClick}
-                  >
-                    <Link 
-                      to={`/questions/${category.name.toLowerCase().replace(/\s+/g, '-')}`}
-                      className="block"
-                    >
-                      <Button className="w-full">
-                        Explore {category.name}
-                      </Button>
-                    </Link>
-                  </ProtectedContent>
-                </div>
-              </CardContent>
-            </Card>
-          );
-        })}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {subcategories.length === 0 ? (
+              <div className="col-span-full text-center py-12">
+                <h3 className="text-lg font-medium text-muted-foreground mb-2">
+                  No subcategories available
+                </h3>
+                <p className="text-muted-foreground">
+                  Subcategories for {currentCategory.name} will be added soon.
+                </p>
+              </div>
+            ) : (
+              subcategories.map((subcategory) => {
+                const questionCount = getQuestionCount(subcategory.id);
+                const requiresUpgrade = subcategory.tier && !canAccessContent(subcategory.tier);
+
+                return (
+                  <Card key={subcategory.id} className={`hover:shadow-lg transition-shadow ${requiresUpgrade ? 'opacity-75' : ''}`}>
+                    <CardHeader>
+                      <div className="flex items-start justify-between">
+                        <div className="flex-1">
+                          <CardTitle className="flex items-center gap-2">
+                            {subcategory.name}
+                            {requiresUpgrade && <Lock className="h-4 w-4 text-muted-foreground" />}
+                          </CardTitle>
+                          <CardDescription className="mt-2">
+                            {subcategory.description || "Explore various topics and questions"}
+                          </CardDescription>
+                        </div>
+                        {subcategory.tier && (
+                          <Badge variant={requiresUpgrade ? "secondary" : "default"}>
+                            {subcategory.tier}
+                          </Badge>
+                        )}
+                      </div>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="space-y-3">
+                        <div className="flex items-center text-sm text-muted-foreground">
+                          <BookOpen className="h-4 w-4 mr-1" />
+                          {questionCount} questions
+                        </div>
+                        
+                        <ProtectedContent 
+                          requiredTier={subcategory.tier || undefined}
+                          onSignInClick={onSignInClick}
+                        >
+                          <Link 
+                            to={`/questions/${category}/${subcategory.id}`}
+                            className="block"
+                          >
+                            <Button className="w-full">
+                              Explore {subcategory.name}
+                            </Button>
+                          </Link>
+                        </ProtectedContent>
+                      </div>
+                    </CardContent>
+                  </Card>
+                );
+              })
+            )}
+          </div>
+        </div>
+
+        <AddTopicModal
+          isOpen={isAddTopicModalOpen}
+          onClose={() => setIsAddTopicModalOpen(false)}
+          onSuccess={handleSuccess}
+          type="subcategory"
+          categoryId={currentCategory.id}
+        />
+
+        <BulkImportModal
+          isOpen={isBulkImportModalOpen}
+          onClose={() => setIsBulkImportModalOpen(false)}
+          onSuccess={handleSuccess}
+        />
       </div>
-
-      <AddTopicModal
-        isOpen={isAddTopicModalOpen}
-        onClose={() => setIsAddTopicModalOpen(false)}
-        onSuccess={handleSuccess}
-        type="category"
-      />
-
-      <BulkImportModal
-        isOpen={isBulkImportModalOpen}
-        onClose={() => setIsBulkImportModalOpen(false)}
-        onSuccess={handleSuccess}
-      />
+      
+      <Footer />
     </div>
   );
 };
