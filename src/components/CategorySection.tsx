@@ -65,7 +65,7 @@ const CategorySection = ({ onSignInClick }: CategorySectionProps) => {
     try {
       const categoryName = category?.replace(/-/g, ' ') || '';
       
-      // Fetch the category first
+      // Fetch the category first with case-insensitive search
       const { data: categoryData, error: categoryError } = await supabase
         .from('categories')
         .select('*')
@@ -74,21 +74,50 @@ const CategorySection = ({ onSignInClick }: CategorySectionProps) => {
 
       if (categoryError) {
         console.error("Category not found:", categoryName);
-        toast({
-          title: "Error",
-          description: "Category not found",
-          variant: "destructive",
-        });
-        return;
+        
+        // Try with exact match
+        const { data: exactCategoryData, error: exactCategoryError } = await supabase
+          .from('categories')
+          .select('*')
+          .eq('name', categoryName)
+          .single();
+
+        if (exactCategoryError) {
+          // Try with capitalized name
+          const capitalizedName = categoryName.split(' ').map(word => 
+            word.charAt(0).toUpperCase() + word.slice(1).toLowerCase()
+          ).join(' ');
+          
+          const { data: capitalizedCategoryData, error: capitalizedCategoryError } = await supabase
+            .from('categories')
+            .select('*')
+            .eq('name', capitalizedName)
+            .single();
+
+          if (capitalizedCategoryError) {
+            toast({
+              title: "Error",
+              description: "Category not found",
+              variant: "destructive",
+            });
+            return;
+          }
+          setCurrentCategory(capitalizedCategoryData);
+        } else {
+          setCurrentCategory(exactCategoryData);
+        }
+      } else {
+        setCurrentCategory(categoryData);
       }
 
-      setCurrentCategory(categoryData);
+      const finalCategory = categoryData || currentCategory;
+      if (!finalCategory) return;
 
       // Fetch subcategories for this category
       const { data: subcategoriesData, error: subcategoriesError } = await supabase
         .from('subcategories')
         .select('*')
-        .eq('category_id', categoryData.id)
+        .eq('category_id', finalCategory.id)
         .order('created_at', { ascending: false });
 
       if (subcategoriesError) throw subcategoriesError;
@@ -248,6 +277,7 @@ const CategorySection = ({ onSignInClick }: CategorySectionProps) => {
                         <ProtectedContent 
                           requiredTier={subcategory.tier || undefined}
                           onSignInClick={onSignInClick}
+                          showUpgradeMessage={true}
                         >
                           <Link 
                             to={`/questions/${category}/${subcategory.id}`}

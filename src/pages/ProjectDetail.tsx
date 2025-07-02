@@ -10,6 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { ArrowLeft, ExternalLink, Edit, Save, X } from "lucide-react";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
+import ProtectedContent from "@/components/ProtectedContent";
 import { useNavigate, useParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
@@ -25,18 +26,26 @@ interface Project {
   level: string;
   key_features: string[];
   github_url: string | null;
+  pricing_tier: string;
   created_at: string;
 }
 
 const ProjectDetail = () => {
   const navigate = useNavigate();
   const { type, id } = useParams();
-  const { user, isAdmin } = useAuth();
+  const { user, isAdmin, hasAccess } = useAuth();
   const { toast } = useToast();
   const [project, setProject] = useState<Project | null>(null);
   const [loading, setLoading] = useState(true);
   const [isEditing, setIsEditing] = useState(false);
   const [editedProject, setEditedProject] = useState<Project | null>(null);
+
+  const handleSignInClick = () => {
+    toast({
+      title: "Sign in required",
+      description: "Please sign in to access this content",
+    });
+  };
 
   useEffect(() => {
     if (id) {
@@ -82,6 +91,7 @@ const ProjectDetail = () => {
           level: editedProject.level,
           key_features: editedProject.key_features,
           github_url: editedProject.github_url,
+          pricing_tier: editedProject.pricing_tier,
         })
         .eq('id', id);
 
@@ -125,6 +135,19 @@ const ProjectDetail = () => {
         return "bg-yellow-500/20 text-yellow-300 border-yellow-500/30";
       case "Innovator":
         return "bg-red-500/20 text-red-300 border-red-500/30";
+      default:
+        return "bg-gray-500/20 text-gray-300 border-gray-500/30";
+    }
+  };
+
+  const getPricingTierColor = (tier: string) => {
+    switch (tier) {
+      case "Explorer":
+        return "bg-blue-500/20 text-blue-300 border-blue-500/30";
+      case "Voyager":
+        return "bg-purple-500/20 text-purple-300 border-purple-500/30";
+      case "Innovator":
+        return "bg-orange-500/20 text-orange-300 border-orange-500/30";
       default:
         return "bg-gray-500/20 text-gray-300 border-gray-500/30";
     }
@@ -178,205 +201,236 @@ const ProjectDetail = () => {
           </Button>
         </div>
 
-        <div className="max-w-4xl mx-auto">
-          <Card className="bg-card border-border">
-            <CardHeader>
-              <div className="flex items-start justify-between gap-4">
-                <div className="flex-1">
-                  <div className="flex items-center gap-2 mb-2">
-                    <Badge className={`${getDifficultyColor(project.level)} border`}>
-                      {project.level}
-                    </Badge>
-                    <Badge variant="secondary" className="bg-blue-600/20 text-blue-300 border-blue-600/30">
-                      {project.type}
-                    </Badge>
-                  </div>
-                  {isEditing ? (
-                    <div className="space-y-4">
-                      <div>
-                        <Label htmlFor="title">Project Title</Label>
-                        <Input
-                          id="title"
-                          value={editedProject?.title || ''}
-                          onChange={(e) => setEditedProject(prev => prev ? {...prev, title: e.target.value} : null)}
-                          className="mt-1"
-                        />
-                      </div>
+        <ProtectedContent 
+          requiredTier={project.pricing_tier}
+          onSignInClick={handleSignInClick}
+          showUpgradeMessage={true}
+        >
+          <div className="max-w-4xl mx-auto">
+            <Card className="bg-card border-border">
+              <CardHeader>
+                <div className="flex items-start justify-between gap-4">
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2 mb-2">
+                      <Badge className={`${getDifficultyColor(project.level)} border`}>
+                        {project.level}
+                      </Badge>
+                      <Badge className={`${getPricingTierColor(project.pricing_tier)} border`}>
+                        {project.pricing_tier}
+                      </Badge>
+                      <Badge variant="secondary" className="bg-blue-600/20 text-blue-300 border-blue-600/30">
+                        {project.type}
+                      </Badge>
                     </div>
-                  ) : (
-                    <CardTitle className="text-foreground text-2xl mb-2">
-                      {project.title}
-                    </CardTitle>
-                  )}
-                </div>
-                {isAdmin && (
-                  <div className="flex gap-2">
                     {isEditing ? (
-                      <>
-                        <Button onClick={handleSave} size="sm">
-                          <Save className="h-4 w-4 mr-1" />
-                          Save
-                        </Button>
-                        <Button onClick={handleCancel} variant="outline" size="sm">
-                          <X className="h-4 w-4 mr-1" />
-                          Cancel
-                        </Button>
-                      </>
+                      <div className="space-y-4">
+                        <div>
+                          <Label htmlFor="title">Project Title</Label>
+                          <Input
+                            id="title"
+                            value={editedProject?.title || ''}
+                            onChange={(e) => setEditedProject(prev => prev ? {...prev, title: e.target.value} : null)}
+                            className="mt-1"
+                          />
+                        </div>
+                      </div>
                     ) : (
-                      <Button onClick={() => setIsEditing(true)} variant="outline" size="sm">
-                        <Edit className="h-4 w-4 mr-1" />
-                        Edit
-                      </Button>
+                      <CardTitle className="text-foreground text-2xl mb-2">
+                        {project.title}
+                      </CardTitle>
                     )}
                   </div>
-                )}
-              </div>
-            </CardHeader>
-            <CardContent className="space-y-6">
-              {/* Description */}
-              <div>
-                <h3 className="text-lg font-semibold text-foreground mb-2">Description</h3>
-                {isEditing ? (
-                  <Textarea
-                    value={editedProject?.description || ''}
-                    onChange={(e) => setEditedProject(prev => prev ? {...prev, description: e.target.value} : null)}
-                    rows={4}
-                    className="w-full"
-                  />
-                ) : (
-                  <p className="text-muted-foreground">{project.description}</p>
-                )}
-              </div>
-
-              {/* Technologies */}
-              <div>
-                <h3 className="text-lg font-semibold text-foreground mb-2">Technologies</h3>
-                {isEditing ? (
-                  <div>
-                    <Input
-                      value={editedProject?.technologies.join(', ') || ''}
-                      onChange={(e) => handleArrayChange(e.target.value, 'technologies')}
-                      placeholder="Enter technologies separated by commas"
-                    />
-                    <p className="text-sm text-muted-foreground mt-1">Separate technologies with commas</p>
-                  </div>
-                ) : (
-                  <div className="flex flex-wrap gap-2">
-                    {project.technologies.map((tech, index) => (
-                      <Badge key={index} variant="secondary" className="bg-muted text-muted-foreground">
-                        {tech}
-                      </Badge>
-                    ))}
-                  </div>
-                )}
-              </div>
-
-              {/* Key Features */}
-              <div>
-                <h3 className="text-lg font-semibold text-foreground mb-2">Key Features</h3>
-                {isEditing ? (
-                  <div>
-                    <Input
-                      value={editedProject?.key_features.join(', ') || ''}
-                      onChange={(e) => handleArrayChange(e.target.value, 'key_features')}
-                      placeholder="Enter key features separated by commas"
-                    />
-                    <p className="text-sm text-muted-foreground mt-1">Separate features with commas</p>
-                  </div>
-                ) : (
-                  <ul className="list-disc list-inside space-y-1 text-muted-foreground">
-                    {project.key_features.map((feature, index) => (
-                      <li key={index}>{feature}</li>
-                    ))}
-                  </ul>
-                )}
-              </div>
-
-              {/* Duration and Type */}
-              <div className="grid md:grid-cols-2 gap-4">
-                <div>
-                  <h3 className="text-lg font-semibold text-foreground mb-2">Duration</h3>
-                  {isEditing ? (
-                    <Input
-                      value={editedProject?.duration || ''}
-                      onChange={(e) => setEditedProject(prev => prev ? {...prev, duration: e.target.value} : null)}
-                    />
-                  ) : (
-                    <p className="text-muted-foreground">{project.duration}</p>
+                  {isAdmin && (
+                    <div className="flex gap-2">
+                      {isEditing ? (
+                        <>
+                          <Button onClick={handleSave} size="sm">
+                            <Save className="h-4 w-4 mr-1" />
+                            Save
+                          </Button>
+                          <Button onClick={handleCancel} variant="outline" size="sm">
+                            <X className="h-4 w-4 mr-1" />
+                            Cancel
+                          </Button>
+                        </>
+                      ) : (
+                        <Button onClick={() => setIsEditing(true)} variant="outline" size="sm">
+                          <Edit className="h-4 w-4 mr-1" />
+                          Edit
+                        </Button>
+                      )}
+                    </div>
                   )}
                 </div>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                {/* Description */}
                 <div>
-                  <h3 className="text-lg font-semibold text-foreground mb-2">Project Type</h3>
+                  <h3 className="text-lg font-semibold text-foreground mb-2">Description</h3>
                   {isEditing ? (
-                    <Select
-                      value={editedProject?.type || ''}
-                      onValueChange={(value) => setEditedProject(prev => prev ? {...prev, type: value} : null)}
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select project type" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="Java">Java</SelectItem>
-                        <SelectItem value="Spring Boot">Spring Boot</SelectItem>
-                        <SelectItem value="ReactJS">ReactJS</SelectItem>
-                        <SelectItem value="Full-Stack">Full-Stack</SelectItem>
-                        <SelectItem value="Database">Database</SelectItem>
-                      </SelectContent>
-                    </Select>
+                    <Textarea
+                      value={editedProject?.description || ''}
+                      onChange={(e) => setEditedProject(prev => prev ? {...prev, description: e.target.value} : null)}
+                      rows={4}
+                      className="w-full"
+                    />
                   ) : (
-                    <p className="text-muted-foreground">{project.type}</p>
+                    <p className="text-muted-foreground">{project.description}</p>
                   )}
                 </div>
-              </div>
 
-              {/* Level */}
-              <div>
-                <h3 className="text-lg font-semibold text-foreground mb-2">Difficulty Level</h3>
-                {isEditing ? (
-                  <Select
-                    value={editedProject?.level || ''}
-                    onValueChange={(value) => setEditedProject(prev => prev ? {...prev, level: value} : null)}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select difficulty level" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="Explorer">Explorer</SelectItem>
-                      <SelectItem value="Builder">Builder</SelectItem>
-                      <SelectItem value="Innovator">Innovator</SelectItem>
-                    </SelectContent>
-                  </Select>
-                ) : (
-                  <p className="text-muted-foreground">{project.level}</p>
-                )}
-              </div>
-
-              {/* GitHub Link */}
-              {(project.github_url || isEditing) && (
+                {/* Technologies */}
                 <div>
-                  <h3 className="text-lg font-semibold text-foreground mb-2">GitHub Repository</h3>
+                  <h3 className="text-lg font-semibold text-foreground mb-2">Technologies</h3>
                   {isEditing ? (
-                    <Input
-                      value={editedProject?.github_url || ''}
-                      onChange={(e) => setEditedProject(prev => prev ? {...prev, github_url: e.target.value} : null)}
-                      placeholder="https://github.com/username/repository"
-                    />
-                  ) : project.github_url ? (
-                    <a
-                      href={project.github_url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="inline-flex items-center text-blue-400 hover:text-blue-300 transition-colors"
-                    >
-                      <ExternalLink className="h-4 w-4 mr-1" />
-                      View on GitHub
-                    </a>
-                  ) : null}
+                    <div>
+                      <Input
+                        value={editedProject?.technologies.join(', ') || ''}
+                        onChange={(e) => handleArrayChange(e.target.value, 'technologies')}
+                        placeholder="Enter technologies separated by commas"
+                      />
+                      <p className="text-sm text-muted-foreground mt-1">Separate technologies with commas</p>
+                    </div>
+                  ) : (
+                    <div className="flex flex-wrap gap-2">
+                      {project.technologies.map((tech, index) => (
+                        <Badge key={index} variant="secondary" className="bg-muted text-muted-foreground">
+                          {tech}
+                        </Badge>
+                      ))}
+                    </div>
+                  )}
                 </div>
-              )}
-            </CardContent>
-          </Card>
-        </div>
+
+                {/* Key Features */}
+                <div>
+                  <h3 className="text-lg font-semibold text-foreground mb-2">Key Features</h3>
+                  {isEditing ? (
+                    <div>
+                      <Input
+                        value={editedProject?.key_features.join(', ') || ''}
+                        onChange={(e) => handleArrayChange(e.target.value, 'key_features')}
+                        placeholder="Enter key features separated by commas"
+                      />
+                      <p className="text-sm text-muted-foreground mt-1">Separate features with commas</p>
+                    </div>
+                  ) : (
+                    <ul className="list-disc list-inside space-y-1 text-muted-foreground">
+                      {project.key_features.map((feature, index) => (
+                        <li key={index}>{feature}</li>
+                      ))}
+                    </ul>
+                  )}
+                </div>
+
+                {/* Duration and Type */}
+                <div className="grid md:grid-cols-2 gap-4">
+                  <div>
+                    <h3 className="text-lg font-semibold text-foreground mb-2">Duration</h3>
+                    {isEditing ? (
+                      <Input
+                        value={editedProject?.duration || ''}
+                        onChange={(e) => setEditedProject(prev => prev ? {...prev, duration: e.target.value} : null)}
+                      />
+                    ) : (
+                      <p className="text-muted-foreground">{project.duration}</p>
+                    )}
+                  </div>
+                  <div>
+                    <h3 className="text-lg font-semibold text-foreground mb-2">Project Type</h3>
+                    {isEditing ? (
+                      <Select
+                        value={editedProject?.type || ''}
+                        onValueChange={(value) => setEditedProject(prev => prev ? {...prev, type: value} : null)}
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select project type" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="Java">Java</SelectItem>
+                          <SelectItem value="Spring Boot">Spring Boot</SelectItem>
+                          <SelectItem value="ReactJS">ReactJS</SelectItem>
+                          <SelectItem value="Full-Stack">Full-Stack</SelectItem>
+                          <SelectItem value="Database">Database</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    ) : (
+                      <p className="text-muted-foreground">{project.type}</p>
+                    )}
+                  </div>
+                </div>
+
+                {/* Level and Pricing Tier */}
+                <div className="grid md:grid-cols-2 gap-4">
+                  <div>
+                    <h3 className="text-lg font-semibold text-foreground mb-2">Difficulty Level</h3>
+                    {isEditing ? (
+                      <Select
+                        value={editedProject?.level || ''}
+                        onValueChange={(value) => setEditedProject(prev => prev ? {...prev, level: value} : null)}
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select difficulty level" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="Explorer">Explorer</SelectItem>
+                          <SelectItem value="Builder">Builder</SelectItem>
+                          <SelectItem value="Innovator">Innovator</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    ) : (
+                      <p className="text-muted-foreground">{project.level}</p>
+                    )}
+                  </div>
+                  <div>
+                    <h3 className="text-lg font-semibold text-foreground mb-2">Pricing Tier</h3>
+                    {isEditing ? (
+                      <Select
+                        value={editedProject?.pricing_tier || ''}
+                        onValueChange={(value) => setEditedProject(prev => prev ? {...prev, pricing_tier: value} : null)}
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select pricing tier" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="Explorer">Explorer</SelectItem>
+                          <SelectItem value="Voyager">Voyager</SelectItem>
+                          <SelectItem value="Innovator">Innovator</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    ) : (
+                      <p className="text-muted-foreground">{project.pricing_tier}</p>
+                    )}
+                  </div>
+                </div>
+
+                {/* GitHub Link */}
+                {(project.github_url || isEditing) && (
+                  <div>
+                    <h3 className="text-lg font-semibold text-foreground mb-2">GitHub Repository</h3>
+                    {isEditing ? (
+                      <Input
+                        value={editedProject?.github_url || ''}
+                        onChange={(e) => setEditedProject(prev => prev ? {...prev, github_url: e.target.value} : null)}
+                        placeholder="https://github.com/username/repository"
+                      />
+                    ) : project.github_url ? (
+                      <a
+                        href={project.github_url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center text-blue-400 hover:text-blue-300 transition-colors"
+                      >
+                        <ExternalLink className="h-4 w-4 mr-1" />
+                        View on GitHub
+                      </a>
+                    ) : null}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </div>
+        </ProtectedContent>
       </div>
 
       <Footer />

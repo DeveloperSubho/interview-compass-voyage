@@ -60,7 +60,14 @@ const CodingQuestionDetail = () => {
         .single();
 
       if (error) throw error;
-      setQuestion(data);
+      
+      // Map solution to explanation for backward compatibility
+      const questionData = {
+        ...data,
+        explanation: data.solution || data.explanation || ''
+      };
+      
+      setQuestion(questionData);
     } catch (error) {
       console.error('Error fetching question:', error);
       toast({
@@ -150,6 +157,7 @@ const CodingQuestionDetail = () => {
         <ProtectedContent 
           requiredTier={question.pricing_tier}
           onSignInClick={handleSignInClick}
+          showUpgradeMessage={true}
         >
           <div className="max-w-4xl mx-auto space-y-8">
             {/* Question Header */}

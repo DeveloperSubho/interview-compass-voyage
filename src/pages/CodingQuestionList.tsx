@@ -3,9 +3,9 @@ import { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { ArrowLeft, Plus, Upload, Eye, EyeOff, Filter, Search } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { ArrowLeft, Code, ExternalLink, Github, Play, Search, Filter, Plus, Trash2, Edit, Lock } from "lucide-react";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import CodingQuestionModal from "@/components/CodingQuestionModal";
@@ -15,21 +15,13 @@ import { useNavigate, useParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
-import {
-  Pagination,
-  PaginationContent,
-  PaginationEllipsis,
-  PaginationItem,
-  PaginationLink,
-  PaginationNext,
-  PaginationPrevious,
-} from "@/components/ui/pagination";
 
 interface CodingQuestion {
   id: string;
   title: string;
   slug: string;
   description: string;
+  explanation: string;  // Changed from solution to explanation
   difficulty: string;
   status: string;
   category: string;
@@ -50,21 +42,15 @@ const CodingQuestionList = () => {
   const [questions, setQuestions] = useState<CodingQuestion[]>([]);
   const [filteredQuestions, setFilteredQuestions] = useState<CodingQuestion[]>([]);
   const [loading, setLoading] = useState(true);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isBulkImportModalOpen, setIsBulkImportModalOpen] = useState(false);
+  const [editingQuestion, setEditingQuestion] = useState<CodingQuestion | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [difficultyFilter, setDifficultyFilter] = useState("all");
-  const [statusFilter, setStatusFilter] = useState("all");
-  const [tagsFilter, setTagsFilter] = useState("all");
   const [pricingTierFilter, setPricingTierFilter] = useState("all");
-  const [currentPage, setCurrentPage] = useState(1);
-  const [availableTags, setAvailableTags] = useState<string[]>([]);
-  const [isQuestionModalOpen, setIsQuestionModalOpen] = useState(false);
-  const [isBulkImportOpen, setIsBulkImportOpen] = useState(false);
-  const [editingQuestion, setEditingQuestion] = useState<CodingQuestion | null>(null);
-  const [selectedQuestions, setSelectedQuestions] = useState<string[]>([]);
-  const questionsPerPage = 10;
+  const [showLockedQuestions, setShowLockedQuestions] = useState(true);
 
   const handleSignInClick = () => {
-    // This would be handled by parent component or context
     toast({
       title: "Sign in required",
       description: "Please sign in to access this content",
@@ -78,32 +64,31 @@ const CodingQuestionList = () => {
   }, [category]);
 
   useEffect(() => {
-    applyFilters();
-  }, [questions, searchTerm, difficultyFilter, statusFilter, tagsFilter, pricingTierFilter]);
+    filterQuestions();
+  }, [questions, searchTerm, difficultyFilter, pricingTierFilter, showLockedQuestions]);
 
   const fetchQuestions = async () => {
     try {
-      const categoryName = category?.replace(/-/g, ' ') || '';
       const { data, error } = await supabase
         .from('coding_questions')
         .select('*')
-        .ilike('category', `%${categoryName}%`)
+        .eq('category', category)
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      setQuestions(data || []);
       
-      // Extract unique tags
-      const tags = new Set<string>();
-      data?.forEach(question => {
-        question.tags.forEach(tag => tags.add(tag));
-      });
-      setAvailableTags(Array.from(tags).sort());
+      // Map solution to explanation for backward compatibility
+      const questionsData = data.map(question => ({
+        ...question,
+        explanation: question.solution || question.explanation || ''
+      }));
+      
+      setQuestions(questionsData || []);
     } catch (error) {
       console.error('Error fetching questions:', error);
       toast({
         title: "Error",
-        description: "Failed to load coding questions",
+        description: "Failed to load questions",
         variant: "destructive",
       });
     } finally {
@@ -111,94 +96,26 @@ const CodingQuestionList = () => {
     }
   };
 
-  const applyFilters = () => {
-    let filtered = questions;
-
-    // Search filter
-    if (searchTerm) {
-      filtered = filtered.filter(question =>
-        question.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        question.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        question.tags.some(tag => tag.toLowerCase().includes(searchTerm.toLowerCase()))
-      );
-    }
-
-    // Difficulty filter
-    if (difficultyFilter !== "all") {
-      filtered = filtered.filter(question => question.difficulty === difficultyFilter);
-    }
-
-    // Status filter
-    if (statusFilter !== "all") {
-      filtered = filtered.filter(question => question.status === statusFilter);
-    }
-
-    // Tags filter
-    if (tagsFilter !== "all") {
-      filtered = filtered.filter(question => question.tags.includes(tagsFilter));
-    }
-
-    // Pricing tier filter
-    if (pricingTierFilter !== "all") {
-      filtered = filtered.filter(question => question.pricing_tier === pricingTierFilter);
-    }
+  const filterQuestions = () => {
+    let filtered = questions.filter(question => {
+      const matchesSearch = question.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                          question.tags.some(tag => tag.toLowerCase().includes(searchTerm.toLowerCase()));
+      const matchesDifficulty = difficultyFilter === "all" || question.difficulty === difficultyFilter;
+      const matchesPricingTier = pricingTierFilter === "all" || question.pricing_tier === pricingTierFilter;
+      
+      // Check if user has access to this question
+      const hasAccessToQuestion = hasAccess(question.pricing_tier);
+      
+      // If showLockedQuestions is false, only show questions user has access to
+      const shouldShow = showLockedQuestions || hasAccessToQuestion;
+      
+      return matchesSearch && matchesDifficulty && matchesPricingTier && shouldShow;
+    });
 
     setFilteredQuestions(filtered);
-    setCurrentPage(1);
   };
 
-  const getDifficultyColor = (difficulty: string) => {
-    switch (difficulty) {
-      case "Easy":
-        return "bg-green-500/20 text-green-300 border-green-500/30";
-      case "Medium":
-        return "bg-yellow-500/20 text-yellow-300 border-yellow-500/30";
-      case "Hard":
-        return "bg-red-500/20 text-red-300 border-red-500/30";
-      default:
-        return "bg-gray-500/20 text-gray-300 border-gray-500/30";
-    }
-  };
-
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case "Solved":
-        return "bg-green-500/20 text-green-300 border-green-500/30";
-      case "In Progress":
-        return "bg-yellow-500/20 text-yellow-300 border-yellow-500/30";
-      case "Unsolved":
-        return "bg-gray-500/20 text-gray-300 border-gray-500/30";
-      default:
-        return "bg-gray-500/20 text-gray-300 border-gray-500/30";
-    }
-  };
-
-  const getPricingTierColor = (tier: string) => {
-    switch (tier) {
-      case "Explorer":
-        return "bg-blue-500/20 text-blue-300 border-blue-500/30";
-      case "Voyager":
-        return "bg-purple-500/20 text-purple-300 border-purple-500/30";
-      case "Innovator":
-        return "bg-orange-500/20 text-orange-300 border-orange-500/30";
-      default:
-        return "bg-gray-500/20 text-gray-300 border-gray-500/30";
-    }
-  };
-
-  const handleAddQuestion = () => {
-    setEditingQuestion(null);
-    setIsQuestionModalOpen(true);
-  };
-
-  const handleEditQuestion = (question: CodingQuestion, e: React.MouseEvent) => {
-    e.stopPropagation();
-    setEditingQuestion(question);
-    setIsQuestionModalOpen(true);
-  };
-
-  const handleDeleteQuestion = async (questionId: string, e: React.MouseEvent) => {
-    e.stopPropagation();
+  const handleDeleteQuestion = async (questionId: string) => {
     if (!confirm('Are you sure you want to delete this question?')) return;
 
     try {
@@ -224,72 +141,40 @@ const CodingQuestionList = () => {
     }
   };
 
-  const handleBulkDelete = async () => {
-    if (selectedQuestions.length === 0) {
-      toast({
-        title: "Error",
-        description: "Please select questions to delete",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    if (!confirm(`Are you sure you want to delete ${selectedQuestions.length} questions?`)) return;
-
-    try {
-      const { error } = await supabase
-        .from('coding_questions')
-        .delete()
-        .in('id', selectedQuestions);
-
-      if (error) throw error;
-
-      setQuestions(questions.filter(q => !selectedQuestions.includes(q.id)));
-      setSelectedQuestions([]);
-      toast({
-        title: "Success",
-        description: `${selectedQuestions.length} questions deleted successfully`,
-      });
-    } catch (error) {
-      console.error('Error deleting questions:', error);
-      toast({
-        title: "Error",
-        description: "Failed to delete questions",
-        variant: "destructive",
-      });
-    }
-  };
-
-  const toggleQuestionSelection = (questionId: string) => {
-    setSelectedQuestions(prev => 
-      prev.includes(questionId) 
-        ? prev.filter(id => id !== questionId)
-        : [...prev, questionId]
-    );
-  };
-
-  const toggleSelectAll = () => {
-    if (selectedQuestions.length === currentQuestions.length) {
-      setSelectedQuestions([]);
-    } else {
-      setSelectedQuestions(currentQuestions.map(q => q.id));
-    }
-  };
-
   const handleQuestionClick = (question: CodingQuestion) => {
     // Check if user has access to this question
     if (!hasAccess(question.pricing_tier)) {
-      handleSignInClick();
+      // Don't navigate, just show a message (handled by ProtectedContent)
       return;
     }
     navigate(`/coding/${category}/${question.slug}`);
   };
 
-  // Pagination logic
-  const totalPages = Math.ceil(filteredQuestions.length / questionsPerPage);
-  const startIndex = (currentPage - 1) * questionsPerPage;
-  const endIndex = startIndex + questionsPerPage;
-  const currentQuestions = filteredQuestions.slice(startIndex, endIndex);
+  const getDifficultyColor = (difficulty: string) => {
+    switch (difficulty) {
+      case "Easy":
+        return "bg-green-500/20 text-green-300 border-green-500/30";
+      case "Medium":
+        return "bg-yellow-500/20 text-yellow-300 border-yellow-500/30";
+      case "Hard":
+        return "bg-red-500/20 text-red-300 border-red-500/30";
+      default:
+        return "bg-gray-500/20 text-gray-300 border-gray-500/30";
+    }
+  };
+
+  const getPricingTierColor = (tier: string) => {
+    switch (tier) {
+      case "Explorer":
+        return "bg-blue-500/20 text-blue-300 border-blue-500/30";
+      case "Voyager":
+        return "bg-purple-500/20 text-purple-300 border-purple-500/30";
+      case "Innovator":
+        return "bg-orange-500/20 text-orange-300 border-orange-500/30";
+      default:
+        return "bg-gray-500/20 text-gray-300 border-gray-500/30";
+    }
+  };
 
   if (loading) {
     return (
@@ -321,348 +206,250 @@ const CodingQuestionList = () => {
             Back to Categories
           </Button>
           
-          <div className="flex justify-between items-center mb-8">
-            <div>
-              <h1 className="text-4xl md:text-5xl font-bold mb-4 bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent capitalize">
-                {category?.replace(/-/g, ' ')} Questions
-              </h1>
-              <p className="text-muted-foreground text-lg max-w-2xl">
-                Practice coding problems with detailed explanations and solutions.
-              </p>
-            </div>
-            {isAdmin && (
-              <div className="flex gap-2">
-                <Button onClick={handleAddQuestion}>
-                  <Plus className="h-4 w-4 mr-2" />
-                  Add Question
-                </Button>
-                <Button onClick={() => setIsBulkImportOpen(true)} variant="outline">
-                  <Plus className="h-4 w-4 mr-2" />
-                  Bulk Import
-                </Button>
-                {selectedQuestions.length > 0 && (
-                  <Button onClick={handleBulkDelete} variant="destructive">
-                    <Trash2 className="h-4 w-4 mr-2" />
-                    Delete Selected ({selectedQuestions.length})
-                  </Button>
-                )}
-              </div>
-            )}
+          <div className="text-center mb-8">
+            <h1 className="text-4xl md:text-5xl font-bold mb-4 bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent capitalize">
+              {category?.replace(/-/g, ' ')} Coding Questions
+            </h1>
+            <p className="text-muted-foreground text-lg max-w-2xl mx-auto">
+              Practice coding problems and improve your problem-solving skills.
+            </p>
           </div>
         </div>
 
+        {/* Admin Controls */}
+        {isAdmin && (
+          <div className="flex gap-2 mb-6">
+            <Button onClick={() => setIsModalOpen(true)}>
+              <Plus className="h-4 w-4 mr-2" />
+              Add Question
+            </Button>
+            <Button variant="outline" onClick={() => setIsBulkImportModalOpen(true)}>
+              <Upload className="h-4 w-4 mr-2" />
+              Bulk Import
+            </Button>
+          </div>
+        )}
+
         {/* Filters */}
-        <div className="max-w-6xl mx-auto mb-8">
-          <Card className="bg-card border-border">
-            <CardHeader>
-              <CardTitle className="text-lg flex items-center gap-2">
-                <Filter className="h-5 w-5" />
-                Filters & Search
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="grid md:grid-cols-2 lg:grid-cols-6 gap-4">
-                <div className="lg:col-span-2">
-                  <div className="relative">
-                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                    <Input
-                      placeholder="Search questions..."
-                      value={searchTerm}
-                      onChange={(e) => setSearchTerm(e.target.value)}
-                      className="pl-10"
-                    />
-                  </div>
-                </div>
-                <Select value={difficultyFilter} onValueChange={setDifficultyFilter}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Difficulty" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">All Difficulties</SelectItem>
-                    <SelectItem value="Easy">Easy</SelectItem>
-                    <SelectItem value="Medium">Medium</SelectItem>
-                    <SelectItem value="Hard">Hard</SelectItem>
-                  </SelectContent>
-                </Select>
-                <Select value={pricingTierFilter} onValueChange={setPricingTierFilter}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Pricing Tier" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">All Tiers</SelectItem>
-                    <SelectItem value="Explorer">Explorer</SelectItem>
-                    <SelectItem value="Voyager">Voyager</SelectItem>
-                    <SelectItem value="Innovator">Innovator</SelectItem>
-                  </SelectContent>
-                </Select>
-                <Select value={statusFilter} onValueChange={setStatusFilter}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Status" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">All Status</SelectItem>
-                    <SelectItem value="Solved">Solved</SelectItem>
-                    <SelectItem value="In Progress">In Progress</SelectItem>
-                    <SelectItem value="Unsolved">Unsolved</SelectItem>
-                  </SelectContent>
-                </Select>
-                <Select value={tagsFilter} onValueChange={setTagsFilter}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Tags" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">All Tags</SelectItem>
-                    {availableTags.map(tag => (
-                      <SelectItem key={tag} value={tag}>{tag}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            </CardContent>
-          </Card>
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
+            <Input
+              placeholder="Search questions..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="pl-10"
+            />
+          </div>
+          
+          <Select value={difficultyFilter} onValueChange={setDifficultyFilter}>
+            <SelectTrigger>
+              <SelectValue placeholder="Filter by difficulty" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Difficulties</SelectItem>
+              <SelectItem value="Easy">Easy</SelectItem>
+              <SelectItem value="Medium">Medium</SelectItem>
+              <SelectItem value="Hard">Hard</SelectItem>
+            </SelectContent>
+          </Select>
+
+          <Select value={pricingTierFilter} onValueChange={setPricingTierFilter}>
+            <SelectTrigger>
+              <SelectValue placeholder="Filter by tier" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Tiers</SelectItem>
+              <SelectItem value="Explorer">Explorer</SelectItem>
+              <SelectItem value="Voyager">Voyager</SelectItem>
+              <SelectItem value="Innovator">Innovator</SelectItem>
+            </SelectContent>
+          </Select>
+
+          <Button
+            variant="outline"
+            onClick={() => setShowLockedQuestions(!showLockedQuestions)}
+            className="flex items-center gap-2"
+          >
+            {showLockedQuestions ? <Eye className="h-4 w-4" /> : <EyeOff className="h-4 w-4" />}
+            {showLockedQuestions ? "Hide Locked" : "Show Locked"}
+          </Button>
         </div>
 
+        {/* Questions List */}
         <div className="max-w-6xl mx-auto">
           {filteredQuestions.length === 0 ? (
             <Card className="bg-card border-border text-center py-12">
               <CardContent>
-                <Code className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
                 <h3 className="text-lg font-semibold text-muted-foreground mb-2">
                   No Questions Found
                 </h3>
-                <p className="text-muted-foreground">
+                <p className="text-muted-foreground mb-4">
                   {questions.length === 0 
-                    ? "No questions available in this category yet."
-                    : "No questions match your current filters."}
+                    ? `No coding questions available for ${category?.replace(/-/g, ' ')} yet.`
+                    : "Try adjusting your filters to see more questions."
+                  }
                 </p>
+                {isAdmin && questions.length === 0 && (
+                  <Button onClick={() => setIsModalOpen(true)}>
+                    <Plus className="h-4 w-4 mr-2" />
+                    Add First Question
+                  </Button>
+                )}
               </CardContent>
             </Card>
           ) : (
-            <>
-              {isAdmin && (
-                <div className="mb-4 flex items-center gap-2">
-                  <input
-                    type="checkbox"
-                    checked={selectedQuestions.length === currentQuestions.length && currentQuestions.length > 0}
-                    onChange={toggleSelectAll}
-                    className="rounded"
-                  />
-                  <span className="text-sm text-muted-foreground">
-                    Select all ({currentQuestions.length})
-                  </span>
-                </div>
-              )}
-              
-              <div className="space-y-4 mb-8">
-                {currentQuestions.map((question) => {
-                  const requiresUpgrade = !hasAccess(question.pricing_tier);
-                  
-                  return (
-                    <Card 
-                      key={question.id} 
-                      className={`bg-card border-border hover:bg-accent/70 transition-all duration-300 cursor-pointer ${requiresUpgrade ? 'opacity-75' : ''}`}
-                      onClick={() => handleQuestionClick(question)}
-                    >
-                      <CardHeader>
-                        <div className="flex items-start justify-between gap-4">
-                          <div className="flex items-start gap-4 flex-1">
-                            {isAdmin && (
-                              <input
-                                type="checkbox"
-                                checked={selectedQuestions.includes(question.id)}
-                                onChange={(e) => {
-                                  e.stopPropagation();
-                                  toggleQuestionSelection(question.id);
-                                }}
-                                className="mt-1 rounded"
-                              />
+            <div className="grid gap-6">
+              {filteredQuestions.map((question) => {
+                const requiresUpgrade = !hasAccess(question.pricing_tier);
+                
+                return (
+                  <Card 
+                    key={question.id} 
+                    className={`bg-card border-border hover:bg-accent/70 transition-all duration-300 ${requiresUpgrade ? 'opacity-75' : 'cursor-pointer'}`}
+                  >
+                    <CardHeader>
+                      <div className="flex items-start justify-between gap-4">
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2 mb-2 flex-wrap">
+                            <Badge className={`${getDifficultyColor(question.difficulty)} border`}>
+                              {question.difficulty}
+                            </Badge>
+                            <Badge className={`${getPricingTierColor(question.pricing_tier)} border`}>
+                              {question.pricing_tier}
+                            </Badge>
+                            {question.is_paid && (
+                              <Badge className="bg-yellow-500/20 text-yellow-300 border-yellow-500/30">
+                                Premium
+                              </Badge>
                             )}
-                            <div className="flex-1">
-                              <div className="flex items-center gap-2 mb-2 flex-wrap">
-                                <Badge className={`${getDifficultyColor(question.difficulty)} border`}>
-                                  {question.difficulty}
-                                </Badge>
-                                <Badge className={`${getPricingTierColor(question.pricing_tier)} border`}>
-                                  {question.pricing_tier}
-                                </Badge>
-                                <Badge className={`${getStatusColor(question.status)} border`}>
-                                  {question.status}
-                                </Badge>
-                                {question.is_paid && (
-                                  <Badge className="bg-yellow-500/20 text-yellow-300 border-yellow-500/30">
-                                    Premium
-                                  </Badge>
-                                )}
-                                {requiresUpgrade && (
-                                  <Badge className="bg-red-500/20 text-red-300 border-red-500/30">
-                                    <Lock className="h-3 w-3 mr-1" />
-                                    Locked
-                                  </Badge>
-                                )}
-                              </div>
-                              <CardTitle className="text-foreground text-lg hover:text-blue-400 transition-colors mb-2">
+                          </div>
+                          
+                          <ProtectedContent
+                            requiredTier={question.pricing_tier}
+                            onSignInClick={handleSignInClick}
+                            showUpgradeMessage={true}
+                          >
+                            <div onClick={() => handleQuestionClick(question)}>
+                              <CardTitle className="text-foreground text-xl hover:text-blue-400 transition-colors mb-2 cursor-pointer">
                                 {question.title}
                               </CardTitle>
-                              <CardDescription className="text-muted-foreground line-clamp-2">
-                                {question.description}
+                              <CardDescription className="text-muted-foreground mb-4">
+                                {question.description.substring(0, 150)}
+                                {question.description.length > 150 && "..."}
                               </CardDescription>
                             </div>
-                          </div>
-                          <div className="flex items-center gap-2">
-                            {question.github_link && (
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  window.open(question.github_link!, '_blank');
-                                }}
-                              >
-                                <Github className="h-4 w-4" />
-                              </Button>
-                            )}
-                            {question.video_link && (
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  window.open(question.video_link!, '_blank');
-                                }}
-                              >
-                                <Play className="h-4 w-4" />
-                              </Button>
-                            )}
-                            {isAdmin && (
-                              <>
-                                <Button
-                                  variant="ghost"
-                                  size="sm"
-                                  onClick={(e) => handleEditQuestion(question, e)}
-                                >
-                                  <Edit className="h-4 w-4" />
-                                </Button>
-                                <Button
-                                  variant="destructive"
-                                  size="sm"
-                                  onClick={(e) => handleDeleteQuestion(question.id, e)}
-                                >
-                                  <Trash2 className="h-4 w-4" />
-                                </Button>
-                              </>
-                            )}
-                          </div>
+                          </ProtectedContent>
                         </div>
-                      </CardHeader>
-                      <CardContent>
-                        <div className="flex flex-wrap gap-2">
-                          {question.tags.map((tag, index) => (
-                            <Badge 
-                              key={index} 
-                              variant="secondary" 
-                              className="bg-muted text-muted-foreground text-xs"
+                        
+                        {isAdmin && (
+                          <div className="flex gap-2">
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setEditingQuestion(question);
+                                setIsModalOpen(true);
+                              }}
                             >
-                              {tag}
-                            </Badge>
-                          ))}
-                        </div>
-                      </CardContent>
-                    </Card>
-                  );
-                })}
-              </div>
-
-              {/* Pagination */}
-              {totalPages > 1 && (
-                <div className="flex justify-center">
-                  <Pagination>
-                    <PaginationContent>
-                      <PaginationItem>
-                        <PaginationPrevious 
-                          onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
-                          className={currentPage === 1 ? "pointer-events-none opacity-50" : "cursor-pointer"}
-                        />
-                      </PaginationItem>
-                      
-                      {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
-                        const pageNumber = i + 1;
-                        return (
-                          <PaginationItem key={pageNumber}>
-                            <PaginationLink
-                              onClick={() => setCurrentPage(pageNumber)}
-                              isActive={currentPage === pageNumber}
-                              className="cursor-pointer"
+                              Edit
+                            </Button>
+                            <Button
+                              variant="destructive"
+                              size="sm"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleDeleteQuestion(question.id);
+                              }}
                             >
-                              {pageNumber}
-                            </PaginationLink>
-                          </PaginationItem>
-                        );
-                      })}
-                      
-                      {totalPages > 5 && <PaginationEllipsis />}
-                      
-                      <PaginationItem>
-                        <PaginationNext 
-                          onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
-                          className={currentPage === totalPages ? "pointer-events-none opacity-50" : "cursor-pointer"}
-                        />
-                      </PaginationItem>
-                    </PaginationContent>
-                  </Pagination>
-                </div>
-              )}
-            </>
+                              Delete
+                            </Button>
+                          </div>
+                        )}
+                      </div>
+                    </CardHeader>
+                    
+                    <CardContent>
+                      <div className="flex flex-wrap gap-2">
+                        {question.tags.map((tag, index) => (
+                          <Badge 
+                            key={index} 
+                            variant="secondary" 
+                            className="bg-muted text-muted-foreground text-xs"
+                          >
+                            {tag}
+                          </Badge>
+                        ))}
+                      </div>
+                    </CardContent>
+                  </Card>
+                );
+              })}
+            </div>
           )}
         </div>
 
         {/* Statistics */}
-        <div className="mt-16 max-w-4xl mx-auto">
-          <Card className="bg-card border-border">
-            <CardContent className="p-8">
-              <div className="grid md:grid-cols-3 gap-8 text-center">
-                <div>
-                  <div className="text-3xl font-bold text-green-400 mb-2">
-                    {questions.filter(q => q.difficulty === "Easy").length}
+        {questions.length > 0 && (
+          <div className="mt-16 max-w-6xl mx-auto">
+            <Card className="bg-card border-border">
+              <CardContent className="p-8">
+                <div className="grid md:grid-cols-4 gap-8 text-center">
+                  <div>
+                    <div className="text-3xl font-bold text-blue-400 mb-2">
+                      {filteredQuestions.length}
+                    </div>
+                    <div className="text-muted-foreground">Available Questions</div>
                   </div>
-                  <div className="text-muted-foreground">Easy Questions</div>
-                </div>
-                <div>
-                  <div className="text-3xl font-bold text-yellow-400 mb-2">
-                    {questions.filter(q => q.difficulty === "Medium").length}
+                  <div>
+                    <div className="text-3xl font-bold text-green-400 mb-2">
+                      {filteredQuestions.filter(q => q.difficulty === "Easy").length}
+                    </div>
+                    <div className="text-muted-foreground">Easy</div>
                   </div>
-                  <div className="text-muted-foreground">Medium Questions</div>
-                </div>
-                <div>
-                  <div className="text-3xl font-bold text-red-400 mb-2">
-                    {questions.filter(q => q.difficulty === "Hard").length}
+                  <div>
+                    <div className="text-3xl font-bold text-yellow-400 mb-2">
+                      {filteredQuestions.filter(q => q.difficulty === "Medium").length}
+                    </div>
+                    <div className="text-muted-foreground">Medium</div>
                   </div>
-                  <div className="text-muted-foreground">Hard Questions</div>
+                  <div>
+                    <div className="text-3xl font-bold text-red-400 mb-2">
+                      {filteredQuestions.filter(q => q.difficulty === "Hard").length}
+                    </div>
+                    <div className="text-muted-foreground">Hard</div>
+                  </div>
                 </div>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
+              </CardContent>
+            </Card>
+          </div>
+        )}
       </div>
 
       <CodingQuestionModal
-        isOpen={isQuestionModalOpen}
-        onClose={() => setIsQuestionModalOpen(false)}
+        isOpen={isModalOpen}
+        onClose={() => {
+          setIsModalOpen(false);
+          setEditingQuestion(null);
+        }}
         onSuccess={() => {
-          setIsQuestionModalOpen(false);
+          setIsModalOpen(false);
+          setEditingQuestion(null);
           fetchQuestions();
         }}
         editingQuestion={editingQuestion}
-        categoryName={category?.replace(/-/g, ' ') || ''}
+        category={category || ''}
       />
 
       <CodingBulkImportModal
-        isOpen={isBulkImportOpen}
-        onClose={() => setIsBulkImportOpen(false)}
+        isOpen={isBulkImportModalOpen}
+        onClose={() => setIsBulkImportModalOpen(false)}
         onSuccess={() => {
-          setIsBulkImportOpen(false);
+          setIsBulkImportModalOpen(false);
           fetchQuestions();
         }}
-        categoryName={category?.replace(/-/g, ' ') || ''}
+        category={category || ''}
       />
 
       <Footer />

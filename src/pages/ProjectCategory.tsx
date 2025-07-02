@@ -3,9 +3,10 @@ import { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, Plus, Trash2 } from "lucide-react";
+import { ArrowLeft, Plus, Trash2, Eye, EyeOff } from "lucide-react";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
+import ProtectedContent from "@/components/ProtectedContent";
 import { useNavigate, useParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
@@ -19,23 +20,37 @@ interface Project {
   duration: string;
   type: string;
   level: string;
+  pricing_tier: string;
   created_at: string;
 }
 
 const ProjectCategory = () => {
   const navigate = useNavigate();
   const { type } = useParams();
-  const { user, isAdmin } = useAuth();
+  const { user, isAdmin, hasAccess } = useAuth();
   const { toast } = useToast();
   const [projects, setProjects] = useState<Project[]>([]);
+  const [filteredProjects, setFilteredProjects] = useState<Project[]>([]);
   const [loading, setLoading] = useState(true);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+  const [showLockedProjects, setShowLockedProjects] = useState(true);
+
+  const handleSignInClick = () => {
+    toast({
+      title: "Sign in required",
+      description: "Please sign in to access this content",
+    });
+  };
 
   useEffect(() => {
     if (type) {
       fetchProjects();
     }
   }, [type]);
+
+  useEffect(() => {
+    filterProjects();
+  }, [projects, showLockedProjects]);
 
   const fetchProjects = async () => {
     try {
@@ -57,6 +72,16 @@ const ProjectCategory = () => {
     } finally {
       setLoading(false);
     }
+  };
+
+  const filterProjects = () => {
+    let filtered = projects;
+    
+    if (!showLockedProjects) {
+      filtered = projects.filter(project => hasAccess(project.pricing_tier));
+    }
+    
+    setFilteredProjects(filtered);
   };
 
   const handleDeleteProject = async (projectId: string) => {
@@ -85,6 +110,15 @@ const ProjectCategory = () => {
     }
   };
 
+  const handleProjectClick = (project: Project) => {
+    // Check if user has access to this project
+    if (!hasAccess(project.pricing_tier)) {
+      // Don't navigate, just show a message (handled by ProtectedContent)
+      return;
+    }
+    navigate(`/projects/${type}/${project.id}`);
+  };
+
   const getDifficultyColor = (level: string) => {
     switch (level) {
       case "Explorer":
@@ -93,6 +127,19 @@ const ProjectCategory = () => {
         return "bg-yellow-500/20 text-yellow-300 border-yellow-500/30";
       case "Innovator":
         return "bg-red-500/20 text-red-300 border-red-500/30";
+      default:
+        return "bg-gray-500/20 text-gray-300 border-gray-500/30";
+    }
+  };
+
+  const getPricingTierColor = (tier: string) => {
+    switch (tier) {
+      case "Explorer":
+        return "bg-blue-500/20 text-blue-300 border-blue-500/30";
+      case "Voyager":
+        return "bg-purple-500/20 text-purple-300 border-purple-500/30";
+      case "Innovator":
+        return "bg-orange-500/20 text-orange-300 border-orange-500/30";
       default:
         return "bg-gray-500/20 text-gray-300 border-gray-500/30";
     }
@@ -137,26 +184,39 @@ const ProjectCategory = () => {
                 Discover and work on {type?.toLowerCase()} projects to enhance your skills.
               </p>
             </div>
-            {isAdmin && (
-              <Button onClick={() => setIsAddModalOpen(true)} className="ml-4">
-                <Plus className="h-4 w-4 mr-2" />
-                Add Project
+            <div className="flex gap-2">
+              {isAdmin && (
+                <Button onClick={() => setIsAddModalOpen(true)}>
+                  <Plus className="h-4 w-4 mr-2" />
+                  Add Project
+                </Button>
+              )}
+              <Button
+                variant="outline"
+                onClick={() => setShowLockedProjects(!showLockedProjects)}
+                className="flex items-center gap-2"
+              >
+                {showLockedProjects ? <Eye className="h-4 w-4" /> : <EyeOff className="h-4 w-4" />}
+                {showLockedProjects ? "Hide Locked" : "Show Locked"}
               </Button>
-            )}
+            </div>
           </div>
         </div>
 
         <div className="max-w-6xl mx-auto">
-          {projects.length === 0 ? (
+          {filteredProjects.length === 0 ? (
             <Card className="bg-card border-border text-center py-12">
               <CardContent>
                 <h3 className="text-lg font-semibold text-muted-foreground mb-2">
                   No Projects Found
                 </h3>
                 <p className="text-muted-foreground mb-4">
-                  There are no {type?.toLowerCase()} projects available yet.
+                  {projects.length === 0 
+                    ? `There are no ${type?.toLowerCase()} projects available yet.`
+                    : "Try adjusting your filters to see more projects."
+                  }
                 </p>
-                {isAdmin && (
+                {isAdmin && projects.length === 0 && (
                   <Button onClick={() => setIsAddModalOpen(true)}>
                     <Plus className="h-4 w-4 mr-2" />
                     Add First Project
@@ -166,62 +226,77 @@ const ProjectCategory = () => {
             </Card>
           ) : (
             <div className="grid gap-6">
-              {projects.map((project) => (
-                <Card 
-                  key={project.id} 
-                  className="bg-card border-border hover:bg-accent/70 transition-all duration-300 cursor-pointer"
-                  onClick={() => navigate(`/projects/${type}/${project.id}`)}
-                >
-                  <CardHeader>
-                    <div className="flex items-start justify-between gap-4">
-                      <div className="flex-1">
-                        <div className="flex items-center gap-2 mb-2">
-                          <Badge className={`${getDifficultyColor(project.level)} border`}>
-                            {project.level}
-                          </Badge>
-                        </div>
-                        <CardTitle className="text-foreground text-xl hover:text-blue-400 transition-colors mb-2">
-                          {project.title}
-                        </CardTitle>
-                        <div className="space-y-2">
-                          <div>
-                            <span className="text-sm font-medium text-muted-foreground">Duration: </span>
-                            <span className="text-sm text-foreground">{project.duration}</span>
+              {filteredProjects.map((project) => {
+                const requiresUpgrade = !hasAccess(project.pricing_tier);
+                
+                return (
+                  <Card 
+                    key={project.id} 
+                    className={`bg-card border-border hover:bg-accent/70 transition-all duration-300 ${requiresUpgrade ? 'opacity-75' : ''}`}
+                  >
+                    <CardHeader>
+                      <div className="flex items-start justify-between gap-4">
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2 mb-2">
+                            <Badge className={`${getDifficultyColor(project.level)} border`}>
+                              {project.level}
+                            </Badge>
+                            <Badge className={`${getPricingTierColor(project.pricing_tier)} border`}>
+                              {project.pricing_tier}
+                            </Badge>
                           </div>
+                          
+                          <ProtectedContent
+                            requiredTier={project.pricing_tier}
+                            onSignInClick={handleSignInClick}
+                            showUpgradeMessage={true}
+                          >
+                            <div onClick={() => handleProjectClick(project)} className="cursor-pointer">
+                              <CardTitle className="text-foreground text-xl hover:text-blue-400 transition-colors mb-2">
+                                {project.title}
+                              </CardTitle>
+                              <div className="space-y-2">
+                                <div>
+                                  <span className="text-sm font-medium text-muted-foreground">Duration: </span>
+                                  <span className="text-sm text-foreground">{project.duration}</span>
+                                </div>
+                              </div>
+                            </div>
+                          </ProtectedContent>
+                        </div>
+                        {isAdmin && (
+                          <Button
+                            variant="destructive"
+                            size="sm"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleDeleteProject(project.id);
+                            }}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        )}
+                      </div>
+                    </CardHeader>
+                    <CardContent>
+                      <div>
+                        <span className="text-sm font-medium text-muted-foreground mb-1 block">Technologies:</span>
+                        <div className="flex flex-wrap gap-1">
+                          {project.technologies.map((tech, index) => (
+                            <Badge 
+                              key={index} 
+                              variant="secondary" 
+                              className="bg-muted text-muted-foreground text-xs"
+                            >
+                              {tech}
+                            </Badge>
+                          ))}
                         </div>
                       </div>
-                      {isAdmin && (
-                        <Button
-                          variant="destructive"
-                          size="sm"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleDeleteProject(project.id);
-                          }}
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      )}
-                    </div>
-                  </CardHeader>
-                  <CardContent>
-                    <div>
-                      <span className="text-sm font-medium text-muted-foreground mb-1 block">Technologies:</span>
-                      <div className="flex flex-wrap gap-1">
-                        {project.technologies.map((tech, index) => (
-                          <Badge 
-                            key={index} 
-                            variant="secondary" 
-                            className="bg-muted text-muted-foreground text-xs"
-                          >
-                            {tech}
-                          </Badge>
-                        ))}
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
+                    </CardContent>
+                  </Card>
+                );
+              })}
             </div>
           )}
         </div>
