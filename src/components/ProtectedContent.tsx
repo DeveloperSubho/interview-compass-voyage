@@ -16,7 +16,12 @@ const ProtectedContent = ({
   onSignInClick, 
   showUpgradeMessage = false 
 }: ProtectedContentProps) => {
-  const { user, hasAccess, subscription } = useAuth();
+  const { user, hasAccess, subscription, isAdmin } = useAuth();
+
+  // Admin can access everything
+  if (isAdmin) {
+    return <>{children}</>;
+  }
 
   if (!user) {
     return (

@@ -3,78 +3,34 @@ import { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { BookOpen, Code, Database, Globe, Layers, Server, Zap } from "lucide-react";
+import { BookOpen, Code, Database, Globe, Layers, Server, Zap, Plus } from "lucide-react";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import AuthModal from "@/components/AuthModal";
+import AddTopicModal from "@/components/AddTopicModal";
 import { useNavigate, useLocation } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
+import { useToast } from "@/hooks/use-toast";
 
 interface Category {
   id: string;
   name: string;
   description: string;
-  image: string;
+  tier: string | null;
   questionCount: number;
   icon: string;
+  image?: string;
 }
 
 const Questions = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const { user } = useAuth();
+  const { user, isAdmin } = useAuth();
+  const { toast } = useToast();
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
-  const [categories, setCategories] = useState<Category[]>([
-    {
-      id: "1",
-      name: "JavaScript",
-      description: "Master the fundamentals and advanced concepts of JavaScript.",
-      image: "/javascript.png",
-      questionCount: 150,
-      icon: "Code"
-    },
-    {
-      id: "2",
-      name: "React",
-      description: "Dive deep into React and build interactive user interfaces.",
-      image: "/react.png",
-      questionCount: 120,
-      icon: "Layers"
-    },
-    {
-      id: "3",
-      name: "Java",
-      description: "Explore Java programming with questions on core concepts and frameworks.",
-      image: "/java.png",
-      questionCount: 200,
-      icon: "Code"
-    },
-    {
-      id: "4",
-      name: "Python",
-      description: "Enhance your Python skills with questions covering data structures and algorithms.",
-      image: "/python.png",
-      questionCount: 180,
-      icon: "Zap"
-    },
-    {
-      id: "5",
-      name: "Data Structures",
-      description: "Strengthen your understanding of data structures and algorithms.",
-      image: "/datastructure.png",
-      questionCount: 220,
-      icon: "Database"
-    },
-    {
-      id: "6",
-      name: "System Design",
-      description: "Learn how to design scalable and robust systems.",
-      image: "/systemdesign.png",
-      questionCount: 100,
-      icon: "Server"
-    },
-  ]);
+  const [isAddCategoryModalOpen, setIsAddCategoryModalOpen] = useState(false);
+  const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
 
   const iconMap = {
@@ -86,43 +42,54 @@ const Questions = () => {
     Zap
   };
 
+  // Default icon mapping for categories
+  const getDefaultIcon = (categoryName: string) => {
+    const name = categoryName.toLowerCase();
+    if (name.includes('javascript')) return 'Code';
+    if (name.includes('react')) return 'Layers';
+    if (name.includes('java')) return 'Code';
+    if (name.includes('python')) return 'Zap';
+    if (name.includes('data')) return 'Database';
+    if (name.includes('system')) return 'Server';
+    return 'Code';
+  };
+
   useEffect(() => {
     fetchCategoriesWithCounts();
   }, []);
 
   const fetchCategoriesWithCounts = async () => {
     try {
+      // Fetch categories from database
+      const { data: dbCategories, error } = await supabase
+        .from('categories')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+
       const categoriesWithCounts = await Promise.all(
-        categories.map(async (category) => {
-          const { data: dbCategory } = await supabase
-            .from('categories')
+        (dbCategories || []).map(async (category) => {
+          const { data: subcategories } = await supabase
+            .from('subcategories')
             .select('id')
-            .eq('name', category.name)
-            .single();
+            .eq('category_id', category.id);
 
-          if (dbCategory) {
-            const { data: subcategories } = await supabase
-              .from('subcategories')
-              .select('id')
-              .eq('category_id', dbCategory.id);
+          let questionCount = 0;
+          if (subcategories && subcategories.length > 0) {
+            const subcategoryIds = subcategories.map(sub => sub.id);
+            const { count } = await supabase
+              .from('questions')
+              .select('*', { count: 'exact', head: true })
+              .in('subcategory_id', subcategoryIds);
 
-            if (subcategories && subcategories.length > 0) {
-              const subcategoryIds = subcategories.map(sub => sub.id);
-              const { count } = await supabase
-                .from('questions')
-                .select('*', { count: 'exact', head: true })
-                .in('subcategory_id', subcategoryIds);
-
-              return {
-                ...category,
-                questionCount: count || 0
-              };
-            }
+            questionCount = count || 0;
           }
           
           return {
             ...category,
-            questionCount: 0
+            questionCount,
+            icon: getDefaultIcon(category.name)
           };
         })
       );
@@ -130,28 +97,33 @@ const Questions = () => {
       setCategories(categoriesWithCounts);
     } catch (error) {
       console.error('Error fetching categories with counts:', error);
+      toast({
+        title: "Error",
+        description: "Failed to load categories",
+        variant: "destructive",
+      });
     } finally {
       setLoading(false);
     }
   };
 
   const handleCategoryClick = (categoryName: string) => {
-    if (categoryName === "Java") {
-      // Java has special routing - always allow access to subcategories page
-      navigate("/questions/java");
+    // All categories now require login (including Java)
+    if (!user) {
+      setIsAuthModalOpen(true);
     } else {
-      // For other categories, check if user is logged in
-      if (!user) {
-        setIsAuthModalOpen(true);
-      } else {
-        navigate(`/questions/${categoryName.toLowerCase().replace(/\s+/g, '-')}`);
-      }
+      navigate(`/questions/${categoryName.toLowerCase().replace(/\s+/g, '-')}`);
     }
   };
 
   const getIcon = (iconName: string) => {
     const IconComponent = iconMap[iconName as keyof typeof iconMap] || Code;
     return <IconComponent className="h-6 w-6 text-white" />;
+  };
+
+  const handleAddCategorySuccess = () => {
+    setIsAddCategoryModalOpen(false);
+    fetchCategoriesWithCounts();
   };
 
   if (loading) {
@@ -174,48 +146,77 @@ const Questions = () => {
       <Navbar />
       
       <div className="container mx-auto px-4 py-16">
-        <h1 className="text-4xl md:text-5xl font-bold mb-8 bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent">
-          Explore Interview Questions
-        </h1>
-        <p className="text-muted-foreground text-lg max-w-3xl mb-12">
-          Sharpen your skills with our curated questions across various domains. Each category is designed to help you master key concepts and techniques.
-        </p>
+        <div className="flex justify-between items-center mb-8">
+          <div>
+            <h1 className="text-4xl md:text-5xl font-bold mb-4 bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent">
+              Explore Interview Questions
+            </h1>
+            <p className="text-muted-foreground text-lg max-w-3xl">
+              Sharpen your skills with our curated questions across various domains. Each category is designed to help you master key concepts and techniques.
+            </p>
+          </div>
+          
+          {isAdmin && (
+            <Button onClick={() => setIsAddCategoryModalOpen(true)}>
+              <Plus className="h-4 w-4 mr-2" />
+              Add Category
+            </Button>
+          )}
+        </div>
 
         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {categories.map((category) => (
-            <Card 
-              key={category.id} 
-              className="bg-card border-border hover:bg-accent/70 transition-all duration-300 hover:scale-105 cursor-pointer"
-              onClick={() => handleCategoryClick(category.name)}
-            >
-              <CardHeader>
-                <div className="flex items-start justify-between mb-4">
-                  <div className="h-12 w-12 bg-gradient-to-r from-[#555879] to-[#98A1BC] rounded-lg flex items-center justify-center">
-                    {getIcon(category.icon)}
+          {categories.length === 0 ? (
+            <div className="col-span-full text-center py-12">
+              <h3 className="text-lg font-medium text-muted-foreground mb-2">
+                No categories available
+              </h3>
+              <p className="text-muted-foreground">
+                Categories will be added soon.
+              </p>
+            </div>
+          ) : (
+            categories.map((category) => (
+              <Card 
+                key={category.id} 
+                className="bg-card border-border hover:bg-accent/70 transition-all duration-300 hover:scale-105 cursor-pointer"
+                onClick={() => handleCategoryClick(category.name)}
+              >
+                <CardHeader>
+                  <div className="flex items-start justify-between mb-4">
+                    <div className="h-12 w-12 bg-gradient-to-r from-[#555879] to-[#98A1BC] rounded-lg flex items-center justify-center">
+                      {getIcon(category.icon)}
+                    </div>
+                    <Badge className="bg-blue-600 text-white">
+                      {category.questionCount} Questions
+                    </Badge>
                   </div>
-                  <Badge className="bg-blue-600 text-white">
-                    {category.questionCount} Questions
-                  </Badge>
-                </div>
-                <CardTitle className="text-foreground">{category.name}</CardTitle>
-                <CardDescription className="text-muted-foreground">
-                  {category.description}
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <Button className="w-full bg-green-600 hover:bg-green-700 text-white">
-                  <BookOpen className="h-4 w-4 mr-2" />
-                  Start Practicing
-                </Button>
-              </CardContent>
-            </Card>
-          ))}
+                  <CardTitle className="text-foreground">{category.name}</CardTitle>
+                  <CardDescription className="text-muted-foreground">
+                    {category.description || `Explore ${category.name} topics and questions`}
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <Button className="w-full bg-green-600 hover:bg-green-700 text-white">
+                    <BookOpen className="h-4 w-4 mr-2" />
+                    Start Practicing
+                  </Button>
+                </CardContent>
+              </Card>
+            ))
+          )}
         </div>
       </div>
 
       <AuthModal 
         isOpen={isAuthModalOpen}
         onClose={() => setIsAuthModalOpen(false)}
+      />
+
+      <AddTopicModal
+        isOpen={isAddCategoryModalOpen}
+        onClose={() => setIsAddCategoryModalOpen(false)}
+        onSuccess={handleAddCategorySuccess}
+        type="category"
       />
 
       <Footer />

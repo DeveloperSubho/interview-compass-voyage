@@ -3,54 +3,45 @@ import { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, Plus, Trash2, Eye, EyeOff } from "lucide-react";
+import { ArrowLeft, Plus, Clock, Github, ExternalLink, Lock } from "lucide-react";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
-import ProtectedContent from "@/components/ProtectedContent";
+import AuthModal from "@/components/AuthModal";
+import AddProjectModal from "@/components/AddProjectModal";
 import { useNavigate, useParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
-import AddProjectModal from "@/components/AddProjectModal";
 
 interface Project {
   id: string;
   title: string;
-  technologies: string[];
-  duration: string;
+  description: string | null;
   type: string;
   level: string;
   pricing_tier: string;
+  technologies: string[];
+  duration: string | null;
+  key_features: string[];
+  github_url: string | null;
   created_at: string;
 }
 
 const ProjectCategory = () => {
-  const navigate = useNavigate();
   const { type } = useParams();
-  const { user, isAdmin, hasAccess } = useAuth();
+  const navigate = useNavigate();
+  const { user, hasAccess, isAdmin } = useAuth();
   const { toast } = useToast();
   const [projects, setProjects] = useState<Project[]>([]);
-  const [filteredProjects, setFilteredProjects] = useState<Project[]>([]);
   const [loading, setLoading] = useState(true);
-  const [isAddModalOpen, setIsAddModalOpen] = useState(false);
-  const [showLockedProjects, setShowLockedProjects] = useState(true);
-
-  const handleSignInClick = () => {
-    toast({
-      title: "Sign in required",
-      description: "Please sign in to access this content",
-    });
-  };
+  const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
+  const [isAddProjectModalOpen, setIsAddProjectModalOpen] = useState(false);
 
   useEffect(() => {
     if (type) {
       fetchProjects();
     }
   }, [type]);
-
-  useEffect(() => {
-    filterProjects();
-  }, [projects, showLockedProjects]);
 
   const fetchProjects = async () => {
     try {
@@ -74,59 +65,33 @@ const ProjectCategory = () => {
     }
   };
 
-  const filterProjects = () => {
-    let filtered = projects;
-    
-    if (!showLockedProjects) {
-      filtered = projects.filter(project => hasAccess(project.pricing_tier));
+  const handleProjectClick = (project: Project) => {
+    // Show content but require sign-in on click
+    if (!user) {
+      setIsAuthModalOpen(true);
+      return;
     }
-    
-    setFilteredProjects(filtered);
-  };
 
-  const handleDeleteProject = async (projectId: string) => {
-    if (!confirm('Are you sure you want to delete this project?')) return;
-
-    try {
-      const { error } = await supabase
-        .from('projects')
-        .delete()
-        .eq('id', projectId);
-
-      if (error) throw error;
-
-      setProjects(projects.filter(p => p.id !== projectId));
+    // Admin can access all projects
+    if (isAdmin || hasAccess(project.pricing_tier)) {
+      navigate(`/projects/${type}/${project.id}`);
+    } else {
       toast({
-        title: "Success",
-        description: "Project deleted successfully",
-      });
-    } catch (error) {
-      console.error('Error deleting project:', error);
-      toast({
-        title: "Error",
-        description: "Failed to delete project",
+        title: "Upgrade Required",
+        description: `This project requires ${project.pricing_tier} tier or higher`,
         variant: "destructive",
       });
     }
   };
 
-  const handleProjectClick = (project: Project) => {
-    // Check if user has access to this project
-    if (!hasAccess(project.pricing_tier)) {
-      // Don't navigate, just show a message (handled by ProtectedContent)
-      return;
-    }
-    navigate(`/projects/${type}/${project.id}`);
-  };
-
-  const getDifficultyColor = (level: string) => {
+  const getLevelColor = (level: string) => {
     switch (level) {
       case "Explorer":
-        return "bg-green-500/20 text-green-300 border-green-500/30";
-      case "Builder":
-        return "bg-yellow-500/20 text-yellow-300 border-yellow-500/30";
+        return "bg-blue-500/20 text-blue-300 border-blue-500/30";
+      case "Voyager":
+        return "bg-purple-500/20 text-purple-300 border-purple-500/30";
       case "Innovator":
-        return "bg-red-500/20 text-red-300 border-red-500/30";
+        return "bg-orange-500/20 text-orange-300 border-orange-500/30";
       default:
         return "bg-gray-500/20 text-gray-300 border-gray-500/30";
     }
@@ -143,6 +108,15 @@ const ProjectCategory = () => {
       default:
         return "bg-gray-500/20 text-gray-300 border-gray-500/30";
     }
+  };
+
+  const handleAddProjectSuccess = () => {
+    setIsAddProjectModalOpen(false);
+    fetchProjects();
+  };
+
+  const shouldShowLock = (project: Project) => {
+    return user && !isAdmin && !hasAccess(project.pricing_tier);
   };
 
   if (loading) {
@@ -177,140 +151,140 @@ const ProjectCategory = () => {
           
           <div className="flex justify-between items-center mb-8">
             <div>
-              <h1 className="text-4xl md:text-5xl font-bold mb-4 bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent capitalize">
+              <h1 className="text-4xl md:text-5xl font-bold mb-4 bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent">
                 {type} Projects
               </h1>
-              <p className="text-muted-foreground text-lg">
-                Discover and work on {type?.toLowerCase()} projects to enhance your skills.
+              <p className="text-muted-foreground text-lg max-w-2xl">
+                Build real-world {type} projects and enhance your skills with hands-on experience.
               </p>
             </div>
-            <div className="flex gap-2">
-              {isAdmin && (
-                <Button onClick={() => setIsAddModalOpen(true)}>
-                  <Plus className="h-4 w-4 mr-2" />
-                  Add Project
-                </Button>
-              )}
-              <Button
-                variant="outline"
-                onClick={() => setShowLockedProjects(!showLockedProjects)}
-                className="flex items-center gap-2"
-              >
-                {showLockedProjects ? <Eye className="h-4 w-4" /> : <EyeOff className="h-4 w-4" />}
-                {showLockedProjects ? "Hide Locked" : "Show Locked"}
+            
+            {isAdmin && (
+              <Button onClick={() => setIsAddProjectModalOpen(true)}>
+                <Plus className="h-4 w-4 mr-2" />
+                Add Project
               </Button>
-            </div>
+            )}
           </div>
         </div>
 
         <div className="max-w-6xl mx-auto">
-          {filteredProjects.length === 0 ? (
+          {projects.length === 0 ? (
             <Card className="bg-card border-border text-center py-12">
               <CardContent>
-                <h3 className="text-lg font-semibold text-muted-foreground mb-2">
-                  No Projects Found
-                </h3>
-                <p className="text-muted-foreground mb-4">
-                  {projects.length === 0 
-                    ? `There are no ${type?.toLowerCase()} projects available yet.`
-                    : "Try adjusting your filters to see more projects."
-                  }
-                </p>
-                {isAdmin && projects.length === 0 && (
-                  <Button onClick={() => setIsAddModalOpen(true)}>
-                    <Plus className="h-4 w-4 mr-2" />
-                    Add First Project
-                  </Button>
-                )}
+                <div className="text-center">
+                  <h3 className="text-lg font-semibold text-muted-foreground mb-2">
+                    No Projects Available
+                  </h3>
+                  <p className="text-muted-foreground">
+                    {type} projects will be added soon.
+                  </p>
+                </div>
               </CardContent>
             </Card>
           ) : (
-            <div className="grid gap-6">
-              {filteredProjects.map((project) => {
-                const requiresUpgrade = !hasAccess(project.pricing_tier);
-                
-                return (
-                  <Card 
-                    key={project.id} 
-                    className={`bg-card border-border hover:bg-accent/70 transition-all duration-300 ${requiresUpgrade ? 'opacity-75' : ''}`}
-                  >
-                    <CardHeader>
-                      <div className="flex items-start justify-between gap-4">
-                        <div className="flex-1">
-                          <div className="flex items-center gap-2 mb-2">
-                            <Badge className={`${getDifficultyColor(project.level)} border`}>
-                              {project.level}
-                            </Badge>
-                            <Badge className={`${getPricingTierColor(project.pricing_tier)} border`}>
-                              {project.pricing_tier}
-                            </Badge>
-                          </div>
-                          
-                          <ProtectedContent
-                            requiredTier={project.pricing_tier}
-                            onSignInClick={handleSignInClick}
-                            showUpgradeMessage={true}
+            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {projects.map((project) => (
+                <Card 
+                  key={project.id} 
+                  className="bg-card border-border hover:bg-accent/70 transition-all duration-300 cursor-pointer"
+                  onClick={() => handleProjectClick(project)}
+                >
+                  <CardHeader>
+                    <div className="flex items-start justify-between gap-2 mb-2">
+                      <div className="flex flex-wrap gap-2">
+                        <Badge className={`${getLevelColor(project.level)} border text-xs`}>
+                          {project.level}
+                        </Badge>
+                        <Badge className={`${getPricingTierColor(project.pricing_tier)} border text-xs`}>
+                          {project.pricing_tier}
+                        </Badge>
+                      </div>
+                      {shouldShowLock(project) && (
+                        <Lock className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+                      )}
+                    </div>
+                    <CardTitle className="text-foreground text-lg hover:text-blue-400 transition-colors">
+                      {project.title}
+                    </CardTitle>
+                    <CardDescription className="text-muted-foreground text-sm">
+                      {project.description || "No description available"}
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-3">
+                      {/* Technologies */}
+                      <div className="flex flex-wrap gap-1">
+                        {project.technologies.slice(0, 3).map((tech, index) => (
+                          <Badge 
+                            key={index} 
+                            variant="secondary" 
+                            className="bg-muted text-muted-foreground text-xs"
                           >
-                            <div onClick={() => handleProjectClick(project)} className="cursor-pointer">
-                              <CardTitle className="text-foreground text-xl hover:text-blue-400 transition-colors mb-2">
-                                {project.title}
-                              </CardTitle>
-                              <div className="space-y-2">
-                                <div>
-                                  <span className="text-sm font-medium text-muted-foreground">Duration: </span>
-                                  <span className="text-sm text-foreground">{project.duration}</span>
-                                </div>
-                              </div>
-                            </div>
-                          </ProtectedContent>
-                        </div>
-                        {isAdmin && (
-                          <Button
-                            variant="destructive"
-                            size="sm"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleDeleteProject(project.id);
-                            }}
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
+                            {tech}
+                          </Badge>
+                        ))}
+                        {project.technologies.length > 3 && (
+                          <Badge variant="secondary" className="bg-muted text-muted-foreground text-xs">
+                            +{project.technologies.length - 3}
+                          </Badge>
                         )}
                       </div>
-                    </CardHeader>
-                    <CardContent>
-                      <div>
-                        <span className="text-sm font-medium text-muted-foreground mb-1 block">Technologies:</span>
-                        <div className="flex flex-wrap gap-1">
-                          {project.technologies.map((tech, index) => (
-                            <Badge 
-                              key={index} 
-                              variant="secondary" 
-                              className="bg-muted text-muted-foreground text-xs"
-                            >
-                              {tech}
-                            </Badge>
-                          ))}
+                      
+                      {/* Key Features */}
+                      {project.key_features.length > 0 && (
+                        <div className="text-sm text-muted-foreground">
+                          <div className="font-medium mb-1">Key Features:</div>
+                          <ul className="text-xs space-y-1">
+                            {project.key_features.slice(0, 2).map((feature, index) => (
+                              <li key={index} className="flex items-start gap-1">
+                                <span className="text-blue-400 mt-0.5">•</span>
+                                <span>{feature}</span>
+                              </li>
+                            ))}
+                            {project.key_features.length > 2 && (
+                              <li className="text-xs text-muted-foreground/70">
+                                +{project.key_features.length - 2} more features
+                              </li>
+                            )}
+                          </ul>
                         </div>
+                      )}
+                      
+                      {/* Duration and GitHub */}
+                      <div className="flex items-center justify-between text-xs text-muted-foreground">
+                        <div className="flex items-center gap-1">
+                          <Clock className="h-3 w-3" />
+                          <span>{project.duration || "Variable"}</span>
+                        </div>
+                        {project.github_url && (
+                          <Badge variant="outline" className="text-xs">
+                            <Github className="h-3 w-3 mr-1" />
+                            Code
+                          </Badge>
+                        )}
                       </div>
-                    </CardContent>
-                  </Card>
-                );
-              })}
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
             </div>
           )}
         </div>
       </div>
 
-      <AddProjectModal 
-        isOpen={isAddModalOpen} 
-        onClose={() => setIsAddModalOpen(false)} 
-        onSuccess={() => {
-          setIsAddModalOpen(false);
-          fetchProjects();
-        }}
-        defaultType={type}
+      <AuthModal 
+        isOpen={isAuthModalOpen}
+        onClose={() => setIsAuthModalOpen(false)}
       />
+
+      {isAdmin && (
+        <AddProjectModal
+          isOpen={isAddProjectModalOpen}
+          onClose={() => setIsAddProjectModalOpen(false)}
+          onSuccess={handleAddProjectSuccess}
+        />
+      )}
 
       <Footer />
     </div>

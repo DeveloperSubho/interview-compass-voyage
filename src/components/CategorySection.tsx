@@ -64,63 +64,70 @@ const CategorySection = ({ onSignInClick }: CategorySectionProps) => {
     setLoading(true);
     try {
       const categoryName = category?.replace(/-/g, ' ') || '';
+      console.log('Searching for category:', categoryName);
       
-      // Fetch the category first with case-insensitive search
-      const { data: categoryData, error: categoryError } = await supabase
+      // Try multiple approaches to find the category
+      let categoryData = null;
+      
+      // 1. Try case-insensitive search
+      const { data: ilikeCategoryData, error: ilikeError } = await supabase
         .from('categories')
         .select('*')
         .ilike('name', categoryName)
         .single();
 
-      if (categoryError) {
-        console.error("Category not found:", categoryName);
-        
-        // Try with exact match
-        const { data: exactCategoryData, error: exactCategoryError } = await supabase
+      if (!ilikeError && ilikeCategoryData) {
+        categoryData = ilikeCategoryData;
+      } else {
+        // 2. Try exact match
+        const { data: exactCategoryData, error: exactError } = await supabase
           .from('categories')
           .select('*')
           .eq('name', categoryName)
           .single();
 
-        if (exactCategoryError) {
-          // Try with capitalized name
+        if (!exactError && exactCategoryData) {
+          categoryData = exactCategoryData;
+        } else {
+          // 3. Try with capitalized name
           const capitalizedName = categoryName.split(' ').map(word => 
             word.charAt(0).toUpperCase() + word.slice(1).toLowerCase()
           ).join(' ');
           
-          const { data: capitalizedCategoryData, error: capitalizedCategoryError } = await supabase
+          const { data: capitalizedCategoryData, error: capitalizedError } = await supabase
             .from('categories')
             .select('*')
             .eq('name', capitalizedName)
             .single();
 
-          if (capitalizedCategoryError) {
-            toast({
-              title: "Error",
-              description: "Category not found",
-              variant: "destructive",
-            });
-            return;
+          if (!capitalizedError && capitalizedCategoryData) {
+            categoryData = capitalizedCategoryData;
           }
-          setCurrentCategory(capitalizedCategoryData);
-        } else {
-          setCurrentCategory(exactCategoryData);
         }
-      } else {
-        setCurrentCategory(categoryData);
       }
 
-      const finalCategory = categoryData || currentCategory;
-      if (!finalCategory) return;
+      if (!categoryData) {
+        console.error("Category not found:", categoryName);
+        toast({
+          title: "Error",
+          description: "Category not found",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      console.log('Found category:', categoryData);
+      setCurrentCategory(categoryData);
 
       // Fetch subcategories for this category
       const { data: subcategoriesData, error: subcategoriesError } = await supabase
         .from('subcategories')
         .select('*')
-        .eq('category_id', finalCategory.id)
+        .eq('category_id', categoryData.id)
         .order('created_at', { ascending: false });
 
       if (subcategoriesError) throw subcategoriesError;
+      console.log('Found subcategories:', subcategoriesData);
       setSubcategories(subcategoriesData || []);
 
       // Fetch questions for all subcategories
@@ -158,7 +165,7 @@ const CategorySection = ({ onSignInClick }: CategorySectionProps) => {
 
   const canAccessContent = (tier: string | null) => {
     if (!tier) return true;
-    return hasAccess(tier);
+    return isAdmin || hasAccess(tier);
   };
 
   if (loading) {

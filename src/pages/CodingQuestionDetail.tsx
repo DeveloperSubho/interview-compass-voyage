@@ -17,7 +17,7 @@ interface CodingQuestion {
   title: string;
   slug: string;
   description: string;
-  explanation: string;
+  solution: string;
   difficulty: string;
   status: string;
   category: string;
@@ -33,7 +33,7 @@ interface CodingQuestion {
 const CodingQuestionDetail = () => {
   const { category, slug } = useParams();
   const navigate = useNavigate();
-  const { hasAccess } = useAuth();
+  const { hasAccess, isAdmin } = useAuth();
   const { toast } = useToast();
   const [question, setQuestion] = useState<CodingQuestion | null>(null);
   const [loading, setLoading] = useState(true);
@@ -61,13 +61,7 @@ const CodingQuestionDetail = () => {
 
       if (error) throw error;
       
-      // Map solution to explanation for backward compatibility
-      const questionData = {
-        ...data,
-        explanation: data.solution || data.explanation || ''
-      };
-      
-      setQuestion(questionData);
+      setQuestion(data);
     } catch (error) {
       console.error('Error fetching question:', error);
       toast({
@@ -105,6 +99,9 @@ const CodingQuestionDetail = () => {
         return "bg-gray-500/20 text-gray-300 border-gray-500/30";
     }
   };
+
+  // Allow access if user is admin or has the required tier
+  const canAccess = isAdmin || hasAccess(question?.pricing_tier || "");
 
   if (loading) {
     return (
@@ -154,131 +151,131 @@ const CodingQuestionDetail = () => {
           </Button>
         </div>
 
-        <ProtectedContent 
-          requiredTier={question.pricing_tier}
-          onSignInClick={handleSignInClick}
-          showUpgradeMessage={true}
-        >
-          <div className="max-w-4xl mx-auto space-y-8">
-            {/* Question Header */}
-            <Card className="bg-card border-border">
-              <CardHeader>
-                <div className="flex items-start justify-between gap-4">
-                  <div className="flex-1">
-                    <div className="flex items-center gap-2 mb-4 flex-wrap">
-                      <Badge className={`${getDifficultyColor(question.difficulty)} border`}>
-                        {question.difficulty}
+        <div className="max-w-4xl mx-auto space-y-8">
+          {/* Question Header */}
+          <Card className="bg-card border-border">
+            <CardHeader>
+              <div className="flex items-start justify-between gap-4">
+                <div className="flex-1">
+                  <div className="flex items-center gap-2 mb-4 flex-wrap">
+                    <Badge className={`${getDifficultyColor(question.difficulty)} border`}>
+                      {question.difficulty}
+                    </Badge>
+                    <Badge className={`${getPricingTierColor(question.pricing_tier)} border`}>
+                      {question.pricing_tier}
+                    </Badge>
+                    {question.is_paid && (
+                      <Badge className="bg-yellow-500/20 text-yellow-300 border-yellow-500/30">
+                        Premium
                       </Badge>
-                      <Badge className={`${getPricingTierColor(question.pricing_tier)} border`}>
-                        {question.pricing_tier}
-                      </Badge>
-                      {question.is_paid && (
-                        <Badge className="bg-yellow-500/20 text-yellow-300 border-yellow-500/30">
-                          Premium
-                        </Badge>
-                      )}
-                    </div>
-                    <CardTitle className="text-2xl md:text-3xl text-foreground mb-4">
-                      {question.title}
-                    </CardTitle>
-                    <div className="flex flex-wrap gap-2 mb-4">
-                      {question.tags.map((tag, index) => (
-                        <Badge 
-                          key={index} 
-                          variant="secondary" 
-                          className="bg-muted text-muted-foreground"
-                        >
-                          {tag}
-                        </Badge>
-                      ))}
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    {question.github_link && (
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => window.open(question.github_link!, '_blank')}
-                      >
-                        <Github className="h-4 w-4 mr-2" />
-                        Code
-                      </Button>
-                    )}
-                    {question.video_link && (
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => window.open(question.video_link!, '_blank')}
-                      >
-                        <Play className="h-4 w-4 mr-2" />
-                        Video
-                      </Button>
                     )}
                   </div>
+                  <CardTitle className="text-2xl md:text-3xl text-foreground mb-4">
+                    {question.title}
+                  </CardTitle>
+                  <div className="flex flex-wrap gap-2 mb-4">
+                    {question.tags.map((tag, index) => (
+                      <Badge 
+                        key={index} 
+                        variant="secondary" 
+                        className="bg-muted text-muted-foreground"
+                      >
+                        {tag}
+                      </Badge>
+                    ))}
+                  </div>
                 </div>
-              </CardHeader>
-            </Card>
+                <div className="flex items-center gap-2">
+                  {question.github_link && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => window.open(question.github_link!, '_blank')}
+                    >
+                      <Github className="h-4 w-4 mr-2" />
+                      Code
+                    </Button>
+                  )}
+                  {question.video_link && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => window.open(question.video_link!, '_blank')}
+                    >
+                      <Play className="h-4 w-4 mr-2" />
+                      Video
+                    </Button>
+                  )}
+                </div>
+              </div>
+            </CardHeader>
+          </Card>
 
-            {/* Problem Description */}
+          {/* Problem Description */}
+          <Card className="bg-card border-border">
+            <CardHeader>
+              <CardTitle className="text-xl">Problem Description</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="prose prose-invert max-w-none">
+                <p className="text-muted-foreground whitespace-pre-wrap">
+                  {question.description}
+                </p>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Solution - Protected Content */}
+          <ProtectedContent 
+            requiredTier={isAdmin ? undefined : question.pricing_tier}
+            onSignInClick={handleSignInClick}
+            showUpgradeMessage={true}
+          >
             <Card className="bg-card border-border">
               <CardHeader>
-                <CardTitle className="text-xl">Problem Description</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="prose prose-invert max-w-none">
-                  <p className="text-muted-foreground whitespace-pre-wrap">
-                    {question.description}
-                  </p>
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Explanation */}
-            <Card className="bg-card border-border">
-              <CardHeader>
-                <CardTitle className="text-xl">Explanation</CardTitle>
+                <CardTitle className="text-xl">Solution</CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="prose prose-invert max-w-none">
                   <div className="text-muted-foreground whitespace-pre-wrap">
-                    {question.explanation}
+                    {question.solution}
                   </div>
                 </div>
               </CardContent>
             </Card>
+          </ProtectedContent>
 
-            {/* Links Section */}
-            {(question.github_link || question.video_link) && (
-              <Card className="bg-card border-border">
-                <CardHeader>
-                  <CardTitle className="text-xl">Resources</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="flex flex-wrap gap-4">
-                    {question.github_link && (
-                      <Button
-                        variant="outline"
-                        onClick={() => window.open(question.github_link!, '_blank')}
-                      >
-                        <Github className="h-4 w-4 mr-2" />
-                        View Solution Code
-                      </Button>
-                    )}
-                    {question.video_link && (
-                      <Button
-                        variant="outline"
-                        onClick={() => window.open(question.video_link!, '_blank')}
-                      >
-                        <Play className="h-4 w-4 mr-2" />
-                        Watch Explanation Video
-                      </Button>
-                    )}
-                  </div>
-                </CardContent>
-              </Card>
-            )}
-          </div>
-        </ProtectedContent>
+          {/* Links Section */}
+          {(question.github_link || question.video_link) && (
+            <Card className="bg-card border-border">
+              <CardHeader>
+                <CardTitle className="text-xl">Resources</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="flex flex-wrap gap-4">
+                  {question.github_link && (
+                    <Button
+                      variant="outline"
+                      onClick={() => window.open(question.github_link!, '_blank')}
+                    >
+                      <Github className="h-4 w-4 mr-2" />
+                      View Solution Code
+                    </Button>
+                  )}
+                  {question.video_link && (
+                    <Button
+                      variant="outline"
+                      onClick={() => window.open(question.video_link!, '_blank')}
+                    >
+                      <Play className="h-4 w-4 mr-2" />
+                      Watch Explanation Video
+                    </Button>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+          )}
+        </div>
       </div>
 
       <Footer />
