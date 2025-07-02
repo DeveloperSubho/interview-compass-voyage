@@ -24,6 +24,7 @@ interface CodingQuestion {
   video_link: string;
   is_paid: boolean;
   level_unlock: string;
+  pricing_tier: string;
 }
 
 interface CodingQuestionModalProps {
@@ -50,7 +51,8 @@ const CodingQuestionModal = ({ isOpen, onClose, onSuccess, editingQuestion, cate
     github_link: "",
     video_link: "",
     is_paid: false,
-    level_unlock: "Beginner"
+    level_unlock: "Beginner",
+    pricing_tier: "Explorer"
   });
 
   useEffect(() => {
@@ -69,7 +71,8 @@ const CodingQuestionModal = ({ isOpen, onClose, onSuccess, editingQuestion, cate
         github_link: "",
         video_link: "",
         is_paid: false,
-        level_unlock: "Beginner"
+        level_unlock: "Beginner",
+        pricing_tier: "Explorer"
       });
     }
   }, [editingQuestion, categoryName, isOpen]);
@@ -183,17 +186,18 @@ const CodingQuestionModal = ({ isOpen, onClose, onSuccess, editingQuestion, cate
           </div>
 
           <div>
-            <Label htmlFor="solution">Solution</Label>
+            <Label htmlFor="solution">Explanation</Label>
             <Textarea
               id="solution"
               value={formData.solution}
               onChange={(e) => setFormData(prev => ({ ...prev, solution: e.target.value }))}
               rows={6}
+              placeholder="Provide a detailed explanation of the solution approach..."
               required
             />
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-3 gap-4">
             <div>
               <Label htmlFor="difficulty">Difficulty</Label>
               <Select value={formData.difficulty} onValueChange={(value) => setFormData(prev => ({ ...prev, difficulty: value }))}>
@@ -217,6 +221,19 @@ const CodingQuestionModal = ({ isOpen, onClose, onSuccess, editingQuestion, cate
                   <SelectItem value="Unsolved">Unsolved</SelectItem>
                   <SelectItem value="Solved">Solved</SelectItem>
                   <SelectItem value="In Progress">In Progress</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <Label htmlFor="pricing_tier">Pricing Tier</Label>
+              <Select value={formData.pricing_tier} onValueChange={(value) => setFormData(prev => ({ ...prev, pricing_tier: value }))}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="Explorer">Explorer</SelectItem>
+                  <SelectItem value="Voyager">Voyager</SelectItem>
+                  <SelectItem value="Innovator">Innovator</SelectItem>
                 </SelectContent>
               </Select>
             </div>

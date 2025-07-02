@@ -22,7 +22,7 @@ interface Props {
 const Navbar = ({ className }: Props) => {
   const navigate = useNavigate();
   const location = useLocation();
-  const { user, isAdmin, signOut } = useAuth();
+  const { user, isAdmin, signOut, profile, subscription } = useAuth();
   const { theme } = useTheme();
   const [isOpen, setIsOpen] = useState(false);
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
@@ -84,8 +84,12 @@ const Navbar = ({ className }: Props) => {
               <DropdownMenuTrigger asChild>
                 <Button variant="ghost" className="h-8 w-8 p-0 rounded-full relative">
                   <Avatar className="h-8 w-8">
-                    <AvatarImage src={user?.user_metadata?.avatar_url} alt={user?.user_metadata?.full_name} />
-                    <AvatarFallback>{user?.user_metadata?.full_name?.charAt(0) || user?.email?.charAt(0)}</AvatarFallback>
+                    <AvatarImage src={user?.user_metadata?.avatar_url || profile?.avatar_url} alt={user?.user_metadata?.full_name || profile?.first_name} />
+                    <AvatarFallback>
+                      {user?.user_metadata?.full_name?.charAt(0) || 
+                       profile?.first_name?.charAt(0) || 
+                       user?.email?.charAt(0)}
+                    </AvatarFallback>
                   </Avatar>
                   {isAdmin && (
                     <Crown className="h-3 w-3 text-yellow-400 absolute -top-1 -right-1" />
@@ -94,7 +98,14 @@ const Navbar = ({ className }: Props) => {
               </DropdownMenuTrigger>
               <DropdownMenuContent className="w-56" align="end" forceMount>
                 <DropdownMenuLabel className="flex items-center gap-2">
-                  My Account
+                  <div className="flex flex-col space-y-1">
+                    <p className="text-sm font-medium leading-none">
+                      {profile?.first_name || user?.user_metadata?.full_name || 'User'}
+                    </p>
+                    <p className="text-xs leading-none text-muted-foreground">
+                      {subscription?.tier || 'Explorer'} Plan
+                    </p>
+                  </div>
                   {isAdmin && <Crown className="h-4 w-4 text-yellow-400" />}
                 </DropdownMenuLabel>
                 <DropdownMenuSeparator />

@@ -4,6 +4,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
@@ -20,6 +21,7 @@ const CodingBulkImportModal = ({ isOpen, onClose, onSuccess, categoryName }: Cod
   const { toast } = useToast();
   const [loading, setLoading] = useState(false);
   const [csvData, setCsvData] = useState("");
+  const [defaultPricingTier, setDefaultPricingTier] = useState("Explorer");
 
   const generateSlug = (title: string) => {
     return title
@@ -63,19 +65,20 @@ const CodingBulkImportModal = ({ isOpen, onClose, onSuccess, categoryName }: Cod
         if (columns.length < 6) {
           toast({
             title: "Error",
-            description: `Invalid format at line ${i + 1}. Expected: Title, Description, Solution, Difficulty, Tags, GitHub Link`,
+            description: `Invalid format at line ${i + 1}. Expected: Title, Description, Explanation, Difficulty, Tags, GitHub Link, Video Link, Pricing Tier (optional)`,
             variant: "destructive",
           });
           return;
         }
 
         const tags = columns[4] ? columns[4].split(';').map(tag => tag.trim()).filter(tag => tag) : [];
+        const pricingTier = columns[7] || defaultPricingTier;
 
         questions.push({
           title: columns[0],
           slug: generateSlug(columns[0]),
           description: columns[1],
-          solution: columns[2],
+          solution: columns[2], // This is now the explanation
           difficulty: columns[3] || 'Easy',
           status: 'Unsolved',
           category: categoryName,
@@ -83,7 +86,8 @@ const CodingBulkImportModal = ({ isOpen, onClose, onSuccess, categoryName }: Cod
           github_link: columns[5] || '',
           video_link: columns[6] || '',
           is_paid: false,
-          level_unlock: 'Beginner'
+          level_unlock: 'Beginner',
+          pricing_tier: pricingTier
         });
       }
 
@@ -132,23 +136,40 @@ const CodingBulkImportModal = ({ isOpen, onClose, onSuccess, categoryName }: Cod
         <DialogHeader>
           <DialogTitle>Bulk Import Coding Questions</DialogTitle>
           <DialogDescription>
-            Import multiple coding questions at once using CSV format. Each line should contain: Title, Description, Solution, Difficulty, Tags, GitHub Link, Video Link
+            Import multiple coding questions at once using CSV format. Each line should contain: Title, Description, Explanation, Difficulty, Tags, GitHub Link, Video Link, Pricing Tier (optional)
           </DialogDescription>
         </DialogHeader>
 
         <form onSubmit={handleSubmit} className="space-y-4">
+          <div>
+            <Label htmlFor="defaultPricingTier">Default Pricing Tier</Label>
+            <Select value={defaultPricingTier} onValueChange={setDefaultPricingTier}>
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="Explorer">Explorer</SelectItem>
+                <SelectItem value="Voyager">Voyager</SelectItem>
+                <SelectItem value="Innovator">Innovator</SelectItem>
+              </SelectContent>
+            </Select>
+            <p className="text-sm text-muted-foreground mt-1">
+              This tier will be used for questions that don't specify a pricing tier
+            </p>
+          </div>
+
           <div>
             <Label htmlFor="csvData">CSV Data</Label>
             <Textarea
               id="csvData"
               value={csvData}
               onChange={(e) => setCsvData(e.target.value)}
-              placeholder="Example:&#10;Two Sum, Given an array of integers find two numbers that add up to target, Use hashmap to store complement values, Easy, Array;Hash Table, https://github.com/example/two-sum, https://youtube.com/watch?v=example&#10;Reverse String, Write a function that reverses a string, Use two pointers approach, Easy, String;Two Pointers, https://github.com/example/reverse-string,"
+              placeholder="Example:&#10;Two Sum, Given an array of integers find two numbers that add up to target, Use hashmap to store complement values for O(1) lookup, Easy, Array;Hash Table, https://github.com/example/two-sum, https://youtube.com/watch?v=example, Explorer&#10;Reverse String, Write a function that reverses a string, Use two pointers approach from both ends, Easy, String;Two Pointers, https://github.com/example/reverse-string, , Voyager"
               rows={10}
               required
             />
             <p className="text-sm text-muted-foreground mt-2">
-              Format: Title, Description, Solution, Difficulty, Tags (separated by semicolons), GitHub Link, Video Link (one question per line)
+              Format: Title, Description, Explanation, Difficulty, Tags (separated by semicolons), GitHub Link, Video Link, Pricing Tier (optional - one question per line)
             </p>
           </div>
 

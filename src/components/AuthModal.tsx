@@ -1,10 +1,11 @@
+
 import { useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 import { Eye, EyeOff, Mail, Phone, Github, Linkedin, Instagram } from "lucide-react";
 
@@ -15,6 +16,7 @@ interface AuthModalProps {
 
 const AuthModal = ({ isOpen, onClose }: AuthModalProps) => {
   const { toast } = useToast();
+  const { signUp, signIn, signInWithPhone, verifyPhoneOtp, signInWithProvider } = useAuth();
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
@@ -28,9 +30,15 @@ const AuthModal = ({ isOpen, onClose }: AuthModalProps) => {
   const [otpSent, setOtpSent] = useState(false);
   
   // Sign up form state
-  const [signUpEmail, setSignUpEmail] = useState("");
-  const [signUpPassword, setSignUpPassword] = useState("");
-  const [signUpConfirmPassword, setSignUpConfirmPassword] = useState("");
+  const [signUpData, setSignUpData] = useState({
+    email: "",
+    password: "",
+    confirmPassword: "",
+    firstName: "",
+    lastName: "",
+    username: "",
+    phone: ""
+  });
   const [signUpPhone, setSignUpPhone] = useState("");
   const [signUpOtp, setSignUpOtp] = useState("");
   const [signUpMode, setSignUpMode] = useState<'email' | 'phone'>('email');
@@ -41,7 +49,7 @@ const AuthModal = ({ isOpen, onClose }: AuthModalProps) => {
     if (!signInEmail || !signInPassword) {
       toast({
         title: "Error",
-        description: "Please enter your email and password",
+        description: "Please enter your email/username and password",
         variant: "destructive",
       });
       return;
@@ -49,14 +57,15 @@ const AuthModal = ({ isOpen, onClose }: AuthModalProps) => {
 
     setLoading(true);
     try {
-      const { error } = await supabase.auth.signInWithPassword({
-        email: signInEmail,
-        password: signInPassword,
-      });
+      const { error } = await signIn(signInEmail, signInPassword);
 
       if (error) throw error;
       
       onClose();
+      toast({
+        title: "Success",
+        description: "Signed in successfully",
+      });
     } catch (error: any) {
       toast({
         title: "Error",
@@ -70,16 +79,17 @@ const AuthModal = ({ isOpen, onClose }: AuthModalProps) => {
 
   const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!signUpEmail || !signUpPassword || !signUpConfirmPassword) {
+    
+    if (!signUpData.email || !signUpData.password || !signUpData.confirmPassword) {
       toast({
         title: "Error",
-        description: "Please enter all required fields",
+        description: "Please fill in all required fields",
         variant: "destructive",
       });
       return;
     }
 
-    if (signUpPassword !== signUpConfirmPassword) {
+    if (signUpData.password !== signUpData.confirmPassword) {
       toast({
         title: "Error",
         description: "Passwords do not match",
@@ -90,13 +100,14 @@ const AuthModal = ({ isOpen, onClose }: AuthModalProps) => {
 
     setLoading(true);
     try {
-      const { error } = await supabase.auth.signUp({
-        email: signUpEmail,
-        password: signUpPassword,
-        options: {
-          emailRedirectTo: window.location.origin,
-        },
-      });
+      const { error } = await signUp(
+        signUpData.email,
+        signUpData.password,
+        signUpData.firstName,
+        signUpData.lastName,
+        signUpData.username,
+        signUpData.phone
+      );
 
       if (error) throw error;
       
@@ -130,9 +141,7 @@ const AuthModal = ({ isOpen, onClose }: AuthModalProps) => {
     setLoading(true);
     try {
       if (!otpSent) {
-        const { error } = await supabase.auth.signInWithOtp({
-          phone: signInPhone,
-        });
+        const { error } = await signInWithPhone(signInPhone);
 
         if (error) throw error;
 
@@ -142,15 +151,15 @@ const AuthModal = ({ isOpen, onClose }: AuthModalProps) => {
           description: "OTP sent to your phone number",
         });
       } else {
-        const { error } = await supabase.auth.verifyOtp({
-          phone: signInPhone,
-          token: signInOtp,
-          type: 'sms',
-        });
+        const { error } = await verifyPhoneOtp(signInPhone, signInOtp);
 
         if (error) throw error;
         
         onClose();
+        toast({
+          title: "Success",
+          description: "Signed in successfully",
+        });
       }
     } catch (error: any) {
       toast({
@@ -177,9 +186,7 @@ const AuthModal = ({ isOpen, onClose }: AuthModalProps) => {
     setLoading(true);
     try {
       if (!signUpOtpSent) {
-        const { error } = await supabase.auth.signInWithOtp({
-          phone: signUpPhone,
-        });
+        const { error } = await signInWithPhone(signUpPhone);
 
         if (error) throw error;
 
@@ -189,15 +196,15 @@ const AuthModal = ({ isOpen, onClose }: AuthModalProps) => {
           description: "OTP sent to your phone number",
         });
       } else {
-        const { error } = await supabase.auth.verifyOtp({
-          phone: signUpPhone,
-          token: signUpOtp,
-          type: 'sms',
-        });
+        const { error } = await verifyPhoneOtp(signUpPhone, signUpOtp);
 
         if (error) throw error;
         
         onClose();
+        toast({
+          title: "Success",
+          description: "Account created successfully",
+        });
       }
     } catch (error: any) {
       toast({
@@ -213,12 +220,7 @@ const AuthModal = ({ isOpen, onClose }: AuthModalProps) => {
   const handleSocialLogin = async (provider: 'google' | 'github' | 'linkedin_oidc') => {
     try {
       setLoading(true);
-      const { error } = await supabase.auth.signInWithOAuth({
-        provider,
-        options: {
-          redirectTo: window.location.origin
-        }
-      });
+      const { error } = await signInWithProvider(provider);
 
       if (error) throw error;
       
@@ -276,10 +278,10 @@ const AuthModal = ({ isOpen, onClose }: AuthModalProps) => {
             {signInMode === 'email' ? (
               <form onSubmit={handleSignIn} className="space-y-4">
                 <div>
-                  <Label htmlFor="signin-email">Email</Label>
+                  <Label htmlFor="signin-email">Email or Username</Label>
                   <Input
                     id="signin-email"
-                    type="email"
+                    type="text"
                     value={signInEmail}
                     onChange={(e) => setSignInEmail(e.target.value)}
                     required
@@ -349,7 +351,7 @@ const AuthModal = ({ isOpen, onClose }: AuthModalProps) => {
               </form>
             )}
 
-            {/* Social Login Section - Below the form */}
+            {/* Social Login Section */}
             <div className="space-y-3 pt-4 border-t">
               <p className="text-sm text-muted-foreground text-center">Or continue with</p>
               <div className="grid grid-cols-2 gap-2">
@@ -428,13 +430,52 @@ const AuthModal = ({ isOpen, onClose }: AuthModalProps) => {
 
             {signUpMode === 'email' ? (
               <form onSubmit={handleSignUp} className="space-y-4">
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label htmlFor="first-name">First Name</Label>
+                    <Input
+                      id="first-name"
+                      type="text"
+                      value={signUpData.firstName}
+                      onChange={(e) => setSignUpData(prev => ({ ...prev, firstName: e.target.value }))}
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="last-name">Last Name</Label>
+                    <Input
+                      id="last-name"
+                      type="text"
+                      value={signUpData.lastName}
+                      onChange={(e) => setSignUpData(prev => ({ ...prev, lastName: e.target.value }))}
+                    />
+                  </div>
+                </div>
+                <div>
+                  <Label htmlFor="username">Username</Label>
+                  <Input
+                    id="username"
+                    type="text"
+                    value={signUpData.username}
+                    onChange={(e) => setSignUpData(prev => ({ ...prev, username: e.target.value }))}
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="phone-signup">Phone Number</Label>
+                  <Input
+                    id="phone-signup"
+                    type="tel"
+                    placeholder="+1234567890"
+                    value={signUpData.phone}
+                    onChange={(e) => setSignUpData(prev => ({ ...prev, phone: e.target.value }))}
+                  />
+                </div>
                 <div>
                   <Label htmlFor="signup-email">Email</Label>
                   <Input
                     id="signup-email"
                     type="email"
-                    value={signUpEmail}
-                    onChange={(e) => setSignUpEmail(e.target.value)}
+                    value={signUpData.email}
+                    onChange={(e) => setSignUpData(prev => ({ ...prev, email: e.target.value }))}
                     required
                   />
                 </div>
@@ -444,8 +485,8 @@ const AuthModal = ({ isOpen, onClose }: AuthModalProps) => {
                     <Input
                       id="signup-password"
                       type={showPassword ? "text" : "password"}
-                      value={signUpPassword}
-                      onChange={(e) => setSignUpPassword(e.target.value)}
+                      value={signUpData.password}
+                      onChange={(e) => setSignUpData(prev => ({ ...prev, password: e.target.value }))}
                       required
                     />
                     <Button
@@ -465,8 +506,8 @@ const AuthModal = ({ isOpen, onClose }: AuthModalProps) => {
                     <Input
                       id="signup-confirm-password"
                       type={showConfirmPassword ? "text" : "password"}
-                      value={signUpConfirmPassword}
-                      onChange={(e) => setSignUpConfirmPassword(e.target.value)}
+                      value={signUpData.confirmPassword}
+                      onChange={(e) => setSignUpData(prev => ({ ...prev, confirmPassword: e.target.value }))}
                       required
                     />
                     <Button
@@ -523,7 +564,7 @@ const AuthModal = ({ isOpen, onClose }: AuthModalProps) => {
               </form>
             )}
 
-            {/* Social Login Section - Below the form */}
+            {/* Social Login Section */}
             <div className="space-y-3 pt-4 border-t">
               <p className="text-sm text-muted-foreground text-center">Or continue with</p>
               <div className="grid grid-cols-2 gap-2">
