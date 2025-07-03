@@ -1,9 +1,8 @@
-
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, Plus, Upload, Clock, Trophy, Code, Lock, edit } from "lucide-react";
+import { ArrowLeft, Plus, Upload, Clock, Trophy, Code, Lock, Edit, Trash2 } from "lucide-react";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import AuthModal from "@/components/AuthModal";
@@ -92,6 +91,35 @@ const CodingQuestionList = () => {
   const handleEditQuestion = (question: CodingQuestion) => {
     setEditingQuestion(question);
     setIsQuestionModalOpen(true);
+  };
+
+  const handleDeleteQuestion = async (questionId: string) => {
+    if (!isAdmin) return;
+    
+    if (!confirm("Are you sure you want to delete this question?")) return;
+
+    try {
+      const { error } = await supabase
+        .from('coding_questions')
+        .delete()
+        .eq('id', questionId);
+
+      if (error) throw error;
+
+      toast({
+        title: "Success",
+        description: "Question deleted successfully",
+      });
+
+      fetchQuestions();
+    } catch (error) {
+      console.error('Error deleting question:', error);
+      toast({
+        title: "Error",
+        description: "Failed to delete question",
+        variant: "destructive",
+      });
+    }
   };
 
   const getDifficultyColor = (difficulty: string) => {
@@ -207,17 +235,28 @@ const CodingQuestionList = () => {
                 onClick={() => handleQuestionClick(question)}
               >
                 {isAdmin && (
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="absolute top-2 right-2 z-10"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleEditQuestion(question);
-                    }}
-                  >
-                    <edit className="h-4 w-4" />
-                  </Button>
+                  <div className="absolute top-2 right-2 z-10 flex gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleEditQuestion(question);
+                      }}
+                    >
+                      <Edit className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleDeleteQuestion(question.id);
+                      }}
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </div>
                 )}
                 <CardHeader>
                   <div className="flex items-start justify-between gap-4">

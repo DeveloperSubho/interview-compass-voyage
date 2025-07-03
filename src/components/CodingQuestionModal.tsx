@@ -8,7 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
-import { edit, trash2 as Trash2 } from "lucide-react";
+import { Edit, Trash2 } from "lucide-react";
 
 interface CodingQuestion {
   id?: string;

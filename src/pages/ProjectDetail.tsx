@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -150,9 +149,6 @@ const ProjectDetail = () => {
               <div className="flex items-start justify-between gap-4">
                 <div className="flex-1">
                   <div className="flex items-center gap-2 mb-4 flex-wrap">
-                    <Badge className={`${getDifficultyColor(project.level)} border`}>
-                      Difficulty: {project.level}
-                    </Badge>
                     <Badge className={`${getPricingTierColor(project.pricing_tier)} border`}>
                       {project.pricing_tier}
                     </Badge>

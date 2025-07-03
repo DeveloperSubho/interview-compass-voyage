@@ -1,9 +1,8 @@
-
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, Plus, Clock, Github, Lock, edit } from "lucide-react";
+import { ArrowLeft, Plus, Clock, Github, Lock, Edit, Trash2 } from "lucide-react";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import AuthModal from "@/components/AuthModal";
@@ -86,6 +85,35 @@ const ProjectCategory = () => {
   const handleEditProject = (project: Project) => {
     setEditingProject(project);
     setIsAddProjectModalOpen(true);
+  };
+
+  const handleDeleteProject = async (projectId: string) => {
+    if (!isAdmin) return;
+    
+    if (!confirm("Are you sure you want to delete this project?")) return;
+
+    try {
+      const { error } = await supabase
+        .from('projects')
+        .delete()
+        .eq('id', projectId);
+
+      if (error) throw error;
+
+      toast({
+        title: "Success",
+        description: "Project deleted successfully",
+      });
+
+      fetchProjects();
+    } catch (error) {
+      console.error('Error deleting project:', error);
+      toast({
+        title: "Error",
+        description: "Failed to delete project",
+        variant: "destructive",
+      });
+    }
   };
 
   const getDifficultyColor = (level: string) => {
@@ -196,24 +224,32 @@ const ProjectCategory = () => {
                   onClick={() => handleProjectClick(project)}
                 >
                   {isAdmin && (
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="absolute top-2 right-2 z-10"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleEditProject(project);
-                      }}
-                    >
-                      <edit className="h-4 w-4" />
-                    </Button>
+                    <div className="absolute top-2 right-2 z-10 flex gap-1">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleEditProject(project);
+                        }}
+                      >
+                        <Edit className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleDeleteProject(project.id);
+                        }}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
                   )}
                   <CardHeader>
                     <div className="flex items-start justify-between gap-2 mb-2">
                       <div className="flex flex-wrap gap-2">
-                        <Badge className={`${getDifficultyColor(project.level)} border text-xs`}>
-                          Difficulty: {project.level}
-                        </Badge>
                         <Badge className={`${getPricingTierColor(project.pricing_tier)} border text-xs`}>
                           {project.pricing_tier}
                         </Badge>

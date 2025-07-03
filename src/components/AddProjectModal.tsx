@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -10,14 +10,29 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 
+interface Project {
+  id?: string;
+  title: string;
+  description: string | null;
+  type: string;
+  level: string;
+  pricing_tier: string;
+  technologies: string[];
+  duration: string | null;
+  key_features: string[];
+  github_url: string | null;
+  created_at?: string;
+}
+
 interface AddProjectModalProps {
   isOpen: boolean;
   onClose: () => void;
   onSuccess: () => void;
   defaultType?: string;
+  editingProject?: Project | null;
 }
 
-const AddProjectModal = ({ isOpen, onClose, onSuccess, defaultType }: AddProjectModalProps) => {
+const AddProjectModal = ({ isOpen, onClose, onSuccess, defaultType, editingProject }: AddProjectModalProps) => {
   const { user } = useAuth();
   const { toast } = useToast();
   const [loading, setLoading] = useState(false);
@@ -28,9 +43,38 @@ const AddProjectModal = ({ isOpen, onClose, onSuccess, defaultType }: AddProject
     duration: "",
     type: defaultType || "",
     level: "Explorer",
+    pricing_tier: "Explorer",
     key_features: "",
     github_url: "",
   });
+
+  useEffect(() => {
+    if (editingProject) {
+      setFormData({
+        title: editingProject.title,
+        description: editingProject.description || "",
+        technologies: editingProject.technologies.join(", "),
+        duration: editingProject.duration || "",
+        type: editingProject.type,
+        level: editingProject.level,
+        pricing_tier: editingProject.pricing_tier,
+        key_features: editingProject.key_features.join(", "),
+        github_url: editingProject.github_url || "",
+      });
+    } else {
+      setFormData({
+        title: "",
+        description: "",
+        technologies: "",
+        duration: "",
+        type: defaultType || "",
+        level: "Explorer",
+        pricing_tier: "Explorer",
+        key_features: "",
+        github_url: "",
+      });
+    }
+  }, [editingProject, defaultType, isOpen]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -48,28 +92,47 @@ const AddProjectModal = ({ isOpen, onClose, onSuccess, defaultType }: AddProject
         .map(feature => feature.trim())
         .filter(feature => feature.length > 0);
 
-      const { error } = await supabase
-        .from('projects')
-        .insert([
-          {
-            title: formData.title,
-            description: formData.description,
-            technologies: technologiesArray,
-            duration: formData.duration,
-            type: formData.type,
-            level: formData.level,
-            key_features: keyFeaturesArray,
-            github_url: formData.github_url || null,
-            created_by: user.id,
-          },
-        ]);
+      const projectData = {
+        title: formData.title,
+        description: formData.description,
+        technologies: technologiesArray,
+        duration: formData.duration,
+        type: formData.type,
+        level: formData.level,
+        pricing_tier: formData.pricing_tier,
+        key_features: keyFeaturesArray,
+        github_url: formData.github_url || null,
+      };
 
-      if (error) throw error;
+      if (editingProject) {
+        const { error } = await supabase
+          .from('projects')
+          .update(projectData)
+          .eq('id', editingProject.id);
 
-      toast({
-        title: "Success",
-        description: "Project added successfully",
-      });
+        if (error) throw error;
+
+        toast({
+          title: "Success",
+          description: "Project updated successfully",
+        });
+      } else {
+        const { error } = await supabase
+          .from('projects')
+          .insert([
+            {
+              ...projectData,
+              created_by: user.id,
+            },
+          ]);
+
+        if (error) throw error;
+
+        toast({
+          title: "Success",
+          description: "Project added successfully",
+        });
+      }
 
       setFormData({
         title: "",
@@ -78,16 +141,17 @@ const AddProjectModal = ({ isOpen, onClose, onSuccess, defaultType }: AddProject
         duration: "",
         type: defaultType || "",
         level: "Explorer",
+        pricing_tier: "Explorer",
         key_features: "",
         github_url: "",
       });
 
       onSuccess();
     } catch (error) {
-      console.error('Error adding project:', error);
+      console.error('Error saving project:', error);
       toast({
         title: "Error",
-        description: "Failed to add project",
+        description: `Failed to ${editingProject ? 'update' : 'add'} project`,
         variant: "destructive",
       });
     } finally {
@@ -103,6 +167,7 @@ const AddProjectModal = ({ isOpen, onClose, onSuccess, defaultType }: AddProject
       duration: "",
       type: defaultType || "",
       level: "Explorer",
+      pricing_tier: "Explorer",
       key_features: "",
       github_url: "",
     });
@@ -113,9 +178,9 @@ const AddProjectModal = ({ isOpen, onClose, onSuccess, defaultType }: AddProject
     <Dialog open={isOpen} onOpenChange={handleClose}>
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>Add New Project</DialogTitle>
+          <DialogTitle>{editingProject ? 'Edit Project' : 'Add New Project'}</DialogTitle>
           <DialogDescription>
-            Create a new project for users to practice and learn from.
+            {editingProject ? 'Update the project details below.' : 'Create a new project for users to practice and learn from.'}
           </DialogDescription>
         </DialogHeader>
 
@@ -163,17 +228,17 @@ const AddProjectModal = ({ isOpen, onClose, onSuccess, defaultType }: AddProject
             </div>
 
             <div>
-              <Label htmlFor="level">Difficulty Level</Label>
+              <Label htmlFor="pricing_tier">Pricing Tier</Label>
               <Select 
-                value={formData.level} 
-                onValueChange={(value) => setFormData({ ...formData, level: value })}
+                value={formData.pricing_tier} 
+                onValueChange={(value) => setFormData({ ...formData, pricing_tier: value })}
               >
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="Explorer">Explorer</SelectItem>
-                  <SelectItem value="Builder">Builder</SelectItem>
+                  <SelectItem value="Voyager">Voyager</SelectItem>
                   <SelectItem value="Innovator">Innovator</SelectItem>
                 </SelectContent>
               </Select>
@@ -236,7 +301,7 @@ const AddProjectModal = ({ isOpen, onClose, onSuccess, defaultType }: AddProject
               Cancel
             </Button>
             <Button type="submit" disabled={loading}>
-              {loading ? "Adding..." : "Add Project"}
+              {loading ? (editingProject ? "Updating..." : "Adding...") : (editingProject ? "Update Project" : "Add Project")}
             </Button>
           </div>
         </form>

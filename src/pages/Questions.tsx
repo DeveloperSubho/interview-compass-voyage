@@ -1,13 +1,12 @@
-
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { BookOpen, Code, Database, Globe, Layers, Server, Zap, Plus, Trash2 } from "lucide-react";
+import { Plus, Trash2 } from "lucide-react";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
-import AuthModal from "@/components/AuthModal";
 import AddTopicModal from "@/components/AddTopicModal";
+import AuthModal from "@/components/AuthModal";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
@@ -16,83 +15,36 @@ import { useToast } from "@/hooks/use-toast";
 interface Category {
   id: string;
   name: string;
-  description: string;
+  description: string | null;
   tier: string | null;
-  questionCount: number;
-  icon: string;
+  created_at: string | null;
+  updated_at: string | null;
 }
 
 const Questions = () => {
   const navigate = useNavigate();
   const { user, isAdmin } = useAuth();
   const { toast } = useToast();
-  const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
-  const [isAddCategoryModalOpen, setIsAddCategoryModalOpen] = useState(false);
   const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
-
-  const iconMap = {
-    Code,
-    Layers, 
-    Database,
-    Globe,
-    Server,
-    Zap
-  };
-
-  const getDefaultIcon = (categoryName: string) => {
-    const name = categoryName.toLowerCase();
-    if (name.includes('javascript')) return 'Code';
-    if (name.includes('react')) return 'Layers';
-    if (name.includes('java')) return 'Code';
-    if (name.includes('python')) return 'Zap';
-    if (name.includes('data')) return 'Database';
-    if (name.includes('system')) return 'Server';
-    return 'Code';
-  };
+  const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
+  const [isAddCategoryModalOpen, setIsAddCategoryModalOpen] = useState(false);
 
   useEffect(() => {
-    fetchCategoriesWithCounts();
+    fetchCategories();
   }, []);
 
-  const fetchCategoriesWithCounts = async () => {
+  const fetchCategories = async () => {
     try {
-      const { data: dbCategories, error } = await supabase
+      const { data, error } = await supabase
         .from('categories')
         .select('*')
-        .order('created_at', { ascending: false });
+        .order('name');
 
       if (error) throw error;
-
-      const categoriesWithCounts = await Promise.all(
-        (dbCategories || []).map(async (category) => {
-          const { data: subcategories } = await supabase
-            .from('subcategories')
-            .select('id')
-            .eq('category_id', category.id);
-
-          let questionCount = 0;
-          if (subcategories && subcategories.length > 0) {
-            const subcategoryIds = subcategories.map(sub => sub.id);
-            const { count } = await supabase
-              .from('questions')
-              .select('*', { count: 'exact', head: true })
-              .in('subcategory_id', subcategoryIds);
-
-            questionCount = count || 0;
-          }
-          
-          return {
-            ...category,
-            questionCount,
-            icon: getDefaultIcon(category.name)
-          };
-        })
-      );
-
-      setCategories(categoriesWithCounts);
+      setCategories(data || []);
     } catch (error) {
-      console.error('Error fetching categories with counts:', error);
+      console.error('Error fetching categories:', error);
       toast({
         title: "Error",
         description: "Failed to load categories",
@@ -106,57 +58,36 @@ const Questions = () => {
   const handleCategoryClick = (categoryName: string) => {
     if (!user) {
       setIsAuthModalOpen(true);
+      return;
+    }
+
+    const formattedName = categoryName.toLowerCase().replace(/\s+/g, '-');
+    if (categoryName === "Java") {
+      navigate(`/java-subcategories`);
     } else {
-      navigate(`/questions/${categoryName.toLowerCase().replace(/\s+/g, '-')}`);
+      navigate(`/categories/${formattedName}`);
     }
   };
 
   const handleDeleteCategory = async (categoryId: string, categoryName: string) => {
-    if (!confirm(`Are you sure you want to delete "${categoryName}" category? This will also delete all related subcategories and questions.`)) {
-      return;
-    }
+    if (!isAdmin) return;
+    
+    if (!confirm(`Are you sure you want to delete the "${categoryName}" category? This will also delete all subcategories and questions related to this category.`)) return;
 
     try {
-      // First get all subcategories for this category
-      const { data: subcategories } = await supabase
-        .from('subcategories')
-        .select('id')
-        .eq('category_id', categoryId);
-
-      if (subcategories && subcategories.length > 0) {
-        const subcategoryIds = subcategories.map(sub => sub.id);
-        
-        // Delete all questions in these subcategories
-        const { error: questionsError } = await supabase
-          .from('questions')
-          .delete()
-          .in('subcategory_id', subcategoryIds);
-
-        if (questionsError) throw questionsError;
-
-        // Delete all subcategories
-        const { error: subcategoriesError } = await supabase
-          .from('subcategories')
-          .delete()
-          .eq('category_id', categoryId);
-
-        if (subcategoriesError) throw subcategoriesError;
-      }
-
-      // Finally delete the category
-      const { error: categoryError } = await supabase
+      const { error } = await supabase
         .from('categories')
         .delete()
         .eq('id', categoryId);
 
-      if (categoryError) throw categoryError;
+      if (error) throw error;
 
       toast({
         title: "Success",
         description: "Category deleted successfully",
       });
 
-      fetchCategoriesWithCounts();
+      fetchCategories();
     } catch (error) {
       console.error('Error deleting category:', error);
       toast({
@@ -167,14 +98,21 @@ const Questions = () => {
     }
   };
 
-  const getIcon = (iconName: string) => {
-    const IconComponent = iconMap[iconName as keyof typeof iconMap] || Code;
-    return <IconComponent className="h-6 w-6 text-white" />;
+  const getTierColor = (tier: string | null) => {
+    switch (tier) {
+      case "Voyager":
+        return "bg-purple-500/20 text-purple-300 border-purple-500/30";
+      case "Innovator":
+        return "bg-orange-500/20 text-orange-300 border-orange-500/30";
+      case "Explorer":
+      default:
+        return "bg-blue-500/20 text-blue-300 border-blue-500/30";
+    }
   };
 
   const handleAddCategorySuccess = () => {
     setIsAddCategoryModalOpen(false);
-    fetchCategoriesWithCounts();
+    fetchCategories();
   };
 
   if (loading) {
@@ -197,12 +135,12 @@ const Questions = () => {
       <Navbar />
       
       <div className="container mx-auto px-4 py-16">
-        <div className="flex justify-between items-center mb-8">
+        <div className="flex justify-between items-center mb-16">
           <div>
-            <h1 className="text-4xl md:text-5xl font-bold mb-4 bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent">
+            <h1 className="text-5xl md:text-6xl font-bold mb-6 bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent">
               Explore Interview Questions
             </h1>
-            <p className="text-muted-foreground text-lg max-w-3xl">
+            <p className="text-muted-foreground text-xl max-w-3xl">
               Sharpen your skills with our curated questions across various domains. Each category is designed to help you master key concepts and techniques.
             </p>
           </div>
@@ -215,59 +153,57 @@ const Questions = () => {
           )}
         </div>
 
-        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {categories.length === 0 ? (
-            <div className="col-span-full text-center py-12">
-              <h3 className="text-lg font-medium text-muted-foreground mb-2">
-                No categories available
-              </h3>
-              <p className="text-muted-foreground">
-                Categories will be added soon.
-              </p>
-            </div>
-          ) : (
-            categories.map((category) => (
-              <Card 
-                key={category.id} 
-                className="bg-card border-border hover:bg-accent/70 transition-all duration-300 hover:scale-105 cursor-pointer relative"
-                onClick={() => handleCategoryClick(category.name)}
-              >
-                {isAdmin && (
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="absolute top-2 right-2 z-10"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleDeleteCategory(category.id, category.name);
-                    }}
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
-                )}
-                <CardHeader>
-                  <div className="flex items-start justify-between mb-4">
-                    <div className="h-12 w-12 bg-gradient-to-r from-[#555879] to-[#98A1BC] rounded-lg flex items-center justify-center">
-                      {getIcon(category.icon)}
-                    </div>
-                    <Badge className="bg-blue-600 text-white">
-                      {category.questionCount} Questions
-                    </Badge>
+        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8 max-w-6xl mx-auto">
+          {categories.map((category) => (
+            <Card 
+              key={category.id}
+              className="bg-card border-border hover:bg-accent/70 transition-all duration-300 cursor-pointer group relative"
+              onClick={() => handleCategoryClick(category.name)}
+            >
+              {isAdmin && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="absolute top-3 right-3 z-10 opacity-0 group-hover:opacity-100 transition-opacity"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleDeleteCategory(category.id, category.name);
+                  }}
+                >
+                  <Trash2 className="h-4 w-4" />
+                </Button>
+              )}
+              
+              <CardHeader className="pb-4">
+                <div className="flex items-start justify-between mb-4">
+                  <div className="text-4xl">
+                    {category.name === "Java" ? "☕" : 
+                     category.name === "Spring & Spring Boot" ? "🌱" :
+                     category.name === "System Design" ? "🏗️" :
+                     category.name === "Design Patterns" ? "🎨" :
+                     category.name === "ReactJS" ? "⚛️" :
+                     category.name === "Message Queues" ? "📬" : "💼"}
                   </div>
-                  <CardTitle className="text-foreground">{category.name}</CardTitle>
-                  <CardDescription className="text-muted-foreground">
-                    {category.description || `Explore ${category.name} topics and questions`}
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <Button className="w-full bg-green-600 hover:bg-green-700 text-white">
-                    <BookOpen className="h-4 w-4 mr-2" />
-                    Start Practicing
-                  </Button>
-                </CardContent>
-              </Card>
-            ))
-          )}
+                  <Badge className={`${getTierColor(category.tier)} border`}>
+                    0 Questions
+                  </Badge>
+                </div>
+                <CardTitle className="text-2xl font-bold text-foreground group-hover:text-blue-400 transition-colors">
+                  {category.name}
+                </CardTitle>
+                <CardDescription className="text-muted-foreground">
+                  {category.description || `${category.name} concepts and interview questions`}
+                </CardDescription>
+              </CardHeader>
+              
+              <CardContent>
+                <Button className="w-full bg-green-600 hover:bg-green-700 text-white">
+                  <span className="mr-2">📚</span>
+                  Start Practicing
+                </Button>
+              </CardContent>
+            </Card>
+          ))}
         </div>
       </div>
 
@@ -276,12 +212,14 @@ const Questions = () => {
         onClose={() => setIsAuthModalOpen(false)}
       />
 
-      <AddTopicModal
-        isOpen={isAddCategoryModalOpen}
-        onClose={() => setIsAddCategoryModalOpen(false)}
-        onSuccess={handleAddCategorySuccess}
-        type="category"
-      />
+      {isAdmin && (
+        <AddTopicModal
+          isOpen={isAddCategoryModalOpen}
+          onClose={() => setIsAddCategoryModalOpen(false)}
+          onSuccess={handleAddCategorySuccess}
+          type="category"
+        />
+      )}
 
       <Footer />
     </div>
