@@ -4,7 +4,7 @@ import { useParams, useNavigate } from "react-router-dom";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, Github, ExternalLink, Clock, Lightbulb } from "lucide-react";
+import { ArrowLeft, Github, Clock, Lightbulb } from "lucide-react";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import ProtectedContent from "@/components/ProtectedContent";
@@ -69,7 +69,7 @@ const ProjectDetail = () => {
     }
   };
 
-  const getLevelColor = (level: string) => {
+  const getDifficultyColor = (level: string) => {
     switch (level) {
       case "Explorer":
         return "bg-blue-500/20 text-blue-300 border-blue-500/30";
@@ -150,8 +150,8 @@ const ProjectDetail = () => {
               <div className="flex items-start justify-between gap-4">
                 <div className="flex-1">
                   <div className="flex items-center gap-2 mb-4 flex-wrap">
-                    <Badge className={`${getLevelColor(project.level)} border`}>
-                      {project.level}
+                    <Badge className={`${getDifficultyColor(project.level)} border`}>
+                      Difficulty: {project.level}
                     </Badge>
                     <Badge className={`${getPricingTierColor(project.pricing_tier)} border`}>
                       {project.pricing_tier}
@@ -166,18 +166,6 @@ const ProjectDetail = () => {
                       <span>Duration: {project.duration || "Variable"}</span>
                     </div>
                   </div>
-                </div>
-                <div className="flex items-center gap-2">
-                  {project.github_url && (
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => window.open(project.github_url!, '_blank')}
-                    >
-                      <Github className="h-4 w-4 mr-2" />
-                      Code
-                    </Button>
-                  )}
                 </div>
               </div>
             </CardHeader>

@@ -3,13 +3,12 @@ import { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Plus, Upload, BookOpen, Lock, ArrowLeft } from "lucide-react";
+import { Plus, BookOpen, Lock, ArrowLeft } from "lucide-react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 import AddTopicModal from "./AddTopicModal";
-import BulkImportModal from "./BulkImportModal";
 import ProtectedContent from "./ProtectedContent";
 import Navbar from "./Navbar";
 import Footer from "./Footer";
@@ -52,7 +51,6 @@ const CategorySection = ({ onSignInClick }: CategorySectionProps) => {
   const [questions, setQuestions] = useState<Question[]>([]);
   const [loading, setLoading] = useState(true);
   const [isAddTopicModalOpen, setIsAddTopicModalOpen] = useState(false);
-  const [isBulkImportModalOpen, setIsBulkImportModalOpen] = useState(false);
 
   useEffect(() => {
     if (category) {
@@ -66,10 +64,9 @@ const CategorySection = ({ onSignInClick }: CategorySectionProps) => {
       const categoryName = category?.replace(/-/g, ' ') || '';
       console.log('Searching for category:', categoryName);
       
-      // Try multiple approaches to find the category
       let categoryData = null;
       
-      // 1. Try case-insensitive search
+      // Try case-insensitive search
       const { data: ilikeCategoryData, error: ilikeError } = await supabase
         .from('categories')
         .select('*')
@@ -79,7 +76,7 @@ const CategorySection = ({ onSignInClick }: CategorySectionProps) => {
       if (!ilikeError && ilikeCategoryData) {
         categoryData = ilikeCategoryData;
       } else {
-        // 2. Try exact match
+        // Try exact match
         const { data: exactCategoryData, error: exactError } = await supabase
           .from('categories')
           .select('*')
@@ -89,7 +86,7 @@ const CategorySection = ({ onSignInClick }: CategorySectionProps) => {
         if (!exactError && exactCategoryData) {
           categoryData = exactCategoryData;
         } else {
-          // 3. Try with capitalized name
+          // Try with capitalized name
           const capitalizedName = categoryName.split(' ').map(word => 
             word.charAt(0).toUpperCase() + word.slice(1).toLowerCase()
           ).join(' ');
@@ -155,7 +152,6 @@ const CategorySection = ({ onSignInClick }: CategorySectionProps) => {
 
   const handleSuccess = () => {
     setIsAddTopicModalOpen(false);
-    setIsBulkImportModalOpen(false);
     fetchCategoryData();
   };
 
@@ -230,11 +226,7 @@ const CategorySection = ({ onSignInClick }: CategorySectionProps) => {
             <div className="flex gap-2">
               <Button onClick={() => setIsAddTopicModalOpen(true)}>
                 <Plus className="h-4 w-4 mr-2" />
-                Add Subcategory
-              </Button>
-              <Button variant="outline" onClick={() => setIsBulkImportModalOpen(true)}>
-                <Upload className="h-4 w-4 mr-2" />
-                Bulk Import
+                Add Topic
               </Button>
             </div>
           )}
@@ -243,10 +235,10 @@ const CategorySection = ({ onSignInClick }: CategorySectionProps) => {
             {subcategories.length === 0 ? (
               <div className="col-span-full text-center py-12">
                 <h3 className="text-lg font-medium text-muted-foreground mb-2">
-                  No subcategories available
+                  No topics available
                 </h3>
                 <p className="text-muted-foreground">
-                  Subcategories for {currentCategory.name} will be added soon.
+                  Topics for {currentCategory.name} will be added soon.
                 </p>
               </div>
             ) : (
@@ -310,12 +302,6 @@ const CategorySection = ({ onSignInClick }: CategorySectionProps) => {
           onSuccess={handleSuccess}
           type="subcategory"
           categoryId={currentCategory.id}
-        />
-
-        <BulkImportModal
-          isOpen={isBulkImportModalOpen}
-          onClose={() => setIsBulkImportModalOpen(false)}
-          onSuccess={handleSuccess}
         />
       </div>
       

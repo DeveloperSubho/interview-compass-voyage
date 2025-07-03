@@ -3,7 +3,7 @@ import { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, Plus, Upload, Clock, Trophy, Code, Lock } from "lucide-react";
+import { ArrowLeft, Plus, Upload, Clock, Trophy, Code, Lock, edit } from "lucide-react";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import AuthModal from "@/components/AuthModal";
@@ -42,6 +42,7 @@ const CodingQuestionList = () => {
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const [isQuestionModalOpen, setIsQuestionModalOpen] = useState(false);
   const [isBulkImportModalOpen, setIsBulkImportModalOpen] = useState(false);
+  const [editingQuestion, setEditingQuestion] = useState<CodingQuestion | null>(null);
 
   useEffect(() => {
     if (category) {
@@ -72,13 +73,11 @@ const CodingQuestionList = () => {
   };
 
   const handleQuestionClick = (question: CodingQuestion) => {
-    // Show content but require sign-in on click
     if (!user) {
       setIsAuthModalOpen(true);
       return;
     }
 
-    // Admin can access all questions
     if (isAdmin || hasAccess(question.pricing_tier)) {
       navigate(`/coding/${category}/${question.slug}`);
     } else {
@@ -88,6 +87,11 @@ const CodingQuestionList = () => {
         variant: "destructive",
       });
     }
+  };
+
+  const handleEditQuestion = (question: CodingQuestion) => {
+    setEditingQuestion(question);
+    setIsQuestionModalOpen(true);
   };
 
   const getDifficultyColor = (difficulty: string) => {
@@ -119,6 +123,7 @@ const CodingQuestionList = () => {
   const handleModalSuccess = () => {
     setIsQuestionModalOpen(false);
     setIsBulkImportModalOpen(false);
+    setEditingQuestion(null);
     fetchQuestions();
   };
 
@@ -198,9 +203,22 @@ const CodingQuestionList = () => {
             questions.map((question) => (
               <Card 
                 key={question.id} 
-                className="bg-card border-border hover:bg-accent/70 transition-all duration-300 cursor-pointer"
+                className="bg-card border-border hover:bg-accent/70 transition-all duration-300 cursor-pointer relative"
                 onClick={() => handleQuestionClick(question)}
               >
+                {isAdmin && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="absolute top-2 right-2 z-10"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleEditQuestion(question);
+                    }}
+                  >
+                    <edit className="h-4 w-4" />
+                  </Button>
+                )}
                 <CardHeader>
                   <div className="flex items-start justify-between gap-4">
                     <div className="flex-1">
@@ -317,14 +335,15 @@ const CodingQuestionList = () => {
             isOpen={isQuestionModalOpen}
             onClose={() => setIsQuestionModalOpen(false)}
             onSuccess={handleModalSuccess}
-            category={category || ""}
+            editingQuestion={editingQuestion}
+            categoryName={category || ""}
           />
 
           <CodingBulkImportModal
             isOpen={isBulkImportModalOpen}
             onClose={() => setIsBulkImportModalOpen(false)}
             onSuccess={handleModalSuccess}
-            category={category || ""}
+            categoryName={category || ""}
           />
         </>
       )}

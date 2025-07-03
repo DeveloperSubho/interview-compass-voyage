@@ -3,12 +3,12 @@ import { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { BookOpen, Code, Database, Globe, Layers, Server, Zap, Plus } from "lucide-react";
+import { BookOpen, Code, Database, Globe, Layers, Server, Zap, Plus, Trash2 } from "lucide-react";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import AuthModal from "@/components/AuthModal";
 import AddTopicModal from "@/components/AddTopicModal";
-import { useNavigate, useLocation } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
@@ -20,12 +20,10 @@ interface Category {
   tier: string | null;
   questionCount: number;
   icon: string;
-  image?: string;
 }
 
 const Questions = () => {
   const navigate = useNavigate();
-  const location = useLocation();
   const { user, isAdmin } = useAuth();
   const { toast } = useToast();
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
@@ -42,7 +40,6 @@ const Questions = () => {
     Zap
   };
 
-  // Default icon mapping for categories
   const getDefaultIcon = (categoryName: string) => {
     const name = categoryName.toLowerCase();
     if (name.includes('javascript')) return 'Code';
@@ -60,7 +57,6 @@ const Questions = () => {
 
   const fetchCategoriesWithCounts = async () => {
     try {
-      // Fetch categories from database
       const { data: dbCategories, error } = await supabase
         .from('categories')
         .select('*')
@@ -108,11 +104,66 @@ const Questions = () => {
   };
 
   const handleCategoryClick = (categoryName: string) => {
-    // All categories now require login (including Java)
     if (!user) {
       setIsAuthModalOpen(true);
     } else {
       navigate(`/questions/${categoryName.toLowerCase().replace(/\s+/g, '-')}`);
+    }
+  };
+
+  const handleDeleteCategory = async (categoryId: string, categoryName: string) => {
+    if (!confirm(`Are you sure you want to delete "${categoryName}" category? This will also delete all related subcategories and questions.`)) {
+      return;
+    }
+
+    try {
+      // First get all subcategories for this category
+      const { data: subcategories } = await supabase
+        .from('subcategories')
+        .select('id')
+        .eq('category_id', categoryId);
+
+      if (subcategories && subcategories.length > 0) {
+        const subcategoryIds = subcategories.map(sub => sub.id);
+        
+        // Delete all questions in these subcategories
+        const { error: questionsError } = await supabase
+          .from('questions')
+          .delete()
+          .in('subcategory_id', subcategoryIds);
+
+        if (questionsError) throw questionsError;
+
+        // Delete all subcategories
+        const { error: subcategoriesError } = await supabase
+          .from('subcategories')
+          .delete()
+          .eq('category_id', categoryId);
+
+        if (subcategoriesError) throw subcategoriesError;
+      }
+
+      // Finally delete the category
+      const { error: categoryError } = await supabase
+        .from('categories')
+        .delete()
+        .eq('id', categoryId);
+
+      if (categoryError) throw categoryError;
+
+      toast({
+        title: "Success",
+        description: "Category deleted successfully",
+      });
+
+      fetchCategoriesWithCounts();
+    } catch (error) {
+      console.error('Error deleting category:', error);
+      toast({
+        title: "Error",
+        description: "Failed to delete category",
+        variant: "destructive",
+      });
     }
   };
 
@@ -178,9 +229,22 @@ const Questions = () => {
             categories.map((category) => (
               <Card 
                 key={category.id} 
-                className="bg-card border-border hover:bg-accent/70 transition-all duration-300 hover:scale-105 cursor-pointer"
+                className="bg-card border-border hover:bg-accent/70 transition-all duration-300 hover:scale-105 cursor-pointer relative"
                 onClick={() => handleCategoryClick(category.name)}
               >
+                {isAdmin && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="absolute top-2 right-2 z-10"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleDeleteCategory(category.id, category.name);
+                    }}
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
+                )}
                 <CardHeader>
                   <div className="flex items-start justify-between mb-4">
                     <div className="h-12 w-12 bg-gradient-to-r from-[#555879] to-[#98A1BC] rounded-lg flex items-center justify-center">

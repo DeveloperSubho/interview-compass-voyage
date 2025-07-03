@@ -3,7 +3,7 @@ import { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, Plus, Clock, Github, ExternalLink, Lock } from "lucide-react";
+import { ArrowLeft, Plus, Clock, Github, Lock, edit } from "lucide-react";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import AuthModal from "@/components/AuthModal";
@@ -36,6 +36,7 @@ const ProjectCategory = () => {
   const [loading, setLoading] = useState(true);
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const [isAddProjectModalOpen, setIsAddProjectModalOpen] = useState(false);
+  const [editingProject, setEditingProject] = useState<Project | null>(null);
 
   useEffect(() => {
     if (type) {
@@ -66,13 +67,11 @@ const ProjectCategory = () => {
   };
 
   const handleProjectClick = (project: Project) => {
-    // Show content but require sign-in on click
     if (!user) {
       setIsAuthModalOpen(true);
       return;
     }
 
-    // Admin can access all projects
     if (isAdmin || hasAccess(project.pricing_tier)) {
       navigate(`/projects/${type}/${project.id}`);
     } else {
@@ -84,7 +83,12 @@ const ProjectCategory = () => {
     }
   };
 
-  const getLevelColor = (level: string) => {
+  const handleEditProject = (project: Project) => {
+    setEditingProject(project);
+    setIsAddProjectModalOpen(true);
+  };
+
+  const getDifficultyColor = (level: string) => {
     switch (level) {
       case "Explorer":
         return "bg-blue-500/20 text-blue-300 border-blue-500/30";
@@ -112,6 +116,7 @@ const ProjectCategory = () => {
 
   const handleAddProjectSuccess = () => {
     setIsAddProjectModalOpen(false);
+    setEditingProject(null);
     fetchProjects();
   };
 
@@ -187,14 +192,27 @@ const ProjectCategory = () => {
               {projects.map((project) => (
                 <Card 
                   key={project.id} 
-                  className="bg-card border-border hover:bg-accent/70 transition-all duration-300 cursor-pointer"
+                  className="bg-card border-border hover:bg-accent/70 transition-all duration-300 cursor-pointer relative"
                   onClick={() => handleProjectClick(project)}
                 >
+                  {isAdmin && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="absolute top-2 right-2 z-10"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleEditProject(project);
+                      }}
+                    >
+                      <edit className="h-4 w-4" />
+                    </Button>
+                  )}
                   <CardHeader>
                     <div className="flex items-start justify-between gap-2 mb-2">
                       <div className="flex flex-wrap gap-2">
-                        <Badge className={`${getLevelColor(project.level)} border text-xs`}>
-                          {project.level}
+                        <Badge className={`${getDifficultyColor(project.level)} border text-xs`}>
+                          Difficulty: {project.level}
                         </Badge>
                         <Badge className={`${getPricingTierColor(project.pricing_tier)} border text-xs`}>
                           {project.pricing_tier}
@@ -283,6 +301,7 @@ const ProjectCategory = () => {
           isOpen={isAddProjectModalOpen}
           onClose={() => setIsAddProjectModalOpen(false)}
           onSuccess={handleAddProjectSuccess}
+          editingProject={editingProject}
         />
       )}
 
