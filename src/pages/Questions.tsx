@@ -236,7 +236,7 @@ const Questions = () => {
                   <Button
                     variant="outline"
                     size="sm"
-                    className="absolute top-2 right-2 z-10"
+                    className="absolute top-2 right-2 z-10 hover:bg-red-700"
                     onClick={(e) => {
                       e.stopPropagation();
                       handleDeleteCategory(category.id, category.name);
