@@ -50,7 +50,7 @@ export const useAuth = () => {
 
 const tierLevels = {
   'Explorer': 1,
-  'Voyager': 2,
+  'Builder': 2,
   'Innovator': 3
 };
 

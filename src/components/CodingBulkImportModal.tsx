@@ -149,7 +149,7 @@ const CodingBulkImportModal = ({ isOpen, onClose, onSuccess, categoryName }: Cod
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="Explorer">Explorer</SelectItem>
-                <SelectItem value="Voyager">Voyager</SelectItem>
+                <SelectItem value="Builder">Builder</SelectItem>
                 <SelectItem value="Innovator">Innovator</SelectItem>
               </SelectContent>
             </Select>
@@ -164,7 +164,7 @@ const CodingBulkImportModal = ({ isOpen, onClose, onSuccess, categoryName }: Cod
               id="csvData"
               value={csvData}
               onChange={(e) => setCsvData(e.target.value)}
-              placeholder="Example:&#10;Two Sum, Given an array of integers find two numbers that add up to target, Use hashmap to store complement values for O(1) lookup, Easy, Array;Hash Table, https://github.com/example/two-sum, https://youtube.com/watch?v=example, Explorer&#10;Reverse String, Write a function that reverses a string, Use two pointers approach from both ends, Easy, String;Two Pointers, https://github.com/example/reverse-string, , Voyager"
+              placeholder="Example:&#10;Two Sum, Given an array of integers find two numbers that add up to target, Use hashmap to store complement values for O(1) lookup, Easy, Array;Hash Table, https://github.com/example/two-sum, https://youtube.com/watch?v=example, Explorer&#10;Reverse String, Write a function that reverses a string, Use two pointers approach from both ends, Easy, String;Two Pointers, https://github.com/example/reverse-string, , Builder"
               rows={10}
               required
             />

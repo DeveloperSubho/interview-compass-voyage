@@ -232,7 +232,7 @@ const CodingQuestionModal = ({ isOpen, onClose, onSuccess, editingQuestion, cate
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="Explorer">Explorer</SelectItem>
-                  <SelectItem value="Voyager">Voyager</SelectItem>
+                  <SelectItem value="Builder">Builder</SelectItem>
                   <SelectItem value="Innovator">Innovator</SelectItem>
                 </SelectContent>
               </Select>
