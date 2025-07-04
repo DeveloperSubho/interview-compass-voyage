@@ -24,7 +24,7 @@ interface Question {
   created_at: string;
 }
 
-const CategoryQuestionList = () => {
+const SubCategory = () => {
   const navigate = useNavigate();
   const { category, subcategoryId } = useParams();
   const location = useLocation();
@@ -55,6 +55,11 @@ const CategoryQuestionList = () => {
         return ['Explorer'];
     }
   };
+
+  const canAccessQuestion = (questionTier: string) => {
+      const accessibleTiers = getTierAccess(userTier);
+      return profile?.is_admin || accessibleTiers.includes(questionTier || 'Explorer');
+    };
 
   useEffect(() => {
     if (subcategoryId) {
@@ -211,9 +216,18 @@ const CategoryQuestionList = () => {
   };
 
   const handleQuestionClick = (questionId: string) => {
-    if (!bulkDeleteMode) {
-      navigate(`/questions/${category}/${subcategoryId}/${questionId}`);
-    }
+    if (bulkDeleteMode) return;
+
+        if (canAccessQuestion(question.pricing_tier)) {
+          navigate(`/questions/java/${subcategoryId}/${question.id}`);
+        } else {
+          toast({
+            title: "Upgrade Required",
+            description: `Upgrade to ${question.pricing_tier} tier to access this question.`,
+            variant: "destructive",
+          });
+          navigate("/pricing");
+        }
   };
 
   if (loading) {
@@ -327,7 +341,11 @@ const CategoryQuestionList = () => {
           {filteredQuestions.map((question, index) => (
             <Card 
               key={question.id} 
-              className="bg-card border-border hover:bg-accent/50 transition-all duration-300"
+              className={`bg-card border-border transition-all duration-300 ${
+                  canAccessQuestion(question.pricing_tier) || bulkDeleteMode
+                    ? 'hover:bg-accent/50 cursor-pointer'
+                    : 'opacity-75 cursor-not-allowed'
+                }`}
             >
               <CardHeader>
                 <div className="flex items-start justify-between gap-4">
@@ -351,6 +369,11 @@ const CategoryQuestionList = () => {
                         <Badge variant="secondary" className="bg-blue-600/20 text-blue-300 border-blue-600/30">
                           {question.type}
                         </Badge>
+                        {!canAccessQuestion(question.pricing_tier) && !profile?.is_admin && (
+                          <Badge className="bg-orange-500/20 text-orange-300 border-orange-500/30">
+                            Upgrade Required
+                          </Badge>
+                        )}
                       </div>
                       <CardTitle className="text-foreground text-lg hover:text-blue-400 transition-colors">
                         {question.title}
@@ -481,4 +504,4 @@ const CategoryQuestionList = () => {
   );
 };
 
-export default CategoryQuestionList;
+export default SubCategory;

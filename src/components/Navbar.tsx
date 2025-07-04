@@ -1,140 +1,191 @@
 
 import { useState } from "react";
+import { Link, useLocation } from "react-router-dom";
+import { Menu, Crown } from "lucide-react";
+
+import { siteConfig } from "@/config/site";
+import { cn } from "@/lib/utils";
+import { useAuth } from "@/contexts/AuthContext";
+import { useTheme } from "@/contexts/ThemeContext";
+import { ModeToggle } from "@/components/ModeToggle";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
-import { Menu, User, LogOut, Settings } from "lucide-react";
-import { Link, useNavigate } from "react-router-dom";
-import { useAuth } from "@/contexts/AuthContext";
-import { ModeToggle } from "@/components/ModeToggle";
-import { supabase } from "@/integrations/supabase/client";
-import { useToast } from "@/hooks/use-toast";
 import AuthModal from "@/components/AuthModal";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { useNavigate } from 'react-router-dom';
 
-const Navbar = () => {
-  const { user, userTier } = useAuth();
+interface Props {
+  className?: string;
+}
+
+const Navbar = ({ className }: Props) => {
   const navigate = useNavigate();
-  const { toast } = useToast();
+  const location = useLocation();
+  const { user, isAdmin, signOut, profile, subscription } = useAuth();
+  const { theme } = useTheme();
+  const [isOpen, setIsOpen] = useState(false);
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
 
   const handleSignOut = async () => {
-    const { error } = await supabase.auth.signOut();
-    if (error) {
-      toast({
-        title: "Error",
-        description: "Failed to sign out",
-        variant: "destructive",
-      });
-    } else {
-      toast({
-        title: "Success",
-        description: "Signed out successfully",
-      });
-      navigate("/");
+    try {
+      await signOut();
+      navigate('/');
+    } catch (error) {
+      console.error("Sign out failed:", error);
     }
   };
 
-  const navItems = [
-    { href: "/", label: "Home" },
-    { href: "/questions", label: "Questions" },
-    { href: "/coding", label: "Coding" },
-    { href: "/system-design", label: "System Design" },
-    { href: "/projects", label: "Projects" },
-    { href: "/pricing", label: "Pricing" },
-    { href: "/contact", label: "Contact" },
-  ];
+  const isActivePath = (path: string) => {
+    if (path === '/') {
+      return location.pathname === '/';
+    }
+    return location.pathname.startsWith(path);
+  };
+
+  const getLinkClass = (path: string) => {
+    return cn(
+      "text-foreground hover:text-blue-400 transition-colors font-medium",
+      isActivePath(path) && "text-blue-400"
+    );
+  };
 
   return (
-    <>
-      <nav className="border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 sticky top-0 z-50">
-        <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between h-16">
-            <div className="flex items-center">
-              <Link to="/" className="flex items-center space-x-2">
-                <span className="font-bold text-xl bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent">
-                  InterviewAce
-                </span>
-              </Link>
-            </div>
+    <div className={cn("bg-background border-b sticky top-0 z-50", className)}>
+      <div className="container flex items-center justify-between py-4">
+        <Link to="/" className="flex items-center font-semibold">
+            <span className="text-xl font-bold bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent">
+                {siteConfig.name}
+            </span>
+        </Link>
 
-            {/* Desktop Navigation */}
-            <div className="hidden md:flex items-center space-x-8">
-              {navItems.map((item) => (
-                <Link
-                  key={item.href}
-                  to={item.href}
-                  className="text-muted-foreground hover:text-foreground transition-colors"
-                >
-                  {item.label}
-                </Link>
-              ))}
-            </div>
+        <nav className="hidden md:flex items-center space-x-8">
+          <Link to="/" className={getLinkClass("/")}>
+            Home
+          </Link>
+          <Link to="/questions" className={getLinkClass("/questions")}>
+            Questions
+          </Link>
+          <Link to="/coding" className={getLinkClass("/coding")}>
+            Coding
+          </Link>
+          <Link to="/system-design" className={getLinkClass("/system-design")}>
+            System Design
+          </Link>
+          <Link to="/projects" className={getLinkClass("/projects")}>
+            Projects
+          </Link>
+          <Link to="/pricing" className={getLinkClass("/pricing")}>
+            Pricing
+          </Link>
+        </nav>
 
-            <div className="flex items-center space-x-4">
-              <ModeToggle />
-              
-              {user ? (
-                <div className="flex items-center space-x-2">
-                  {userTier && (
-                    <span className="text-xs px-2 py-1 bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200 rounded-full">
-                      {userTier}
-                    </span>
+        <div className="flex items-center space-x-4">
+          <ModeToggle />
+          {user ? (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" className="h-8 w-8 p-0 rounded-full relative">
+                  <Avatar className="h-8 w-8">
+                    <AvatarImage src={user?.user_metadata?.avatar_url || profile?.avatar_url} alt={user?.user_metadata?.full_name || profile?.first_name} />
+                    <AvatarFallback>
+                      {user?.user_metadata?.full_name?.charAt(0) ||
+                       profile?.first_name?.charAt(0) ||
+                       user?.email?.charAt(0)}
+                    </AvatarFallback>
+                  </Avatar>
+                  {isAdmin && (
+                    <Crown className="h-3 w-3 text-yellow-400 absolute -top-1 -right-1" />
                   )}
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => navigate("/profile")}
-                    className="flex items-center space-x-1"
-                  >
-                    <User className="h-4 w-4" />
-                    <span className="hidden sm:inline">Profile</span>
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={handleSignOut}
-                    className="flex items-center space-x-1"
-                  >
-                    <LogOut className="h-4 w-4" />
-                    <span className="hidden sm:inline">Sign Out</span>
-                  </Button>
-                </div>
-              ) : (
-                <Button onClick={() => setIsAuthModalOpen(true)}>
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent className="w-56" align="end" forceMount>
+                <DropdownMenuLabel className="flex items-center gap-2">
+                  <div className="flex flex-col space-y-1">
+                    <p className="text-sm font-medium leading-none">
+                      {profile?.first_name || user?.user_metadata?.full_name || 'User'}
+                    </p>
+                    <p className="text-xs leading-none text-muted-foreground">
+                      {subscription?.tier || 'Explorer'} Plan
+                    </p>
+                  </div>
+                  {isAdmin && <Crown className="h-4 w-4 text-yellow-400" />}
+                </DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={() => navigate('/profile')}>Profile</DropdownMenuItem>
+                <DropdownMenuItem onClick={handleSignOut}>Sign out</DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          ) : (
+            <Button variant="outline" onClick={() => setIsAuthModalOpen(true)}>
+              Sign In
+            </Button>
+          )}
+        </div>
+
+        <Sheet>
+          <SheetTrigger asChild>
+            <Button variant="outline" size="icon" className="md:hidden">
+              <Menu className="h-4 w-4" />
+            </Button>
+          </SheetTrigger>
+          <SheetContent side="right">
+            <div className="flex flex-col space-y-4 mt-4">
+              <Link
+                to="/"
+                className={getLinkClass("/")}
+                onClick={() => setIsOpen(false)}
+              >
+                Home
+              </Link>
+              <Link
+                to="/questions"
+                className={getLinkClass("/questions")}
+                onClick={() => setIsOpen(false)}
+              >
+                Questions
+              </Link>
+              <Link
+                to="/coding"
+                className={getLinkClass("/coding")}
+                onClick={() => setIsOpen(false)}
+              >
+                Coding
+              </Link>
+              <Link
+                  to="/system-design"
+                  className={getLinkClass("/system-design")}
+                  onClick={() => setIsOpen(false)}
+               >
+                  System Design
+              </Link>
+              <Link
+                to="/projects"
+                className={getLinkClass("/projects")}
+                onClick={() => setIsOpen(false)}
+              >
+                Projects
+              </Link>
+              <Link
+                to="/pricing"
+                className={getLinkClass("/pricing")}
+                onClick={() => setIsOpen(false)}
+              >
+                Pricing
+              </Link>
+
+              {!user && (
+                <Button variant="outline" onClick={() => setIsAuthModalOpen(true)}>
                   Sign In
                 </Button>
               )}
-
-              {/* Mobile menu */}
-              <Sheet>
-                <SheetTrigger asChild className="md:hidden">
-                  <Button variant="ghost" size="sm">
-                    <Menu className="h-5 w-5" />
-                  </Button>
-                </SheetTrigger>
-                <SheetContent side="right" className="w-[300px] sm:w-[400px]">
-                  <nav className="flex flex-col space-y-4 mt-8">
-                    {navItems.map((item) => (
-                      <Link
-                        key={item.href}
-                        to={item.href}
-                        className="text-muted-foreground hover:text-foreground transition-colors py-2"
-                      >
-                        {item.label}
-                      </Link>
-                    ))}
-                  </nav>
-                </SheetContent>
-              </Sheet>
             </div>
-          </div>
-        </div>
-      </nav>
+          </SheetContent>
+        </Sheet>
 
-      <AuthModal 
-        isOpen={isAuthModalOpen}
-        onClose={() => setIsAuthModalOpen(false)}
-      />
-    </>
+        <AuthModal isOpen={isAuthModalOpen} onClose={() => setIsAuthModalOpen(false)} />
+      </div>
+    </div>
   );
 };
 
