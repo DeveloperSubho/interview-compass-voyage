@@ -1,14 +1,13 @@
-import { useState, useEffect } from "react";
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+
+import { useState } from "react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { supabase } from "@/integrations/supabase/client";
-import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
-import { Edit, Trash2 } from "lucide-react";
 
 interface CodingQuestion {
   id?: string;
@@ -17,117 +16,79 @@ interface CodingQuestion {
   description: string;
   solution: string;
   difficulty: string;
-  status: string;
   category: string;
   tags: string[];
-  github_link: string;
-  video_link: string;
-  is_paid: boolean;
-  level_unlock: string;
   pricing_tier: string;
+  video_link?: string;
+  github_link?: string;
 }
 
 interface CodingQuestionModalProps {
   isOpen: boolean;
   onClose: () => void;
   onSuccess: () => void;
-  editingQuestion?: CodingQuestion | null;
-  categoryName: string;
+  question?: CodingQuestion;
 }
 
-const CodingQuestionModal = ({ isOpen, onClose, onSuccess, editingQuestion, categoryName }: CodingQuestionModalProps) => {
-  const { user } = useAuth();
+const CodingQuestionModal = ({ isOpen, onClose, onSuccess, question }: CodingQuestionModalProps) => {
   const { toast } = useToast();
   const [loading, setLoading] = useState(false);
-  const [formData, setFormData] = useState<CodingQuestion>({
-    title: "",
-    slug: "",
-    description: "",
-    solution: "",
-    difficulty: "Easy",
-    status: "Unsolved",
-    category: categoryName,
-    tags: [],
-    github_link: "",
-    video_link: "",
-    is_paid: false,
-    level_unlock: "Beginner",
-    pricing_tier: "Explorer"
+  const [formData, setFormData] = useState({
+    title: question?.title || "",
+    slug: question?.slug || "",
+    description: question?.description || "",
+    solution: question?.solution || "",
+    difficulty: question?.difficulty || "Easy",
+    category: question?.category || "",
+    tags: question?.tags?.join(", ") || "",
+    pricing_tier: question?.pricing_tier || "Explorer",
+    video_link: question?.video_link || "",
+    github_link: question?.github_link || ""
   });
-
-  useEffect(() => {
-    if (editingQuestion) {
-      setFormData(editingQuestion);
-    } else {
-      setFormData({
-        title: "",
-        slug: "",
-        description: "",
-        solution: "",
-        difficulty: "Easy",
-        status: "Unsolved",
-        category: categoryName,
-        tags: [],
-        github_link: "",
-        video_link: "",
-        is_paid: false,
-        level_unlock: "Beginner",
-        pricing_tier: "Explorer"
-      });
-    }
-  }, [editingQuestion, categoryName, isOpen]);
-
-  const generateSlug = (title: string) => {
-    return title
-      .toLowerCase()
-      .replace(/[^a-z0-9]+/g, '-')
-      .replace(/^-+|-+$/g, '');
-  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!user) return;
-
     setLoading(true);
+
     try {
-      const slug = formData.slug || generateSlug(formData.title);
       const questionData = {
         ...formData,
-        slug,
-        tags: Array.isArray(formData.tags) ? formData.tags : []
+        tags: formData.tags.split(",").map(tag => tag.trim()).filter(tag => tag)
       };
 
-      if (editingQuestion) {
+      if (question?.id) {
+        // Update existing question
         const { error } = await supabase
           .from('coding_questions')
           .update(questionData)
-          .eq('id', editingQuestion.id);
+          .eq('id', question.id);
 
         if (error) throw error;
-        
+
         toast({
           title: "Success",
-          description: "Question updated successfully",
+          description: "Coding question updated successfully",
         });
       } else {
+        // Create new question
         const { error } = await supabase
           .from('coding_questions')
           .insert([questionData]);
 
         if (error) throw error;
-        
+
         toast({
           title: "Success",
-          description: "Question created successfully",
+          description: "Coding question created successfully",
         });
       }
 
       onSuccess();
     } catch (error) {
-      console.error('Error saving question:', error);
+      console.error('Error saving coding question:', error);
       toast({
         title: "Error",
-        description: "Failed to save question",
+        description: "Failed to save coding question",
         variant: "destructive",
       });
     } finally {
@@ -135,23 +96,13 @@ const CodingQuestionModal = ({ isOpen, onClose, onSuccess, editingQuestion, cate
     }
   };
 
-  const handleTagsChange = (value: string) => {
-    const tags = value.split(',').map(tag => tag.trim()).filter(tag => tag);
-    setFormData(prev => ({ ...prev, tags }));
-  };
-
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>
-            {editingQuestion ? 'Edit Question' : 'Add New Question'}
-          </DialogTitle>
-          <DialogDescription>
-            {editingQuestion ? 'Update the question details below.' : 'Fill in the details to create a new coding question.'}
-          </DialogDescription>
+          <DialogTitle>{question ? "Edit Coding Question" : "Add New Coding Question"}</DialogTitle>
         </DialogHeader>
-
+        
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="grid grid-cols-2 gap-4">
             <div>
@@ -159,50 +110,30 @@ const CodingQuestionModal = ({ isOpen, onClose, onSuccess, editingQuestion, cate
               <Input
                 id="title"
                 value={formData.title}
-                onChange={(e) => setFormData(prev => ({ ...prev, title: e.target.value }))}
+                onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+                placeholder="Enter question title"
                 required
               />
             </div>
+
             <div>
               <Label htmlFor="slug">Slug</Label>
               <Input
                 id="slug"
                 value={formData.slug}
-                onChange={(e) => setFormData(prev => ({ ...prev, slug: e.target.value }))}
-                placeholder="Auto-generated from title"
+                onChange={(e) => setFormData({ ...formData, slug: e.target.value })}
+                placeholder="question-slug"
+                required
               />
             </div>
-          </div>
-
-          <div>
-            <Label htmlFor="description">Description</Label>
-            <Textarea
-              id="description"
-              value={formData.description}
-              onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
-              rows={4}
-              required
-            />
-          </div>
-
-          <div>
-            <Label htmlFor="solution">Explanation</Label>
-            <Textarea
-              id="solution"
-              value={formData.solution}
-              onChange={(e) => setFormData(prev => ({ ...prev, solution: e.target.value }))}
-              rows={6}
-              placeholder="Provide a detailed explanation of the solution approach..."
-              required
-            />
           </div>
 
           <div className="grid grid-cols-3 gap-4">
             <div>
               <Label htmlFor="difficulty">Difficulty</Label>
-              <Select value={formData.difficulty} onValueChange={(value) => setFormData(prev => ({ ...prev, difficulty: value }))}>
+              <Select value={formData.difficulty} onValueChange={(value) => setFormData({ ...formData, difficulty: value })}>
                 <SelectTrigger>
-                  <SelectValue />
+                  <SelectValue placeholder="Select difficulty" />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="Easy">Easy</SelectItem>
@@ -211,71 +142,95 @@ const CodingQuestionModal = ({ isOpen, onClose, onSuccess, editingQuestion, cate
                 </SelectContent>
               </Select>
             </div>
+
             <div>
-              <Label htmlFor="status">Status</Label>
-              <Select value={formData.status} onValueChange={(value) => setFormData(prev => ({ ...prev, status: value }))}>
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="Unsolved">Unsolved</SelectItem>
-                  <SelectItem value="Solved">Solved</SelectItem>
-                  <SelectItem value="In Progress">In Progress</SelectItem>
-                </SelectContent>
-              </Select>
+              <Label htmlFor="category">Category</Label>
+              <Input
+                id="category"
+                value={formData.category}
+                onChange={(e) => setFormData({ ...formData, category: e.target.value })}
+                placeholder="e.g., Arrays, Strings"
+                required
+              />
             </div>
+
             <div>
               <Label htmlFor="pricing_tier">Pricing Tier</Label>
-              <Select value={formData.pricing_tier} onValueChange={(value) => setFormData(prev => ({ ...prev, pricing_tier: value }))}>
+              <Select value={formData.pricing_tier} onValueChange={(value) => setFormData({ ...formData, pricing_tier: value })}>
                 <SelectTrigger>
-                  <SelectValue />
+                  <SelectValue placeholder="Select pricing tier" />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="Explorer">Explorer</SelectItem>
-                  <SelectItem value="Builder">Builder</SelectItem>
                   <SelectItem value="Innovator">Innovator</SelectItem>
+                  <SelectItem value="Builder">Builder</SelectItem>
                 </SelectContent>
               </Select>
             </div>
           </div>
 
           <div>
-            <Label htmlFor="tags">Tags (comma-separated)</Label>
+            <Label htmlFor="tags">Tags (comma separated)</Label>
             <Input
               id="tags"
-              value={Array.isArray(formData.tags) ? formData.tags.join(', ') : ''}
-              onChange={(e) => handleTagsChange(e.target.value)}
-              placeholder="Array, String, Dynamic Programming"
+              value={formData.tags}
+              onChange={(e) => setFormData({ ...formData, tags: e.target.value })}
+              placeholder="array, sorting, algorithm"
+            />
+          </div>
+
+          <div>
+            <Label htmlFor="description">Description</Label>
+            <Textarea
+              id="description"
+              value={formData.description}
+              onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+              placeholder="Enter problem description"
+              rows={4}
+              required
+            />
+          </div>
+
+          <div>
+            <Label htmlFor="solution">Solution</Label>
+            <Textarea
+              id="solution"
+              value={formData.solution}
+              onChange={(e) => setFormData({ ...formData, solution: e.target.value })}
+              placeholder="Enter the solution with explanation"
+              rows={6}
+              required
             />
           </div>
 
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <Label htmlFor="github_link">GitHub Link</Label>
-              <Input
-                id="github_link"
-                value={formData.github_link}
-                onChange={(e) => setFormData(prev => ({ ...prev, github_link: e.target.value }))}
-                placeholder="https://github.com/..."
-              />
-            </div>
-            <div>
-              <Label htmlFor="video_link">Video Link</Label>
+              <Label htmlFor="video_link">Video Link (Optional)</Label>
               <Input
                 id="video_link"
                 value={formData.video_link}
-                onChange={(e) => setFormData(prev => ({ ...prev, video_link: e.target.value }))}
+                onChange={(e) => setFormData({ ...formData, video_link: e.target.value })}
                 placeholder="https://youtube.com/..."
+              />
+            </div>
+
+            <div>
+              <Label htmlFor="github_link">GitHub Link (Optional)</Label>
+              <Input
+                id="github_link"
+                value={formData.github_link}
+                onChange={(e) => setFormData({ ...formData, github_link: e.target.value })}
+                placeholder="https://github.com/..."
               />
             </div>
           </div>
 
-          <div className="flex justify-end space-x-2 pt-4">
+          <div className="flex justify-end gap-2">
             <Button type="button" variant="outline" onClick={onClose}>
               Cancel
             </Button>
             <Button type="submit" disabled={loading}>
-              {loading ? "Saving..." : (editingQuestion ? "Update" : "Create")}
+              {loading ? "Saving..." : question ? "Update Question" : "Create Question"}
             </Button>
           </div>
         </form>

@@ -1,13 +1,13 @@
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/hooks/use-toast";
 
 interface Question {
   id?: string;
@@ -15,90 +15,47 @@ interface Question {
   content: string;
   answer: string;
   type: string;
-  level: string;
+  difficulty: string;
+  pricing_tier: string;
+  subcategory_id: string;
 }
 
 interface QuestionModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onQuestionSaved: () => void;
+  onSuccess: () => void;
   subcategoryId: string;
-  subcategoryName: string;
-  editingQuestion?: Question | null;
+  question?: Question;
 }
 
-const QuestionModal = ({ 
-  isOpen, 
-  onClose, 
-  onQuestionSaved, 
-  subcategoryId, 
-  subcategoryName,
-  editingQuestion 
-}: QuestionModalProps) => {
-  const [title, setTitle] = useState("");
-  const [answer, setAnswer] = useState("");
-  const [type, setType] = useState("");
-  const [level, setLevel] = useState("");
-  const [loading, setLoading] = useState(false);
+const QuestionModal = ({ isOpen, onClose, onSuccess, subcategoryId, question }: QuestionModalProps) => {
   const { toast } = useToast();
-
-  const levels = ["Explorer", "Builder", "Innovator"];
-  const types = [
-    "Basic Java",
-    "Advanced Java", 
-    "Collection Framework",
-    "Errors and Exception",
-    "JPA JDBC Hibernate",
-    "Java Versions",
-    "Unit Testing",
-    "Asynchronous Programming"
-  ];
-
-  useEffect(() => {
-    if (editingQuestion) {
-      setTitle(editingQuestion.title);
-      setAnswer(editingQuestion.answer);
-      setType(editingQuestion.type);
-      setLevel(editingQuestion.level);
-    } else {
-      setTitle("");
-      setAnswer("");
-      setType("");
-      setLevel("");
-    }
-  }, [editingQuestion, isOpen]);
+  const [loading, setLoading] = useState(false);
+  const [formData, setFormData] = useState({
+    title: question?.title || "",
+    content: question?.content || "",
+    answer: question?.answer || "",
+    type: question?.type || "Multiple Choice",
+    difficulty: question?.difficulty || "Easy",
+    pricing_tier: question?.pricing_tier || "Explorer"
+  });
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
-    if (!title.trim() || !answer.trim() || !type || !level) {
-      toast({
-        title: "Error",
-        description: "All fields are required",
-        variant: "destructive",
-      });
-      return;
-    }
-
     setLoading(true);
 
     try {
       const questionData = {
-        subcategory_id: subcategoryId,
-        title: title.trim(),
-        content: title.trim(), // Use title as content since we removed content field
-        answer: answer.trim(),
-        type,
-        level,
-        tier: level // Set tier same as level
+        ...formData,
+        subcategory_id: subcategoryId
       };
 
-      if (editingQuestion?.id) {
+      if (question?.id) {
         // Update existing question
         const { error } = await supabase
           .from('questions')
           .update(questionData)
-          .eq('id', editingQuestion.id);
+          .eq('id', question.id);
 
         if (error) throw error;
 
@@ -107,26 +64,25 @@ const QuestionModal = ({
           description: "Question updated successfully",
         });
       } else {
-        // Insert new question
+        // Create new question
         const { error } = await supabase
           .from('questions')
-          .insert(questionData);
+          .insert([questionData]);
 
         if (error) throw error;
 
         toast({
           title: "Success",
-          description: "Question added successfully",
+          description: "Question created successfully",
         });
       }
 
-      onQuestionSaved();
-      onClose();
+      onSuccess();
     } catch (error) {
       console.error('Error saving question:', error);
       toast({
         title: "Error",
-        description: `Failed to ${editingQuestion ? 'update' : 'add'} question`,
+        description: "Failed to save question",
         variant: "destructive",
       });
     } finally {
@@ -136,93 +92,98 @@ const QuestionModal = ({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-2xl bg-slate-800 border-slate-700 text-white max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-w-2xl">
         <DialogHeader>
-          <DialogTitle className="text-2xl text-center text-white">
-            {editingQuestion ? 'Edit Question' : `Add Question to ${subcategoryName}`}
-          </DialogTitle>
+          <DialogTitle>{question ? "Edit Question" : "Add New Question"}</DialogTitle>
         </DialogHeader>
         
         <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="space-y-2">
-            <Label htmlFor="title" className="text-slate-300">Question Title</Label>
+          <div>
+            <Label htmlFor="title">Title</Label>
             <Input
               id="title"
-              type="text"
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
-              className="bg-slate-700 border-slate-600 text-white"
-              placeholder="Enter the question title"
+              value={formData.title}
+              onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+              placeholder="Enter question title"
               required
             />
           </div>
 
           <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="type" className="text-slate-300">Type</Label>
-              <Select value={type} onValueChange={setType}>
-                <SelectTrigger className="bg-slate-700 border-slate-600 text-white">
+            <div>
+              <Label htmlFor="type">Type</Label>
+              <Select value={formData.type} onValueChange={(value) => setFormData({ ...formData, type: value })}>
+                <SelectTrigger>
                   <SelectValue placeholder="Select type" />
                 </SelectTrigger>
-                <SelectContent className="bg-slate-700 border-slate-600">
-                  {types.map((t) => (
-                    <SelectItem key={t} value={t} className="text-white hover:bg-slate-600">
-                      {t}
-                    </SelectItem>
-                  ))}
+                <SelectContent>
+                  <SelectItem value="Multiple Choice">Multiple Choice</SelectItem>
+                  <SelectItem value="Short Answer">Short Answer</SelectItem>
+                  <SelectItem value="Essay">Essay</SelectItem>
+                  <SelectItem value="Code">Code</SelectItem>
                 </SelectContent>
               </Select>
             </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="level" className="text-slate-300">Level</Label>
-              <Select value={level} onValueChange={setLevel}>
-                <SelectTrigger className="bg-slate-700 border-slate-600 text-white">
-                  <SelectValue placeholder="Select level" />
+            <div>
+              <Label htmlFor="difficulty">Difficulty</Label>
+              <Select value={formData.difficulty} onValueChange={(value) => setFormData({ ...formData, difficulty: value })}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select difficulty" />
                 </SelectTrigger>
-                <SelectContent className="bg-slate-700 border-slate-600">
-                  {levels.map((l) => (
-                    <SelectItem key={l} value={l} className="text-white hover:bg-slate-600">
-                      {l}
-                    </SelectItem>
-                  ))}
+                <SelectContent>
+                  <SelectItem value="Easy">Easy</SelectItem>
+                  <SelectItem value="Medium">Medium</SelectItem>
+                  <SelectItem value="Hard">Hard</SelectItem>
                 </SelectContent>
               </Select>
             </div>
           </div>
-          
-          <div className="space-y-2">
-            <Label htmlFor="answer" className="text-slate-300">Answer</Label>
+
+          <div>
+            <Label htmlFor="pricing_tier">Pricing Tier</Label>
+            <Select value={formData.pricing_tier} onValueChange={(value) => setFormData({ ...formData, pricing_tier: value })}>
+              <SelectTrigger>
+                <SelectValue placeholder="Select pricing tier" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="Explorer">Explorer</SelectItem>
+                <SelectItem value="Innovator">Innovator</SelectItem>
+                <SelectItem value="Builder">Builder</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div>
+            <Label htmlFor="content">Question Content</Label>
             <Textarea
-              id="answer"
-              value={answer}
-              onChange={(e) => setAnswer(e.target.value)}
-              className="bg-slate-700 border-slate-600 text-white"
-              placeholder="Detailed answer with explanations. You can use markdown formatting and include image URLs."
-              rows={8}
+              id="content"
+              value={formData.content}
+              onChange={(e) => setFormData({ ...formData, content: e.target.value })}
+              placeholder="Enter the full question content"
+              rows={4}
               required
             />
-            <p className="text-xs text-slate-400">
-              Tip: You can use markdown formatting and include image URLs directly in the answer text.
-            </p>
           </div>
 
-          <div className="flex gap-3 pt-4">
-            <Button 
-              type="button"
-              variant="outline" 
-              onClick={onClose}
-              className="flex-1 border-slate-600 text-slate-300 hover:bg-slate-700"
-              disabled={loading}
-            >
+          <div>
+            <Label htmlFor="answer">Answer</Label>
+            <Textarea
+              id="answer"
+              value={formData.answer}
+              onChange={(e) => setFormData({ ...formData, answer: e.target.value })}
+              placeholder="Enter the correct answer or explanation"
+              rows={4}
+              required
+            />
+          </div>
+
+          <div className="flex justify-end gap-2">
+            <Button type="button" variant="outline" onClick={onClose}>
               Cancel
             </Button>
-            <Button 
-              type="submit" 
-              className="flex-1 bg-green-600 hover:bg-green-700 text-white"
-              disabled={loading}
-            >
-              {loading ? "Saving..." : (editingQuestion ? "Update Question" : "Add Question")}
+            <Button type="submit" disabled={loading}>
+              {loading ? "Saving..." : question ? "Update Question" : "Create Question"}
             </Button>
           </div>
         </form>

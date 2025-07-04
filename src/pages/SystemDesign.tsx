@@ -24,7 +24,7 @@ interface SystemDesignProblem {
   video_link: string | null;
   github_link: string | null;
   tags: string[];
-  level: string;
+  difficulty: string;
   pricing_tier: string;
   status: string;
   created_at: string;
@@ -37,7 +37,7 @@ const SystemDesign = () => {
   const [problems, setProblems] = useState<SystemDesignProblem[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
-  const [levelFilter, setLevelFilter] = useState<string>("");
+  const [difficultyFilter, setDifficultyFilter] = useState<string>("");
   const [tierFilter, setTierFilter] = useState<string>("");
   const [tagFilter, setTagFilter] = useState<string>("");
   const [sortBy, setSortBy] = useState<string>("created_at");
@@ -68,8 +68,8 @@ const SystemDesign = () => {
     }
   };
 
-  const getDifficultyColor = (level: string) => {
-    switch (level) {
+  const getDifficultyColor = (difficulty: string) => {
+    switch (difficulty) {
       case "Easy":
         return "bg-green-500/20 text-green-300 border-green-500/30";
       case "Medium":
@@ -97,13 +97,13 @@ const SystemDesign = () => {
   const filteredProblems = problems.filter(problem => {
     const matchesSearch = problem.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          problem.description.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesLevel = !levelFilter || problem.level === levelFilter;
+    const matchesDifficulty = !difficultyFilter || problem.difficulty === difficultyFilter;
     const matchesTier = !tierFilter || problem.pricing_tier === tierFilter;
     const matchesTag = !tagFilter || problem.tags.some(tag => 
       tag.toLowerCase().includes(tagFilter.toLowerCase())
     );
     
-    return matchesSearch && matchesLevel && matchesTier && matchesTag;
+    return matchesSearch && matchesDifficulty && matchesTier && matchesTag;
   }).sort((a, b) => {
     if (sortBy === "title") {
       return a.title.localeCompare(b.title);
@@ -163,7 +163,7 @@ const SystemDesign = () => {
             />
           </div>
           
-          <Select value={levelFilter} onValueChange={setLevelFilter}>
+          <Select value={difficultyFilter} onValueChange={setDifficultyFilter}>
             <SelectTrigger>
               <SelectValue placeholder="Filter by difficulty" />
             </SelectTrigger>
@@ -238,8 +238,8 @@ const SystemDesign = () => {
                 <CardHeader>
                   <div className="flex items-start justify-between mb-4">
                     <div className="flex gap-2 flex-wrap">
-                      <Badge className={`${getDifficultyColor(problem.level)} border`}>
-                        {problem.level}
+                      <Badge className={`${getDifficultyColor(problem.difficulty)} border`}>
+                        {problem.difficulty}
                       </Badge>
                       <Badge className={`${getPricingTierColor(problem.pricing_tier)} border`}>
                         {problem.pricing_tier}

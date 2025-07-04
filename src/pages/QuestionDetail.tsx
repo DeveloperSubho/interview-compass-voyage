@@ -15,7 +15,7 @@ const QuestionDetail = () => {
   const sampleQuestion = {
     id: questionId,
     title: "What is the difference between == and === in JavaScript?",
-    difficulty: "Basic",
+    difficulty: "Easy",
     timeToSolve: "5 mins",
     tags: ["JavaScript", "Comparison", "Fundamentals"],
     description: "This question tests your understanding of JavaScript's comparison operators and type coercion.",
@@ -75,11 +75,11 @@ Always use === unless you specifically need type coercion. It makes your code mo
 
   const getDifficultyColor = (difficulty: string) => {
     switch (difficulty) {
-      case "Basic":
+      case "Easy":
         return "bg-green-500/20 text-green-300 border-green-500/30";
-      case "Intermediate":
+      case "Medium":
         return "bg-yellow-500/20 text-yellow-300 border-yellow-500/30";
-      case "Advanced":
+      case "Hard":
         return "bg-red-500/20 text-red-300 border-red-500/30";
       default:
         return "bg-gray-500/20 text-gray-300 border-gray-500/30";

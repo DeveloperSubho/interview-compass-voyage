@@ -202,11 +202,11 @@ export type Database = {
           created_at: string
           created_by: string | null
           description: string | null
+          difficulty: string
           duration: string | null
           github_url: string | null
           id: string
           key_features: string[]
-          level: string
           pricing_tier: string
           technologies: string[]
           title: string
@@ -217,11 +217,11 @@ export type Database = {
           created_at?: string
           created_by?: string | null
           description?: string | null
+          difficulty?: string
           duration?: string | null
           github_url?: string | null
           id?: string
           key_features?: string[]
-          level?: string
           pricing_tier?: string
           technologies?: string[]
           title: string
@@ -232,11 +232,11 @@ export type Database = {
           created_at?: string
           created_by?: string | null
           description?: string | null
+          difficulty?: string
           duration?: string | null
           github_url?: string | null
           id?: string
           key_features?: string[]
-          level?: string
           pricing_tier?: string
           technologies?: string[]
           title?: string
@@ -251,10 +251,10 @@ export type Database = {
           content: string
           created_at: string | null
           created_by: string | null
+          difficulty: string
           id: string
-          level: string
+          pricing_tier: string | null
           subcategory_id: string | null
-          tier: string | null
           title: string
           type: string
           updated_at: string | null
@@ -264,10 +264,10 @@ export type Database = {
           content: string
           created_at?: string | null
           created_by?: string | null
+          difficulty: string
           id?: string
-          level: string
+          pricing_tier?: string | null
           subcategory_id?: string | null
-          tier?: string | null
           title: string
           type: string
           updated_at?: string | null
@@ -277,10 +277,10 @@ export type Database = {
           content?: string
           created_at?: string | null
           created_by?: string | null
+          difficulty?: string
           id?: string
-          level?: string
+          pricing_tier?: string | null
           subcategory_id?: string | null
-          tier?: string | null
           title?: string
           type?: string
           updated_at?: string | null
@@ -332,6 +332,60 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      system_design_problems: {
+        Row: {
+          created_at: string
+          description: string
+          design_image: string | null
+          difficulty: string
+          github_link: string | null
+          id: string
+          pricing_tier: string
+          requirement_discussion: string | null
+          slug: string
+          solution: string | null
+          status: string
+          tags: string[]
+          title: string
+          updated_at: string
+          video_link: string | null
+        }
+        Insert: {
+          created_at?: string
+          description: string
+          design_image?: string | null
+          difficulty?: string
+          github_link?: string | null
+          id?: string
+          pricing_tier?: string
+          requirement_discussion?: string | null
+          slug: string
+          solution?: string | null
+          status?: string
+          tags?: string[]
+          title: string
+          updated_at?: string
+          video_link?: string | null
+        }
+        Update: {
+          created_at?: string
+          description?: string
+          design_image?: string | null
+          difficulty?: string
+          github_link?: string | null
+          id?: string
+          pricing_tier?: string
+          requirement_discussion?: string | null
+          slug?: string
+          solution?: string | null
+          status?: string
+          tags?: string[]
+          title?: string
+          updated_at?: string
+          video_link?: string | null
+        }
+        Relationships: []
       }
       user_subscriptions: {
         Row: {
