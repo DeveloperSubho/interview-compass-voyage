@@ -8,6 +8,7 @@ import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import AuthModal from "@/components/AuthModal";
 import AddTopicModal from "@/components/AddTopicModal";
+import DeleteConfirmationModal from "@/components/DeleteConfirmationModal";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
@@ -17,7 +18,7 @@ interface Category {
   id: string;
   name: string;
   description: string;
-  tier: string | null;
+  pricing_tier: string | null;
   questionCount: number;
   icon: string;
 }
@@ -28,6 +29,9 @@ const Questions = () => {
   const { toast } = useToast();
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const [isAddCategoryModalOpen, setIsAddCategoryModalOpen] = useState(false);
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [categoryToDelete, setCategoryToDelete] = useState<Category | null>(null);
+  const [deleteLoading, setDeleteLoading] = useState(false);
   const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -111,17 +115,21 @@ const Questions = () => {
     }
   };
 
-  const handleDeleteCategory = async (categoryId: string, categoryName: string) => {
-    if (!confirm(`Are you sure you want to delete "${categoryName}" category? This will also delete all related subcategories and questions.`)) {
-      return;
-    }
+  const handleDeleteClick = (category: Category) => {
+    setCategoryToDelete(category);
+    setIsDeleteModalOpen(true);
+  };
 
+  const handleDeleteConfirm = async () => {
+    if (!categoryToDelete) return;
+
+    setDeleteLoading(true);
     try {
       // First get all subcategories for this category
       const { data: subcategories } = await supabase
         .from('subcategories')
         .select('id')
-        .eq('category_id', categoryId);
+        .eq('category_id', categoryToDelete.id);
 
       if (subcategories && subcategories.length > 0) {
         const subcategoryIds = subcategories.map(sub => sub.id);
@@ -138,7 +146,7 @@ const Questions = () => {
         const { error: subcategoriesError } = await supabase
           .from('subcategories')
           .delete()
-          .eq('category_id', categoryId);
+          .eq('category_id', categoryToDelete.id);
 
         if (subcategoriesError) throw subcategoriesError;
       }
@@ -147,7 +155,7 @@ const Questions = () => {
       const { error: categoryError } = await supabase
         .from('categories')
         .delete()
-        .eq('id', categoryId);
+        .eq('id', categoryToDelete.id);
 
       if (categoryError) throw categoryError;
 
@@ -157,6 +165,8 @@ const Questions = () => {
       });
 
       fetchCategoriesWithCounts();
+      setIsDeleteModalOpen(false);
+      setCategoryToDelete(null);
     } catch (error) {
       console.error('Error deleting category:', error);
       toast({
@@ -164,6 +174,8 @@ const Questions = () => {
         description: "Failed to delete category",
         variant: "destructive",
       });
+    } finally {
+      setDeleteLoading(false);
     }
   };
 
@@ -239,7 +251,7 @@ const Questions = () => {
                     className="absolute top-2 right-2 z-10 hover:bg-red-700"
                     onClick={(e) => {
                       e.stopPropagation();
-                      handleDeleteCategory(category.id, category.name);
+                      handleDeleteClick(category);
                     }}
                   >
                     <Trash2 className="h-4 w-4" />
@@ -281,6 +293,19 @@ const Questions = () => {
         onClose={() => setIsAddCategoryModalOpen(false)}
         onSuccess={handleAddCategorySuccess}
         type="category"
+      />
+
+      <DeleteConfirmationModal
+        isOpen={isDeleteModalOpen}
+        onClose={() => {
+          setIsDeleteModalOpen(false);
+          setCategoryToDelete(null);
+        }}
+        onConfirm={handleDeleteConfirm}
+        title="Delete Category"
+        description="Are you sure you want to delete this category? This action will permanently delete the category and all its related subcategories and questions. This action cannot be undone."
+        itemName={categoryToDelete?.name || ""}
+        loading={deleteLoading}
       />
 
       <Footer />

@@ -3,38 +3,21 @@ import { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Plus, BookOpen, Lock, ArrowLeft } from "lucide-react";
-import { Link, useNavigate, useParams } from "react-router-dom";
+import { BookOpen, Plus } from "lucide-react";
+import { useParams, useNavigate } from "react-router-dom";
+import Navbar from "@/components/Navbar";
+import Footer from "@/components/Footer";
+import AddTopicModal from "@/components/AddTopicModal";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
-import AddTopicModal from "./AddTopicModal";
-import ProtectedContent from "./ProtectedContent";
-import Navbar from "./Navbar";
-import Footer from "./Footer";
-
-interface Category {
-  id: string;
-  name: string;
-  description: string | null;
-  tier: string | null;
-}
 
 interface Subcategory {
   id: string;
   name: string;
-  description: string | null;
-  tier: string | null;
-  category_id: string | null;
-}
-
-interface Question {
-  id: string;
-  title: string;
-  tier: string | null;
-  level: string;
-  type: string;
-  subcategory_id: string | null;
+  description: string;
+  pricing_tier: string | null;
+  questionCount: number;
 }
 
 interface CategorySectionProps {
@@ -42,81 +25,34 @@ interface CategorySectionProps {
 }
 
 const CategorySection = ({ onSignInClick }: CategorySectionProps) => {
-  const { isAdmin, hasAccess } = useAuth();
-  const { toast } = useToast();
-  const navigate = useNavigate();
   const { category } = useParams();
-  const [currentCategory, setCurrentCategory] = useState<Category | null>(null);
+  const navigate = useNavigate();
+  const { user, isAdmin } = useAuth();
+  const { toast } = useToast();
   const [subcategories, setSubcategories] = useState<Subcategory[]>([]);
-  const [questions, setQuestions] = useState<Question[]>([]);
+  const [categoryInfo, setCategoryInfo] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [isAddTopicModalOpen, setIsAddTopicModalOpen] = useState(false);
 
   useEffect(() => {
     if (category) {
-      fetchCategoryData();
+      fetchSubcategories();
     }
   }, [category]);
 
-  const fetchCategoryData = async () => {
-    setLoading(true);
+  const fetchSubcategories = async () => {
     try {
-      const categoryName = category?.replace(/-/g, ' ') || '';
-      console.log('Searching for category:', categoryName);
-      
-      let categoryData = null;
-      
-      // Try case-insensitive search
-      const { data: ilikeCategoryData, error: ilikeError } = await supabase
+      // First get category info
+      const { data: categoryData, error: categoryError } = await supabase
         .from('categories')
         .select('*')
-        .ilike('name', categoryName)
+        .ilike('name', category?.replace('-', ' ') || '')
         .single();
 
-      if (!ilikeError && ilikeCategoryData) {
-        categoryData = ilikeCategoryData;
-      } else {
-        // Try exact match
-        const { data: exactCategoryData, error: exactError } = await supabase
-          .from('categories')
-          .select('*')
-          .eq('name', categoryName)
-          .single();
+      if (categoryError) throw categoryError;
+      setCategoryInfo(categoryData);
 
-        if (!exactError && exactCategoryData) {
-          categoryData = exactCategoryData;
-        } else {
-          // Try with capitalized name
-          const capitalizedName = categoryName.split(' ').map(word => 
-            word.charAt(0).toUpperCase() + word.slice(1).toLowerCase()
-          ).join(' ');
-          
-          const { data: capitalizedCategoryData, error: capitalizedError } = await supabase
-            .from('categories')
-            .select('*')
-            .eq('name', capitalizedName)
-            .single();
-
-          if (!capitalizedError && capitalizedCategoryData) {
-            categoryData = capitalizedCategoryData;
-          }
-        }
-      }
-
-      if (!categoryData) {
-        console.error("Category not found:", categoryName);
-        toast({
-          title: "Error",
-          description: "Category not found",
-          variant: "destructive",
-        });
-        return;
-      }
-
-      console.log('Found category:', categoryData);
-      setCurrentCategory(categoryData);
-
-      // Fetch subcategories for this category
+      // Then get subcategories with question counts
       const { data: subcategoriesData, error: subcategoriesError } = await supabase
         .from('subcategories')
         .select('*')
@@ -124,25 +60,27 @@ const CategorySection = ({ onSignInClick }: CategorySectionProps) => {
         .order('created_at', { ascending: false });
 
       if (subcategoriesError) throw subcategoriesError;
-      console.log('Found subcategories:', subcategoriesData);
-      setSubcategories(subcategoriesData || []);
 
-      // Fetch questions for all subcategories
-      if (subcategoriesData && subcategoriesData.length > 0) {
-        const subcategoryIds = subcategoriesData.map(sub => sub.id);
-        const { data: questionsData, error: questionsError } = await supabase
-          .from('questions')
-          .select('*')
-          .in('subcategory_id', subcategoryIds);
+      const subcategoriesWithCounts = await Promise.all(
+        (subcategoriesData || []).map(async (subcategory) => {
+          const { count } = await supabase
+            .from('questions')
+            .select('*', { count: 'exact', head: true })
+            .eq('subcategory_id', subcategory.id);
 
-        if (questionsError) throw questionsError;
-        setQuestions(questionsData || []);
-      }
+          return {
+            ...subcategory,
+            questionCount: count || 0
+          };
+        })
+      );
+
+      setSubcategories(subcategoriesWithCounts);
     } catch (error) {
-      console.error("Error fetching category data:", error);
+      console.error('Error fetching subcategories:', error);
       toast({
         title: "Error",
-        description: "Failed to load category data",
+        description: "Failed to load subcategories",
         variant: "destructive",
       });
     } finally {
@@ -150,18 +88,17 @@ const CategorySection = ({ onSignInClick }: CategorySectionProps) => {
     }
   };
 
-  const handleSuccess = () => {
+  const handleSubcategoryClick = (subcategoryId: string) => {
+    if (!user) {
+      onSignInClick();
+    } else {
+      navigate(`/questions/${category}/${subcategoryId}`);
+    }
+  };
+
+  const handleAddTopicSuccess = () => {
     setIsAddTopicModalOpen(false);
-    fetchCategoryData();
-  };
-
-  const getQuestionCount = (subcategoryId: string) => {
-    return questions.filter(q => q.subcategory_id === subcategoryId).length;
-  };
-
-  const canAccessContent = (tier: string | null) => {
-    if (!tier) return true;
-    return isAdmin || hasAccess(tier);
+    fetchSubcategories();
   };
 
   if (loading) {
@@ -171,24 +108,7 @@ const CategorySection = ({ onSignInClick }: CategorySectionProps) => {
         <div className="container mx-auto px-4 py-16">
           <div className="text-center">
             <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-400 mx-auto"></div>
-            <p className="mt-4 text-muted-foreground">Loading...</p>
-          </div>
-        </div>
-        <Footer />
-      </div>
-    );
-  }
-
-  if (!currentCategory) {
-    return (
-      <div className="min-h-screen bg-background text-foreground">
-        <Navbar />
-        <div className="container mx-auto px-4 py-16">
-          <div className="text-center">
-            <h1 className="text-2xl font-bold mb-4">Category Not Found</h1>
-            <Button onClick={() => navigate('/questions')}>
-              Back to Questions
-            </Button>
+            <p className="mt-4 text-muted-foreground">Loading subcategories...</p>
           </div>
         </div>
         <Footer />
@@ -201,110 +121,75 @@ const CategorySection = ({ onSignInClick }: CategorySectionProps) => {
       <Navbar />
       
       <div className="container mx-auto px-4 py-16">
-        <div className="mb-8">
-          <Button 
-            variant="ghost" 
-            onClick={() => navigate("/questions")}
-            className="text-muted-foreground hover:text-foreground hover:bg-accent mb-4"
-          >
-            <ArrowLeft className="h-4 w-4 mr-2" />
-            Back to Questions
-          </Button>
-          
-          <div className="text-center mb-12">
-            <h1 className="text-4xl md:text-5xl font-bold mb-4 bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent capitalize">
-              {currentCategory.name} Questions
+        <div className="flex justify-between items-center mb-8">
+          <div>
+            <h1 className="text-4xl md:text-5xl font-bold mb-4 bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent">
+              {categoryInfo?.name || category?.replace('-', ' ')} Questions
             </h1>
-            <p className="text-muted-foreground text-lg max-w-2xl mx-auto">
-              {currentCategory.description || `Explore ${currentCategory.name} topics and questions`}
+            <p className="text-muted-foreground text-lg max-w-3xl">
+              {categoryInfo?.description || `Explore ${category?.replace('-', ' ')} topics and questions`}
             </p>
           </div>
-        </div>
-
-        <div className="space-y-6">
+          
           {isAdmin && (
-            <div className="flex gap-2">
-              <Button onClick={() => setIsAddTopicModalOpen(true)}>
-                <Plus className="h-4 w-4 mr-2" />
-                Add Topic
-              </Button>
-            </div>
+            <Button onClick={() => setIsAddTopicModalOpen(true)}>
+              <Plus className="h-4 w-4 mr-2" />
+              Add Topic
+            </Button>
           )}
-
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {subcategories.length === 0 ? (
-              <div className="col-span-full text-center py-12">
-                <h3 className="text-lg font-medium text-muted-foreground mb-2">
-                  No topics available
-                </h3>
-                <p className="text-muted-foreground">
-                  Topics for {currentCategory.name} will be added soon.
-                </p>
-              </div>
-            ) : (
-              subcategories.map((subcategory) => {
-                const questionCount = getQuestionCount(subcategory.id);
-                const requiresUpgrade = subcategory.tier && !canAccessContent(subcategory.tier);
-
-                return (
-                  <Card key={subcategory.id} className={`hover:shadow-lg transition-shadow ${requiresUpgrade ? 'opacity-75' : ''}`}>
-                    <CardHeader>
-                      <div className="flex items-start justify-between">
-                        <div className="flex-1">
-                          <CardTitle className="flex items-center gap-2">
-                            {subcategory.name}
-                            {requiresUpgrade && <Lock className="h-4 w-4 text-muted-foreground" />}
-                          </CardTitle>
-                          <CardDescription className="mt-2">
-                            {subcategory.description || "Explore various topics and questions"}
-                          </CardDescription>
-                        </div>
-                        {subcategory.tier && (
-                          <Badge variant={requiresUpgrade ? "secondary" : "default"}>
-                            {subcategory.tier}
-                          </Badge>
-                        )}
-                      </div>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="space-y-3">
-                        <div className="flex items-center text-sm text-muted-foreground">
-                          <BookOpen className="h-4 w-4 mr-1" />
-                          {questionCount} questions
-                        </div>
-                        
-                        <ProtectedContent 
-                          requiredTier={subcategory.tier || undefined}
-                          onSignInClick={onSignInClick}
-                          showUpgradeMessage={true}
-                        >
-                          <Link 
-                            to={`/questions/${category}/${subcategory.id}`}
-                            className="block"
-                          >
-                            <Button className="w-full">
-                              Explore {subcategory.name}
-                            </Button>
-                          </Link>
-                        </ProtectedContent>
-                      </div>
-                    </CardContent>
-                  </Card>
-                );
-              })
-            )}
-          </div>
         </div>
 
-        <AddTopicModal
-          isOpen={isAddTopicModalOpen}
-          onClose={() => setIsAddTopicModalOpen(false)}
-          onSuccess={handleSuccess}
-          type="subcategory"
-          categoryId={currentCategory.id}
-        />
+        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {subcategories.length === 0 ? (
+            <div className="col-span-full text-center py-12">
+              <h3 className="text-lg font-medium text-muted-foreground mb-2">
+                No topics available
+              </h3>
+              <p className="text-muted-foreground">
+                Topics will be added soon for this category.
+              </p>
+            </div>
+          ) : (
+            subcategories.map((subcategory) => (
+              <Card 
+                key={subcategory.id} 
+                className="bg-card border-border hover:bg-accent/70 transition-all duration-300 hover:scale-105 cursor-pointer"
+                onClick={() => handleSubcategoryClick(subcategory.id)}
+              >
+                <CardHeader>
+                  <div className="flex items-start justify-between mb-4">
+                    <div className="h-12 w-12 bg-gradient-to-r from-[#555879] to-[#98A1BC] rounded-lg flex items-center justify-center">
+                      <BookOpen className="h-6 w-6 text-white" />
+                    </div>
+                    <Badge className="bg-blue-600 text-white">
+                      {subcategory.questionCount} Questions
+                    </Badge>
+                  </div>
+                  <CardTitle className="text-foreground">{subcategory.name}</CardTitle>
+                  <CardDescription className="text-muted-foreground">
+                    {subcategory.description || `Explore ${subcategory.name} questions`}
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <Button className="w-full bg-green-600 hover:bg-green-700 text-white">
+                    <BookOpen className="h-4 w-4 mr-2" />
+                    Start Practicing
+                  </Button>
+                </CardContent>
+              </Card>
+            ))
+          )}
+        </div>
       </div>
-      
+
+      <AddTopicModal
+        isOpen={isAddTopicModalOpen}
+        onClose={() => setIsAddTopicModalOpen(false)}
+        onSuccess={handleAddTopicSuccess}
+        type="subcategory"
+        categoryId={categoryInfo?.id}
+      />
+
       <Footer />
     </div>
   );
