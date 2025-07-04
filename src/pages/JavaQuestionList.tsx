@@ -20,8 +20,8 @@ interface Question {
   content: string;
   answer: string;
   type: string;
-  level: string;
-  tier: string;
+  difficulty: string;
+  pricing_tier: string;
   created_at: string;
 }
 
@@ -57,9 +57,9 @@ const JavaQuestionList = () => {
     }
   };
 
-  const canAccessQuestion = (questionLevel: string) => {
+  const canAccessQuestion = (questionTier: string) => {
     const accessibleTiers = getTierAccess(userTier);
-    return profile?.is_admin || accessibleTiers.includes(questionLevel || 'Explorer');
+    return profile?.is_admin || accessibleTiers.includes(questionTier || 'Explorer');
   };
 
   useEffect(() => {
@@ -199,8 +199,8 @@ const JavaQuestionList = () => {
     fetchQuestions();
   };
 
-  const getDifficultyColor = (level: string) => {
-    switch (level) {
+  const getDifficultyColor = (pricing_tier: string) => {
+    switch (pricing_tier) {
       case "Explorer":
         return "bg-green-500/20 text-green-300 border-green-500/30";
       case "Builder":
@@ -215,12 +215,12 @@ const JavaQuestionList = () => {
   const handleQuestionClick = (question: Question) => {
     if (bulkDeleteMode) return;
     
-    if (canAccessQuestion(question.level)) {
+    if (canAccessQuestion(question.pricing_tier)) {
       navigate(`/questions/java/${subcategoryId}/${question.id}`);
     } else {
       toast({
         title: "Upgrade Required",
-        description: `Upgrade to ${question.level} tier to access this question.`,
+        description: `Upgrade to ${question.pricing_tier} tier to access this question.`,
         variant: "destructive",
       });
       navigate("/pricing");
@@ -339,7 +339,7 @@ const JavaQuestionList = () => {
             <Card 
               key={question.id} 
               className={`bg-card border-border transition-all duration-300 ${
-                canAccessQuestion(question.level) || bulkDeleteMode 
+                canAccessQuestion(question.pricing_tier) || bulkDeleteMode
                   ? 'hover:bg-accent/50 cursor-pointer' 
                   : 'opacity-75 cursor-not-allowed'
               }`}
@@ -360,13 +360,13 @@ const JavaQuestionList = () => {
                     >
                       <div className="flex items-center gap-2 mb-2">
                         <span className="text-muted-foreground text-sm">#{index + 1}</span>
-                        <Badge className={`${getDifficultyColor(question.level)} border`}>
-                          {question.level}
+                        <Badge className={`${getDifficultyColor(question.pricing_tier)} border`}>
+                          {question.pricing_tier}
                         </Badge>
                         <Badge variant="secondary" className="bg-blue-600/20 text-blue-300 border-blue-600/30">
                           {question.type}
                         </Badge>
-                        {!canAccessQuestion(question.level) && !profile?.is_admin && (
+                        {!canAccessQuestion(question.pricing_tier) && !profile?.is_admin && (
                           <Badge className="bg-orange-500/20 text-orange-300 border-orange-500/30">
                             Upgrade Required
                           </Badge>
@@ -451,19 +451,19 @@ const JavaQuestionList = () => {
                 <div className="grid md:grid-cols-3 gap-8 text-center">
                   <div>
                     <div className="text-3xl font-bold text-green-400 mb-2">
-                      {filteredQuestions.filter(q => q.level === "Explorer").length}
+                      {filteredQuestions.filter(q => q.pricing_tier === "Explorer").length}
                     </div>
                     <div className="text-foreground">Explorer Questions</div>
                   </div>
                   <div>
                     <div className="text-3xl font-bold text-yellow-400 mb-2">
-                      {filteredQuestions.filter(q => q.level === "Builder").length}
+                      {filteredQuestions.filter(q => q.pricing_tier === "Builder").length}
                     </div>
                     <div className="text-foreground">Builder Questions</div>
                   </div>
                   <div>
                     <div className="text-3xl font-bold text-red-400 mb-2">
-                      {filteredQuestions.filter(q => q.level === "Innovator").length}
+                      {filteredQuestions.filter(q => q.pricing_tier === "Innovator").length}
                     </div>
                     <div className="text-foreground">Innovator Questions</div>
                   </div>
