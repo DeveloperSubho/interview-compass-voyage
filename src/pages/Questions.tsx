@@ -262,9 +262,16 @@ const Questions = () => {
                     <div className="h-12 w-12 bg-gradient-to-r from-[#555879] to-[#98A1BC] rounded-lg flex items-center justify-center">
                       {getIcon(category.icon)}
                     </div>
-                    <Badge className="bg-blue-600 text-white">
-                      {category.questionCount} Questions
-                    </Badge>
+                    <div className="flex flex-col gap-2">
+                      <Badge className="bg-blue-600 text-white">
+                        {category.questionCount} Questions
+                      </Badge>
+                      {category.pricing_tier && (
+                        <Badge className="bg-purple-600 text-white">
+                          {category.pricing_tier}
+                        </Badge>
+                      )}
+                    </div>
                   </div>
                   <CardTitle className="text-foreground">{category.name}</CardTitle>
                   <CardDescription className="text-muted-foreground">

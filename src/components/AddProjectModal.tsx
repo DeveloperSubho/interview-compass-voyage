@@ -15,7 +15,7 @@ interface Project {
   title: string;
   description: string | null;
   type: string;
-  level: string;
+  difficulty: string;
   pricing_tier: string;
   technologies: string[];
   duration: string | null;
@@ -42,7 +42,7 @@ const AddProjectModal = ({ isOpen, onClose, onSuccess, defaultType, editingProje
     technologies: "",
     duration: "",
     type: defaultType || "",
-    level: "Explorer",
+    difficulty: "Easy",
     pricing_tier: "Explorer",
     key_features: "",
     github_url: "",
@@ -56,7 +56,7 @@ const AddProjectModal = ({ isOpen, onClose, onSuccess, defaultType, editingProje
         technologies: editingProject.technologies.join(", "),
         duration: editingProject.duration || "",
         type: editingProject.type,
-        level: editingProject.level,
+        difficulty: editingProject.difficulty,
         pricing_tier: editingProject.pricing_tier,
         key_features: editingProject.key_features.join(", "),
         github_url: editingProject.github_url || "",
@@ -68,7 +68,7 @@ const AddProjectModal = ({ isOpen, onClose, onSuccess, defaultType, editingProje
         technologies: "",
         duration: "",
         type: defaultType || "",
-        level: "Explorer",
+        difficulty: "Easy",
         pricing_tier: "Explorer",
         key_features: "",
         github_url: "",
@@ -98,7 +98,7 @@ const AddProjectModal = ({ isOpen, onClose, onSuccess, defaultType, editingProje
         technologies: technologiesArray,
         duration: formData.duration,
         type: formData.type,
-        level: formData.level,
+        difficulty: formData.difficulty,
         pricing_tier: formData.pricing_tier,
         key_features: keyFeaturesArray,
         github_url: formData.github_url || null,
@@ -140,7 +140,7 @@ const AddProjectModal = ({ isOpen, onClose, onSuccess, defaultType, editingProje
         technologies: "",
         duration: "",
         type: defaultType || "",
-        level: "Explorer",
+        difficulty: "Easy",
         pricing_tier: "Explorer",
         key_features: "",
         github_url: "",
@@ -166,7 +166,7 @@ const AddProjectModal = ({ isOpen, onClose, onSuccess, defaultType, editingProje
       technologies: "",
       duration: "",
       type: defaultType || "",
-      level: "Explorer",
+      difficulty: "Easy",
       pricing_tier: "Explorer",
       key_features: "",
       github_url: "",
@@ -228,21 +228,38 @@ const AddProjectModal = ({ isOpen, onClose, onSuccess, defaultType, editingProje
             </div>
 
             <div>
-              <Label htmlFor="pricing_tier">Pricing Tier</Label>
+              <Label htmlFor="difficulty">Difficulty Level</Label>
               <Select 
-                value={formData.pricing_tier} 
-                onValueChange={(value) => setFormData({ ...formData, pricing_tier: value })}
+                value={formData.difficulty} 
+                onValueChange={(value) => setFormData({ ...formData, difficulty: value })}
               >
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="Explorer">Explorer</SelectItem>
-                  <SelectItem value="Voyager">Voyager</SelectItem>
-                  <SelectItem value="Innovator">Innovator</SelectItem>
+                  <SelectItem value="Easy">Easy</SelectItem>
+                  <SelectItem value="Medium">Medium</SelectItem>
+                  <SelectItem value="Hard">Hard</SelectItem>
                 </SelectContent>
               </Select>
             </div>
+          </div>
+
+          <div>
+            <Label htmlFor="pricing_tier">Pricing Tier</Label>
+            <Select 
+              value={formData.pricing_tier} 
+              onValueChange={(value) => setFormData({ ...formData, pricing_tier: value })}
+            >
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="Explorer">Explorer</SelectItem>
+                <SelectItem value="Innovator">Innovator</SelectItem>
+                <SelectItem value="Builder">Builder</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
 
           <div>

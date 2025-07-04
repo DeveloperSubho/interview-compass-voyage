@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -17,7 +18,7 @@ interface Project {
   title: string;
   description: string | null;
   type: string;
-  level: string;
+  difficulty: string;
   pricing_tier: string;
   technologies: string[];
   duration: string | null;
@@ -116,14 +117,14 @@ const ProjectCategory = () => {
     }
   };
 
-  const getDifficultyColor = (level: string) => {
-    switch (level) {
-      case "Explorer":
-        return "bg-blue-500/20 text-blue-300 border-blue-500/30";
-      case "Voyager":
-        return "bg-purple-500/20 text-purple-300 border-purple-500/30";
-      case "Innovator":
-        return "bg-orange-500/20 text-orange-300 border-orange-500/30";
+  const getDifficultyColor = (difficulty: string) => {
+    switch (difficulty) {
+      case "Easy":
+        return "bg-green-500/20 text-green-300 border-green-500/30";
+      case "Medium":
+        return "bg-yellow-500/20 text-yellow-300 border-yellow-500/30";
+      case "Hard":
+        return "bg-red-500/20 text-red-300 border-red-500/30";
       default:
         return "bg-gray-500/20 text-gray-300 border-gray-500/30";
     }
@@ -133,9 +134,9 @@ const ProjectCategory = () => {
     switch (tier) {
       case "Explorer":
         return "bg-blue-500/20 text-blue-300 border-blue-500/30";
-      case "Voyager":
-        return "bg-purple-500/20 text-purple-300 border-purple-500/30";
       case "Innovator":
+        return "bg-purple-500/20 text-purple-300 border-purple-500/30";
+      case "Builder":
         return "bg-orange-500/20 text-orange-300 border-orange-500/30";
       default:
         return "bg-gray-500/20 text-gray-300 border-gray-500/30";
@@ -193,7 +194,10 @@ const ProjectCategory = () => {
             </div>
             
             {isAdmin && (
-              <Button onClick={() => setIsAddProjectModalOpen(true)}>
+              <Button onClick={() => {
+                setEditingProject(null);
+                setIsAddProjectModalOpen(true);
+              }}>
                 <Plus className="h-4 w-4 mr-2" />
                 Add Project
               </Button>
@@ -250,6 +254,9 @@ const ProjectCategory = () => {
                   <CardHeader>
                     <div className="flex items-start justify-between gap-2 mb-2">
                       <div className="flex flex-wrap gap-2">
+                        <Badge className={`${getDifficultyColor(project.difficulty)} border text-xs`}>
+                          {project.difficulty}
+                        </Badge>
                         <Badge className={`${getPricingTierColor(project.pricing_tier)} border text-xs`}>
                           {project.pricing_tier}
                         </Badge>
@@ -335,8 +342,12 @@ const ProjectCategory = () => {
       {isAdmin && (
         <AddProjectModal
           isOpen={isAddProjectModalOpen}
-          onClose={() => setIsAddProjectModalOpen(false)}
+          onClose={() => {
+            setIsAddProjectModalOpen(false);
+            setEditingProject(null);
+          }}
           onSuccess={handleAddProjectSuccess}
+          defaultType={type}
           editingProject={editingProject}
         />
       )}
