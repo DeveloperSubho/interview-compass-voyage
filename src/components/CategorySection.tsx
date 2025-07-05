@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, BookOpen, Plus, Trash2, Edit, FileText } from "lucide-react";
+import { ArrowLeft, BookOpen, Plus, Trash2 } from "lucide-react";
 import Navbar from "@/components/Navbar";
 import { useNavigate, useParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
@@ -14,13 +14,9 @@ import DeleteConfirmationModal from "@/components/DeleteConfirmationModal";
 interface Subcategory {
   id: string;
   name: string;
-  description: string;
-  tier: string;
-  title: string;
-  category_id: string;
-  created_at: string;
-  updated_at: string;
-  questionCount?: number;
+  description: string | null;
+  pricing_tier: string | null;
+  questionCount: number;
 }
 
 const CategorySection = () => {
@@ -109,51 +105,6 @@ const CategorySection = () => {
     }
   };
 
-  const fetchSubcategories = async () => {
-    if (!category) return;
-    
-    try {
-      setLoading(true);
-      
-      // Fetch subcategories for this category
-      const { data: subcategoriesData, error: subcategoriesError } = await supabase
-        .from('subcategories')
-        .select('*')
-        .eq('category_id', categoryData?.id || '');
-
-      if (subcategoriesError) throw subcategoriesError;
-
-      // If no subcategories found, show message instead of error
-      if (!subcategoriesData || subcategoriesData.length === 0) {
-        setSubcategories([]);
-        return;
-      }
-
-      // Count questions for each subcategory
-      const subcategoriesWithCount = await Promise.all(
-        subcategoriesData.map(async (subcategory) => {
-          const { count } = await supabase
-            .from('questions')
-            .select('*', { count: 'exact', head: true })
-            .eq('subcategory_id', subcategory.id);
-
-          return {
-            ...subcategory,
-            questionCount: count || 0
-          };
-        })
-      );
-
-      setSubcategories(subcategoriesWithCount);
-    } catch (error) {
-      console.error('Error fetching subcategories:', error);
-      // Don't show error toast, just set empty array
-      setSubcategories([]);
-    } finally {
-      setLoading(false);
-    }
-  };
-
   const handleSubcategoryClick = (subcategoryName: string) => {
     navigate(`/questions/${category}/${subcategoryName}`);
   };
@@ -210,128 +161,109 @@ const CategorySection = () => {
     fetchCategoryAndSubcategories();
   };
 
-  const handleAddSubcategory = () => {
-    if (!categoryData) return;
-    setSelectedSubcategory(undefined);
-    setIsTopicModalOpen(true);
-  };
-
   if (loading) {
     return (
-      <div className="min-h-screen bg-background text-foreground">
-        <Navbar />
-        <div className="container mx-auto px-4 py-16">
-          <div className="text-center">
-            <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-400 mx-auto"></div>
-            <p className="mt-4 text-muted-foreground">Loading topics...</p>
-          </div>
+      <div className="container mx-auto px-4 py-16">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-400 mx-auto"></div>
+          <p className="mt-4 text-muted-foreground">Loading subcategories...</p>
         </div>
-        <Footer />
-      </div>
-    );
-  }
-
-  if (!categoryData) {
-    return (
-      <div className="min-h-screen bg-background text-foreground">
-        <Navbar />
-        <div className="container mx-auto px-4 py-16">
-          <div className="text-center">
-            <h2 className="text-2xl font-bold text-muted-foreground mb-4">Category Not Found</h2>
-            <Button onClick={() => navigate('/questions')}>
-              Back to Categories
-            </Button>
-          </div>
-        </div>
-        <Footer />
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-background text-foreground">
-      <Navbar />
-      
-      <div className="container mx-auto px-4 py-16">
-        <div className="flex justify-between items-center mb-8">
-          <div>
+      <div className="min-h-screen bg-background text-foreground">
+        <Navbar />
+
+        <div className="container mx-auto px-4 py-16">
+          <div className="mb-8">
             <Button
               variant="ghost"
-              onClick={() => navigate('/questions')}
+              onClick={() => navigate("/questions")}
               className="text-muted-foreground hover:text-foreground hover:bg-accent mb-4"
             >
               <ArrowLeft className="h-4 w-4 mr-2" />
               Back to Categories
             </Button>
-            
-            <h1 className="text-4xl md:text-5xl font-bold mb-4 bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent">
-              {categoryData.title || categoryData.name}
-            </h1>
-            <p className="text-muted-foreground text-lg max-w-3xl">
-              {categoryData.description}
-            </p>
-          </div>
-          
-          {isAdmin && (
-            <Button onClick={handleAddSubcategory}>
-              <Plus className="h-4 w-4 mr-2" />
-              Add Topic
-            </Button>
-          )}
-        </div>
 
-        {/* Subcategories Grid */}
-        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {subcategories.length === 0 ? (
-            <div className="col-span-full text-center py-12">
-              <h3 className="text-lg font-medium text-muted-foreground mb-2">
-                No topics available
-              </h3>
-              <p className="text-muted-foreground">
-                Topics for this category will be added soon.
-              </p>
+            <div className="flex justify-between items-center">
+              <div>
+                <h1 className="text-4xl md:text-5xl font-bold mb-4 bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent capitalize">
+                  {category?.replace(/-/g, ' ')} Topics
+                </h1>
+                <p className="text-muted-foreground text-lg max-w-2xl">
+                  Choose a topic to start practicing questions and improve your skills.
+                </p>
+              </div>
+
+              {isAdmin && (
+                <Button onClick={() => setIsAddSubcategoryModalOpen(true)}>
+                  <Plus className="h-4 w-4 mr-2" />
+                  Add Topic
+                </Button>
+              )}
             </div>
-          ) : (
-            subcategories.map((subcategory) => (
-              <Card key={subcategory.id} className="bg-card border-border hover:bg-accent/70 transition-all duration-300 relative cursor-pointer" onClick={() => handleSubcategoryClick(subcategory)}>
-                {isAdmin && (
-                  <div className="absolute top-2 right-2 z-10 flex gap-1">
-                    <Button variant="outline" size="sm" className="hover:bg-blue-700" onClick={(e) => handleEditClick(e, subcategory)}>
-                      <Edit className="h-4 w-4" />
-                    </Button>
-                    <Button variant="outline" size="sm" className="hover:bg-red-700" onClick={(e) => handleDeleteClick(e, subcategory)}>
+          </div>
+
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {subcategories.length === 0 ? (
+              <div className="col-span-full text-center py-12">
+                <h3 className="text-lg font-medium text-muted-foreground mb-2">
+                  No topics available
+                </h3>
+                <p className="text-muted-foreground">
+                  Topics will be added soon for this category.
+                </p>
+              </div>
+            ) : (
+              subcategories.map((subcategory) => (
+                <Card
+                  key={subcategory.id}
+                  className="bg-card border-border hover:bg-accent/70 transition-all duration-300 hover:scale-105 cursor-pointer relative"
+                  onClick={() => handleSubcategoryClick(subcategory.name)}
+                >
+                  {isAdmin && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="absolute top-2 right-2 z-10 hover:bg-red-700"
+                      onClick={(e) => handleDeleteClick(e, subcategory)}
+                    >
                       <Trash2 className="h-4 w-4" />
                     </Button>
-                  </div>
-                )}
-                
-                <CardHeader>
-                  <div className="flex items-start justify-between mb-4">
-                    <Badge className={`${getTierColor(subcategory.tier)} border`}>
-                      {subcategory.tier}
-                    </Badge>
-                  </div>
-                  <CardTitle className="text-foreground">{subcategory.title || subcategory.name}</CardTitle>
-                  <CardDescription className="text-muted-foreground">
-                    {subcategory.description}
-                  </CardDescription>
-                </CardHeader>
-                
-                <CardContent>
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center text-muted-foreground">
-                      <FileText className="h-4 w-4 mr-2" />
-                      <span>{subcategory.questionCount || 0} Questions</span>
+                  )}
+                  <CardHeader>
+                    <div className="flex items-start justify-between mb-4">
+                      <div className="h-12 w-12 bg-gradient-to-r from-[#555879] to-[#98A1BC] rounded-lg flex items-center justify-center">
+                        <BookOpen className="h-6 w-6 text-white" />
+                      </div>
+                      <div className="flex flex-col gap-2">
+                        <Badge className="bg-blue-600 text-white">
+                          {subcategory.questionCount} Questions
+                        </Badge>
+                        {subcategory.pricing_tier && (
+                          <Badge className="bg-purple-600 text-white">
+                            {subcategory.pricing_tier}
+                          </Badge>
+                        )}
+                      </div>
                     </div>
-                    <Button variant="outline" size="sm">
-                      View Questions
+                    <CardTitle className="text-foreground">{subcategory.title}</CardTitle>
+                    <CardDescription className="text-muted-foreground">
+                      {subcategory.description || `Explore ${subcategory.title} questions and concepts`}
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <Button className="w-full bg-green-600 hover:bg-green-700 text-white">
+                      <BookOpen className="h-4 w-4 mr-2" />
+                      Start Practicing
                     </Button>
-                  </div>
-                </CardContent>
-              </Card>
-            ))
-          )}
-        </div>
+                  </CardContent>
+                </Card>
+              ))
+            )}
+          </div>
       </div>
 
       <AddTopicModal

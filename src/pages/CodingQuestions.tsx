@@ -41,7 +41,6 @@ const CodingQuestions = () => {
   const [difficultyFilter, setDifficultyFilter] = useState<string>("");
   const [categoryFilter, setCategoryFilter] = useState<string>("");
   const [tierFilter, setTierFilter] = useState<string>("");
-  const [sortBy, setSortBy] = useState<string>("");
   const [isQuestionModalOpen, setIsQuestionModalOpen] = useState(false);
   const [isBulkImportModalOpen, setIsBulkImportModalOpen] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
@@ -103,10 +102,10 @@ const CodingQuestions = () => {
   const filteredQuestions = questions.filter(question => {
     const matchesSearch = question.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          question.description.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesDifficulty = difficultyFilter === "" || question.difficulty === difficultyFilter;
-    const matchesCategory = categoryFilter === "" || question.category === categoryFilter;
-    const matchesTier = tierFilter === "" || question.tier === tierFilter;
-    
+    const matchesDifficulty = !difficultyFilter || difficultyFilter === "All" || question.difficulty === difficultyFilter;
+    const matchesCategory = !categoryFilter || categoryFilter === "All" || question.category === categoryFilter;
+    const matchesTier = !tierFilter || tierFilter === "All" || question.tier === tierFilter;
+
     return matchesSearch && matchesDifficulty && matchesCategory && matchesTier;
   }).sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
 
@@ -170,11 +169,11 @@ const CodingQuestions = () => {
     setSelectedQuestion(undefined);
     setIsQuestionModalOpen(true);
   };
-  
+
   return (
     <div className="min-h-screen bg-background text-foreground">
       <Navbar />
-      
+
       <div className="container mx-auto px-4 py-16">
         <div className="flex justify-between items-center mb-8">
           <div>
@@ -185,7 +184,7 @@ const CodingQuestions = () => {
               Practice coding problems to sharpen your algorithmic thinking and problem-solving skills.
             </p>
           </div>
-          
+
           {isAdmin && (
             <div className="flex gap-2">
               <Button variant="outline" onClick={() => setIsBulkImportModalOpen(true)}>
@@ -200,7 +199,7 @@ const CodingQuestions = () => {
         </div>
 
         {/* Filters */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 mb-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
           <div className="relative">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input
@@ -210,13 +209,13 @@ const CodingQuestions = () => {
               className="pl-10"
             />
           </div>
-          
+
           <Select value={difficultyFilter} onValueChange={setDifficultyFilter}>
             <SelectTrigger>
               <SelectValue placeholder="Filter by difficulty" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="">All Difficulties</SelectItem>
+              <SelectItem value="all">All Difficulties</SelectItem>
               <SelectItem value="Easy">Easy</SelectItem>
               <SelectItem value="Medium">Medium</SelectItem>
               <SelectItem value="Hard">Hard</SelectItem>
@@ -228,7 +227,7 @@ const CodingQuestions = () => {
               <SelectValue placeholder="Filter by category" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="">All Categories</SelectItem>
+              <SelectItem value="all">All Categories</SelectItem>
               {allCategories.map(category => (
                 <SelectItem key={category} value={category}>{category}</SelectItem>
               ))}
@@ -240,21 +239,10 @@ const CodingQuestions = () => {
               <SelectValue placeholder="Filter by tier" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="">All Tiers</SelectItem>
+              <SelectItem value="all">All Tiers</SelectItem>
               <SelectItem value="Explorer">Explorer</SelectItem>
               <SelectItem value="Builder">Builder</SelectItem>
               <SelectItem value="Innovator">Innovator</SelectItem>
-            </SelectContent>
-          </Select>
-
-          <Select value={sortBy} onValueChange={setSortBy}>
-            <SelectTrigger>
-              <SelectValue placeholder="Sort by" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="created_at">Date Created</SelectItem>
-              <SelectItem value="title">Title</SelectItem>
-              <SelectItem value="difficulty">Difficulty</SelectItem>
             </SelectContent>
           </Select>
         </div>
