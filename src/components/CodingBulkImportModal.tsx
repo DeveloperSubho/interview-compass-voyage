@@ -1,103 +1,58 @@
-
 import { useState } from "react";
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { supabase } from "@/integrations/supabase/client";
-import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 
 interface CodingBulkImportModalProps {
   isOpen: boolean;
   onClose: () => void;
   onSuccess: () => void;
-  categoryName: string;
 }
 
-const CodingBulkImportModal = ({ isOpen, onClose, onSuccess, categoryName }: CodingBulkImportModalProps) => {
-  const { user } = useAuth();
+const CodingBulkImportModal = ({ isOpen, onClose, onSuccess }: CodingBulkImportModalProps) => {
   const { toast } = useToast();
   const [loading, setLoading] = useState(false);
-  const [csvData, setCsvData] = useState("");
-  const [defaultPricingTier, setDefaultPricingTier] = useState("Explorer");
+  const [jsonData, setJsonData] = useState("");
 
-  const generateSlug = (title: string) => {
-    return title
-      .toLowerCase()
-      .replace(/[^a-z0-9]+/g, '-')
-      .replace(/^-+|-+$/g, '');
-  };
+  const exampleData = `[
+  {
+    "title": "Two Sum",
+    "slug": "two-sum",
+    "description": "Given an array of integers nums and an integer target, return indices of the two numbers such that they add up to target.",
+    "difficulty": "Easy",
+    "category": "Arrays",
+    "tags": ["array", "hash table"],
+    "tier": "Explorer",
+    "solution": "Use a hash map to store each number and its index. Then, iterate through the array and check if target - num exists in the hash map.",
+    "video_link": "https://www.youtube.com/watch?v=KLlXCFS5ObI",
+    "github_link": "https://github.com/username/repo/blob/main/two-sum.py"
+  },
+  {
+    "title": "Reverse Linked List",
+    "slug": "reverse-linked-list",
+    "description": "Given the head of a singly linked list, reverse the list, and return the reversed list.",
+    "difficulty": "Medium",
+    "category": "Linked Lists",
+    "tags": ["linked list", "recursion"],
+    "tier": "Builder",
+    "solution": "Iteratively change the next pointer of each node to point to the previous node.",
+    "video_link": "https://www.youtube.com/watch?v=O0Byj0Vs4CA",
+    "github_link": "https://github.com/username/repo/blob/main/reverse-linked-list.java"
+  }
+]`;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!user || !csvData.trim()) {
-      toast({
-        title: "Error",
-        description: "Please provide CSV data to import",
-        variant: "destructive",
-      });
-      return;
-    }
-
     setLoading(true);
+
     try {
-      const lines = csvData.trim().split('\n');
+      const questions = JSON.parse(jsonData);
       
-      if (lines.length === 0) {
-        toast({
-          title: "Error",
-          description: "No data to import",
-          variant: "destructive",
-        });
-        return;
-      }
-
-      const questions = [];
-      
-      for (let i = 0; i < lines.length; i++) {
-        const line = lines[i].trim();
-        if (!line) continue;
-        
-        const columns = line.split(',').map(col => col.trim().replace(/^"|"$/g, ''));
-        
-        if (columns.length < 6) {
-          toast({
-            title: "Error",
-            description: `Invalid format at line ${i + 1}. Expected: Title, Description, Explanation, Difficulty, Tags, GitHub Link, Video Link, Pricing Tier (optional)`,
-            variant: "destructive",
-          });
-          return;
-        }
-
-        const tags = columns[4] ? columns[4].split(';').map(tag => tag.trim()).filter(tag => tag) : [];
-        const pricingTier = columns[7] || defaultPricingTier;
-
-        questions.push({
-          title: columns[0],
-          slug: generateSlug(columns[0]),
-          description: columns[1],
-          solution: columns[2], // This is now the explanation
-          difficulty: columns[3] || 'Easy',
-          status: 'Unsolved',
-          category: categoryName,
-          tags: tags,
-          github_link: columns[5] || '',
-          video_link: columns[6] || '',
-          is_paid: false,
-          level_unlock: 'Beginner',
-          pricing_tier: pricingTier
-        });
-      }
-
-      if (questions.length === 0) {
-        toast({
-          title: "Error",
-          description: "No valid questions found to import",
-          variant: "destructive",
-        });
-        return;
+      if (!Array.isArray(questions)) {
+        throw new Error("Data must be an array of questions");
       }
 
       const { error } = await supabase
@@ -108,16 +63,16 @@ const CodingBulkImportModal = ({ isOpen, onClose, onSuccess, categoryName }: Cod
 
       toast({
         title: "Success",
-        description: `Successfully imported ${questions.length} questions`,
+        description: `Successfully imported ${questions.length} coding questions`,
       });
 
-      setCsvData("");
+      setJsonData("");
       onSuccess();
     } catch (error) {
-      console.error('Error importing questions:', error);
+      console.error('Error importing coding questions:', error);
       toast({
         title: "Error",
-        description: "Failed to import questions",
+        description: error instanceof Error ? error.message : "Failed to import coding questions",
         variant: "destructive",
       });
     } finally {
@@ -125,59 +80,44 @@ const CodingBulkImportModal = ({ isOpen, onClose, onSuccess, categoryName }: Cod
     }
   };
 
-  const handleClose = () => {
-    setCsvData("");
-    onClose();
-  };
-
   return (
-    <Dialog open={isOpen} onOpenChange={handleClose}>
-      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+    <Dialog open={isOpen} onOpenChange={onClose}>
+      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Bulk Import Coding Questions</DialogTitle>
           <DialogDescription>
-            Import multiple coding questions at once using CSV format. Each line should contain: Title, Description, Explanation, Difficulty, Tags, GitHub Link, Video Link, Pricing Tier (optional)
+            Import multiple coding questions using JSON format. Use the example below as a reference.
           </DialogDescription>
         </DialogHeader>
-
+        
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <Label htmlFor="defaultPricingTier">Default Pricing Tier</Label>
-            <Select value={defaultPricingTier} onValueChange={setDefaultPricingTier}>
-              <SelectTrigger>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="Explorer">Explorer</SelectItem>
-                <SelectItem value="Builder">Builder</SelectItem>
-                <SelectItem value="Innovator">Innovator</SelectItem>
-              </SelectContent>
-            </Select>
-            <p className="text-sm text-muted-foreground mt-1">
-              This tier will be used for questions that don't specify a pricing tier
-            </p>
+            <Label htmlFor="jsonData">JSON Data</Label>
+            <Textarea
+              id="jsonData"
+              value={jsonData}
+              onChange={(e) => setJsonData(e.target.value)}
+              placeholder="Paste your JSON data here..."
+              rows={12}
+              className="font-mono text-sm"
+              required
+            />
           </div>
 
           <div>
-            <Label htmlFor="csvData">CSV Data</Label>
-            <Textarea
-              id="csvData"
-              value={csvData}
-              onChange={(e) => setCsvData(e.target.value)}
-              placeholder="Example:&#10;Two Sum, Given an array of integers find two numbers that add up to target, Use hashmap to store complement values for O(1) lookup, Easy, Array;Hash Table, https://github.com/example/two-sum, https://youtube.com/watch?v=example, Explorer&#10;Reverse String, Write a function that reverses a string, Use two pointers approach from both ends, Easy, String;Two Pointers, https://github.com/example/reverse-string, , Builder"
-              rows={10}
-              required
-            />
-            <p className="text-sm text-muted-foreground mt-2">
-              Format: Title, Description, Explanation, Difficulty, Tags (separated by semicolons), GitHub Link, Video Link, Pricing Tier (optional - one question per line)
-            </p>
+            <Label>Example Format:</Label>
+            <div className="mt-2 p-4 bg-muted rounded-lg">
+              <pre className="text-xs overflow-x-auto whitespace-pre-wrap">
+                {exampleData}
+              </pre>
+            </div>
           </div>
 
-          <div className="flex justify-end space-x-2 pt-4">
-            <Button type="button" variant="outline" onClick={handleClose}>
+          <div className="flex justify-end gap-2">
+            <Button type="button" variant="outline" onClick={onClose}>
               Cancel
             </Button>
-            <Button type="submit" disabled={loading || !csvData.trim()}>
+            <Button type="submit" disabled={loading}>
               {loading ? "Importing..." : "Import Questions"}
             </Button>
           </div>

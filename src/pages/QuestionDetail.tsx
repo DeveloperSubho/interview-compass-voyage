@@ -16,7 +16,9 @@ interface Question {
   content: string;
   answer: string;
   type: string;
-  level: string;
+  difficulty: string;
+  pricing_tier: string;
+  subcategory_id: string;
   created_at: string;
 }
 
@@ -55,14 +57,27 @@ const QuestionDetail = () => {
     }
   };
 
-  const getDifficultyColor = (pricing_tier: string) => {
-    switch (pricing_tier) {
-      case "Explorer":
+  const getDifficultyColor = (difficulty: string) => {
+    switch (difficulty) {
+      case "Easy":
         return "bg-green-500/20 text-green-300 border-green-500/30";
-      case "Builder":
+      case "Medium":
         return "bg-yellow-500/20 text-yellow-300 border-yellow-500/30";
-      case "Innovator":
+      case "Hard":
         return "bg-red-500/20 text-red-300 border-red-500/30";
+      default:
+        return "bg-gray-500/20 text-gray-300 border-gray-500/30";
+    }
+  };
+
+  const getPricingTierColor = (tier: string) => {
+    switch (tier) {
+      case "Explorer":
+        return "bg-blue-500/20 text-blue-300 border-blue-500/30";
+      case "Builder":
+        return "bg-orange-500/20 text-orange-300 border-orange-500/30";
+      case "Innovator":
+        return "bg-purple-500/20 text-purple-300 border-purple-500/30";
       default:
         return "bg-gray-500/20 text-gray-300 border-gray-500/30";
     }
@@ -155,7 +170,10 @@ const QuestionDetail = () => {
               <div className="flex items-start justify-between gap-4">
                 <div className="flex-1">
                   <div className="flex items-center gap-2 mb-2">
-                    <Badge className={`${getDifficultyColor(question.pricing_tier)} border`}>
+                    <Badge className={`${getDifficultyColor(question.difficulty)} border`}>
+                      {question.difficulty}
+                    </Badge>
+                    <Badge className={`${getPricingTierColor(question.pricing_tier)} border`}>
                       {question.pricing_tier}
                     </Badge>
                     <Badge variant="secondary" className="bg-blue-600/20 text-blue-300 border-blue-600/30">

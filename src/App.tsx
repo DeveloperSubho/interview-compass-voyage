@@ -11,9 +11,6 @@ import Index from "./pages/Index";
 import Questions from "./pages/Questions";
 import QuestionList from "./pages/QuestionList";
 import QuestionDetail from "./pages/QuestionDetail";
-import JavaSubcategories from "./pages/JavaSubcategories";
-import JavaQuestionList from "./pages/JavaQuestionList";
-import JavaQuestionDetail from "./pages/JavaQuestionDetail";
 import CategorySection from "./components/CategorySection";
 import SubCategory from "./components/SubCategory";
 import Projects from "./pages/Projects";
@@ -22,6 +19,7 @@ import ProjectDetail from "./pages/ProjectDetail";
 import CodingQuestions from "./pages/CodingQuestions";
 import CodingQuestionDetail from "./pages/CodingQuestionDetail";
 import SystemDesign from "./pages/SystemDesign";
+import SystemDesignDetail from "./pages/SystemDesignDetail";
 import Profile from "./pages/Profile";
 import Pricing from "./pages/Pricing";
 import Contact from "./pages/Contact";
@@ -48,7 +46,7 @@ function App() {
               <Routes>
                 <Route path="/" element={<Index />} />
                 <Route path="/questions" element={<Questions />} />
-                <Route path="/questions/:category" element={<CategorySection onSignInClick={handleSignInClick} />} />
+                <Route path="/questions/:category" element={<CategorySection />} />
                 <Route path="/questions/:category/:subcategoryName" element={<SubCategory />} />
                 <Route path="/questions/:category/:subcategoryName/:questionId" element={<QuestionDetail />} />
                 <Route path="/coding" element={<CodingQuestions />} />

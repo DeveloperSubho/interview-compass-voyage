@@ -103,9 +103,9 @@ const CodingQuestions = () => {
   const filteredQuestions = questions.filter(question => {
     const matchesSearch = question.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          question.description.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesDifficulty = !difficultyFilter || question.difficulty === difficultyFilter;
-    const matchesCategory = !categoryFilter || question.category === categoryFilter;
-    const matchesTier = !tierFilter || question.tier === tierFilter;
+    const matchesDifficulty = difficultyFilter === "" || question.difficulty === difficultyFilter;
+    const matchesCategory = categoryFilter === "" || question.category === categoryFilter;
+    const matchesTier = tierFilter === "" || question.tier === tierFilter;
     
     return matchesSearch && matchesDifficulty && matchesCategory && matchesTier;
   }).sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());

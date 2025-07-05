@@ -209,7 +209,7 @@ const Pricing = () => {
   const getButtonText = (tier: any) => {
     if (!user) return tier.buttonText;
     if (currentSubscription?.tier === tier.name) {
-      return tier.name === "Explorer" ? "Current Plan" : "Current Plan";
+      return "Current Plan";
     }
     return tier.buttonText;
   };
@@ -273,9 +273,10 @@ const Pricing = () => {
         <div className="grid md:grid-cols-3 gap-8 max-w-5xl mx-auto">
           {pricingTiers.map((tier, index) => (
             <Card key={index} className={`relative bg-card border-border hover:scale-105 transition-all duration-300 ${
-              tier.popular ? "ring-2 ring-[#555879] bg-card/70" : ""
+              tier.popular && !isCurrentPlan(tier.name) ? "ring-2 ring-[#555879] bg-card/70" : ""
             } ${isCurrentPlan(tier.name) ? "ring-2 ring-green-500" : ""}`}>
-              {tier.popular && (
+              {/* Popular Badge - only show if not current plan */}
+              {tier.popular && !isCurrentPlan(tier.name) && (
                 <div className="absolute -top-4 left-1/2 transform -translate-x-1/2">
                   <Badge className="bg-[#555879] text-white px-4 py-1">
                     <Star className="h-3 w-3 mr-1" />
@@ -283,8 +284,9 @@ const Pricing = () => {
                   </Badge>
                 </div>
               )}
+              {/* Current Plan Badge */}
               {isCurrentPlan(tier.name) && (
-                <div className="absolute -top-4 right-4">
+                <div className="absolute -top-4 left-1/2 transform -translate-x-1/2">
                   <Badge className="bg-green-600 text-white px-4 py-1">
                     Current Plan
                   </Badge>
@@ -312,7 +314,7 @@ const Pricing = () => {
                 <div className="space-y-2">
                   <Button 
                     className={`w-full ${
-                      tier.popular 
+                      tier.popular && !isCurrentPlan(tier.name)
                         ? "bg-[#555879] hover:bg-[#98A1BC] text-white" 
                         : "bg-muted hover:bg-muted/80 text-foreground"
                     } ${isCurrentPlan(tier.name) ? "opacity-50 cursor-not-allowed" : ""}`}
