@@ -41,6 +41,7 @@ const CodingQuestions = () => {
   const [difficultyFilter, setDifficultyFilter] = useState<string>("");
   const [categoryFilter, setCategoryFilter] = useState<string>("");
   const [tierFilter, setTierFilter] = useState<string>("");
+  const [sortBy, setSortBy] = useState<string>("");
   const [isQuestionModalOpen, setIsQuestionModalOpen] = useState(false);
   const [isBulkImportModalOpen, setIsBulkImportModalOpen] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
@@ -199,7 +200,7 @@ const CodingQuestions = () => {
         </div>
 
         {/* Filters */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 mb-8">
           <div className="relative">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input
@@ -215,7 +216,7 @@ const CodingQuestions = () => {
               <SelectValue placeholder="Filter by difficulty" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">All Difficulties</SelectItem>
+              <SelectItem value="">All Difficulties</SelectItem>
               <SelectItem value="Easy">Easy</SelectItem>
               <SelectItem value="Medium">Medium</SelectItem>
               <SelectItem value="Hard">Hard</SelectItem>
@@ -227,7 +228,7 @@ const CodingQuestions = () => {
               <SelectValue placeholder="Filter by category" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">All Categories</SelectItem>
+              <SelectItem value="">All Categories</SelectItem>
               {allCategories.map(category => (
                 <SelectItem key={category} value={category}>{category}</SelectItem>
               ))}
@@ -239,10 +240,21 @@ const CodingQuestions = () => {
               <SelectValue placeholder="Filter by tier" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">All Tiers</SelectItem>
+              <SelectItem value="">All Tiers</SelectItem>
               <SelectItem value="Explorer">Explorer</SelectItem>
               <SelectItem value="Builder">Builder</SelectItem>
               <SelectItem value="Innovator">Innovator</SelectItem>
+            </SelectContent>
+          </Select>
+
+          <Select value={sortBy} onValueChange={setSortBy}>
+            <SelectTrigger>
+              <SelectValue placeholder="Sort by" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="created_at">Date Created</SelectItem>
+              <SelectItem value="title">Title</SelectItem>
+              <SelectItem value="difficulty">Difficulty</SelectItem>
             </SelectContent>
           </Select>
         </div>

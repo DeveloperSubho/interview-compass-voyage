@@ -5,13 +5,17 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Search, Filter, Github, Play, Image as ImageIcon, Plus, Edit, Trash2 } from "lucide-react";
+import { Search, Github, Play, Image as ImageIcon, Plus, Edit, Trash2, Upload } from "lucide-react";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import ProtectedContent from "@/components/ProtectedContent";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
+import { useNavigate } from "react-router-dom";
+import SystemDesignModal from "@/components/SystemDesignModal";
+import SystemDesignBulkImportModal from "@/components/SystemDesignBulkImportModal";
+import DeleteConfirmationModal from "@/components/DeleteConfirmationModal";
 
 interface SystemDesignProblem {
   id: string;
@@ -34,6 +38,7 @@ interface SystemDesignProblem {
 const SystemDesign = () => {
   const { user, isAdmin, hasAccess } = useAuth();
   const { toast } = useToast();
+  const navigate = useNavigate();
   const [problems, setProblems] = useState<SystemDesignProblem[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
@@ -41,6 +46,12 @@ const SystemDesign = () => {
   const [tierFilter, setTierFilter] = useState<string>("");
   const [tagFilter, setTagFilter] = useState<string>("");
   const [sortBy, setSortBy] = useState<string>("created_at");
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isBulkImportOpen, setIsBulkImportOpen] = useState(false);
+  const [editingProblem, setEditingProblem] = useState<SystemDesignProblem | undefined>();
+  const [deleteModalOpen, setDeleteModalOpen] = useState(false);
+  const [problemToDelete, setProblemToDelete] = useState<SystemDesignProblem | null>(null);
+  const [deleteLoading, setDeleteLoading] = useState(false);
 
   useEffect(() => {
     fetchProblems();
@@ -68,6 +79,38 @@ const SystemDesign = () => {
     }
   };
 
+  const handleDelete = async () => {
+    if (!problemToDelete) return;
+    
+    setDeleteLoading(true);
+    try {
+      const { error } = await supabase
+        .from('system_design_problems')
+        .delete()
+        .eq('id', problemToDelete.id);
+
+      if (error) throw error;
+
+      toast({
+        title: "Success",
+        description: "System design problem deleted successfully",
+      });
+
+      fetchProblems();
+      setDeleteModalOpen(false);
+      setProblemToDelete(null);
+    } catch (error) {
+      console.error('Error deleting system design problem:', error);
+      toast({
+        title: "Error",
+        description: "Failed to delete system design problem",
+        variant: "destructive",
+      });
+    } finally {
+      setDeleteLoading(false);
+    }
+  };
+
   const getDifficultyColor = (difficulty: string) => {
     switch (difficulty) {
       case "Easy":
@@ -85,10 +128,10 @@ const SystemDesign = () => {
     switch (tier) {
       case "Explorer":
         return "bg-blue-500/20 text-blue-300 border-blue-500/30";
-      case "Innovator":
-        return "bg-purple-500/20 text-purple-300 border-purple-500/30";
       case "Builder":
         return "bg-orange-500/20 text-orange-300 border-orange-500/30";
+      case "Innovator":
+        return "bg-purple-500/20 text-purple-300 border-purple-500/30";
       default:
         return "bg-gray-500/20 text-gray-300 border-gray-500/30";
     }
@@ -97,9 +140,9 @@ const SystemDesign = () => {
   const filteredProblems = problems.filter(problem => {
     const matchesSearch = problem.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          problem.description.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesDifficulty = !difficultyFilter || problem.difficulty === difficultyFilter;
-    const matchesTier = !tierFilter || problem.pricing_tier === tierFilter;
-    const matchesTag = !tagFilter || problem.tags.some(tag => 
+    const matchesDifficulty = !difficultyFilter || difficultyFilter === "" || problem.difficulty === difficultyFilter;
+    const matchesTier = !tierFilter || tierFilter === "" || problem.pricing_tier === tierFilter;
+    const matchesTag = !tagFilter || tagFilter === "" || problem.tags.some(tag => 
       tag.toLowerCase().includes(tagFilter.toLowerCase())
     );
     
@@ -144,10 +187,19 @@ const SystemDesign = () => {
           </div>
           
           {isAdmin && (
-            <Button>
-              <Plus className="h-4 w-4 mr-2" />
-              Add Problem
-            </Button>
+            <div className="flex gap-2">
+              <Button onClick={() => setIsBulkImportOpen(true)} variant="outline">
+                <Upload className="h-4 w-4 mr-2" />
+                Bulk Import
+              </Button>
+              <Button onClick={() => {
+                setEditingProblem(undefined);
+                setIsModalOpen(true);
+              }}>
+                <Plus className="h-4 w-4 mr-2" />
+                Add Problem
+              </Button>
+            </div>
           )}
         </div>
 
@@ -168,7 +220,7 @@ const SystemDesign = () => {
               <SelectValue placeholder="Filter by difficulty" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="All">All Difficulties</SelectItem>
+              <SelectItem value="">All Difficulties</SelectItem>
               <SelectItem value="Easy">Easy</SelectItem>
               <SelectItem value="Medium">Medium</SelectItem>
               <SelectItem value="Hard">Hard</SelectItem>
@@ -180,10 +232,10 @@ const SystemDesign = () => {
               <SelectValue placeholder="Filter by tier" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="All">All Tiers</SelectItem>
+              <SelectItem value="">All Tiers</SelectItem>
               <SelectItem value="Explorer">Explorer</SelectItem>
-              <SelectItem value="Innovator">Innovator</SelectItem>
               <SelectItem value="Builder">Builder</SelectItem>
+              <SelectItem value="Innovator">Innovator</SelectItem>
             </SelectContent>
           </Select>
 
@@ -192,7 +244,7 @@ const SystemDesign = () => {
               <SelectValue placeholder="Filter by tag" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="All">All Tags</SelectItem>
+              <SelectItem value="">All Tags</SelectItem>
               {allTags.map(tag => (
                 <SelectItem key={tag} value={tag}>{tag}</SelectItem>
               ))}
@@ -223,13 +275,35 @@ const SystemDesign = () => {
             </div>
           ) : (
             filteredProblems.map((problem) => (
-              <Card key={problem.id} className="bg-card border-border hover:bg-accent/70 transition-all duration-300 relative">
+              <Card 
+                key={problem.id} 
+                className="bg-card border-border hover:bg-accent/70 transition-all duration-300 relative cursor-pointer"
+                onClick={() => navigate(`/system-design/${problem.slug}`)}
+              >
                 {isAdmin && (
                   <div className="absolute top-2 right-2 z-10 flex gap-1">
-                    <Button variant="outline" size="sm" className="hover:bg-blue-700">
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      className="hover:bg-blue-700"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setEditingProblem(problem);
+                        setIsModalOpen(true);
+                      }}
+                    >
                       <Edit className="h-4 w-4" />
                     </Button>
-                    <Button variant="outline" size="sm" className="hover:bg-red-700">
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      className="hover:bg-red-700"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setProblemToDelete(problem);
+                        setDeleteModalOpen(true);
+                      }}
+                    >
                       <Trash2 className="h-4 w-4" />
                     </Button>
                   </div>
@@ -278,13 +352,29 @@ const SystemDesign = () => {
                     {/* Links */}
                     <div className="flex gap-2">
                       {problem.video_link && (
-                        <Button variant="outline" size="sm" className="flex-1">
+                        <Button 
+                          variant="outline" 
+                          size="sm" 
+                          className="flex-1"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            window.open(problem.video_link!, '_blank');
+                          }}
+                        >
                           <Play className="h-4 w-4 mr-1" />
                           Video
                         </Button>
                       )}
                       {problem.github_link && (
-                        <Button variant="outline" size="sm" className="flex-1">
+                        <Button 
+                          variant="outline" 
+                          size="sm" 
+                          className="flex-1"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            window.open(problem.github_link!, '_blank');
+                          }}
+                        >
                           <Github className="h-4 w-4 mr-1" />
                           Code
                         </Button>
@@ -295,7 +385,13 @@ const SystemDesign = () => {
                       requiredTier={isAdmin ? undefined : problem.pricing_tier}
                       showUpgradeMessage={true}
                     >
-                      <Button className="w-full bg-green-600 hover:bg-green-700 text-white">
+                      <Button 
+                        className="w-full bg-green-600 hover:bg-green-700 text-white"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          navigate(`/system-design/${problem.slug}`);
+                        }}
+                      >
                         View Solution
                       </Button>
                     </ProtectedContent>
@@ -306,6 +402,42 @@ const SystemDesign = () => {
           )}
         </div>
       </div>
+
+      <SystemDesignModal
+        isOpen={isModalOpen}
+        onClose={() => {
+          setIsModalOpen(false);
+          setEditingProblem(undefined);
+        }}
+        onSuccess={() => {
+          setIsModalOpen(false);
+          setEditingProblem(undefined);
+          fetchProblems();
+        }}
+        problem={editingProblem}
+      />
+
+      <SystemDesignBulkImportModal
+        isOpen={isBulkImportOpen}
+        onClose={() => setIsBulkImportOpen(false)}
+        onSuccess={() => {
+          setIsBulkImportOpen(false);
+          fetchProblems();
+        }}
+      />
+
+      <DeleteConfirmationModal
+        isOpen={deleteModalOpen}
+        onClose={() => {
+          setDeleteModalOpen(false);
+          setProblemToDelete(null);
+        }}
+        onConfirm={handleDelete}
+        title="Delete System Design Problem"
+        description="Are you sure you want to delete this system design problem? This action cannot be undone."
+        itemName={problemToDelete?.title || ""}
+        loading={deleteLoading}
+      />
 
       <Footer />
     </div>

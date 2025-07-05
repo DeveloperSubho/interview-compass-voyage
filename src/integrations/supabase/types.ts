@@ -16,6 +16,7 @@ export type Database = {
           id: string
           name: string
           tier: string | null
+          title: string | null
           updated_at: string | null
         }
         Insert: {
@@ -24,6 +25,7 @@ export type Database = {
           id?: string
           name: string
           tier?: string | null
+          title?: string | null
           updated_at?: string | null
         }
         Update: {
@@ -32,6 +34,7 @@ export type Database = {
           id?: string
           name?: string
           tier?: string | null
+          title?: string | null
           updated_at?: string | null
         }
         Relationships: []
@@ -70,11 +73,11 @@ export type Database = {
           id: string
           is_paid: boolean
           level_unlock: string
-          pricing_tier: string
           slug: string
           solution: string
           status: string
           tags: string[]
+          tier: string
           title: string
           updated_at: string
           video_link: string | null
@@ -88,11 +91,11 @@ export type Database = {
           id?: string
           is_paid?: boolean
           level_unlock?: string
-          pricing_tier?: string
           slug: string
           solution: string
           status?: string
           tags?: string[]
+          tier?: string
           title: string
           updated_at?: string
           video_link?: string | null
@@ -106,11 +109,11 @@ export type Database = {
           id?: string
           is_paid?: boolean
           level_unlock?: string
-          pricing_tier?: string
           slug?: string
           solution?: string
           status?: string
           tags?: string[]
+          tier?: string
           title?: string
           updated_at?: string
           video_link?: string | null
@@ -303,6 +306,7 @@ export type Database = {
           id: string
           name: string
           tier: string | null
+          title: string | null
           updated_at: string | null
         }
         Insert: {
@@ -312,6 +316,7 @@ export type Database = {
           id?: string
           name: string
           tier?: string | null
+          title?: string | null
           updated_at?: string | null
         }
         Update: {
@@ -321,6 +326,7 @@ export type Database = {
           id?: string
           name?: string
           tier?: string | null
+          title?: string | null
           updated_at?: string | null
         }
         Relationships: [
