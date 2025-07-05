@@ -1,6 +1,5 @@
-
-import { useState } from "react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { useState, useEffect } from "react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -25,10 +24,11 @@ interface QuestionModalProps {
   onClose: () => void;
   onSuccess: () => void;
   subcategoryId: string;
+  subcategoryTitle: string;
   question?: Question;
 }
 
-const QuestionModal = ({ isOpen, onClose, onSuccess, subcategoryId, question }: QuestionModalProps) => {
+const QuestionModal = ({ isOpen, onClose, onSuccess, subcategoryId, subcategoryTitle, question }: QuestionModalProps) => {
   const { toast } = useToast();
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({
@@ -39,6 +39,19 @@ const QuestionModal = ({ isOpen, onClose, onSuccess, subcategoryId, question }: 
     difficulty: question?.difficulty || "Easy",
     pricing_tier: question?.pricing_tier || "Explorer"
   });
+
+  // Add this useEffect:
+  useEffect(() => {
+    const allowedDifficulties = ["Explorer", "Builder", "Innovator"];
+    setFormData({
+      title: question?.title || "",
+      content: question?.content || "",
+      answer: question?.answer || "",
+      type: question?.type || "Multiple Choice",
+      difficulty: allowedDifficulties.includes(question?.difficulty || "") ? question.difficulty : "Easy",
+      pricing_tier: question?.pricing_tier || "Explorer"
+    });
+  }, [question]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -95,6 +108,9 @@ const QuestionModal = ({ isOpen, onClose, onSuccess, subcategoryId, question }: 
       <DialogContent className="max-w-2xl">
         <DialogHeader>
           <DialogTitle>{question ? "Edit Question" : "Add New Question"}</DialogTitle>
+          <DialogDescription>
+            {question ? 'Update the question.' : 'Create a new question.'}
+          </DialogDescription>
         </DialogHeader>
         
         <form onSubmit={handleSubmit} className="space-y-4">
@@ -112,17 +128,13 @@ const QuestionModal = ({ isOpen, onClose, onSuccess, subcategoryId, question }: 
           <div className="grid grid-cols-2 gap-4">
             <div>
               <Label htmlFor="type">Type</Label>
-              <Select value={formData.type} onValueChange={(value) => setFormData({ ...formData, type: value })}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Select type" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="Multiple Choice">Multiple Choice</SelectItem>
-                  <SelectItem value="Short Answer">Short Answer</SelectItem>
-                  <SelectItem value="Essay">Essay</SelectItem>
-                  <SelectItem value="Code">Code</SelectItem>
-                </SelectContent>
-              </Select>
+              <Input
+                id="type"
+                value={formData.type}
+                onChange={(e) => setFormData({ ...formData, type: e.target.value })}
+                placeholder="Enter question type"
+                required
+              />
             </div>
 
             <div>
@@ -132,9 +144,9 @@ const QuestionModal = ({ isOpen, onClose, onSuccess, subcategoryId, question }: 
                   <SelectValue placeholder="Select difficulty" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="Easy">Easy</SelectItem>
-                  <SelectItem value="Medium">Medium</SelectItem>
-                  <SelectItem value="Hard">Hard</SelectItem>
+                  <SelectItem value="Explorer">Explorer</SelectItem>
+                  <SelectItem value="Builder">Builder</SelectItem>
+                  <SelectItem value="Innovator">Innovator</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -148,8 +160,8 @@ const QuestionModal = ({ isOpen, onClose, onSuccess, subcategoryId, question }: 
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="Explorer">Explorer</SelectItem>
-                <SelectItem value="Innovator">Innovator</SelectItem>
                 <SelectItem value="Builder">Builder</SelectItem>
+                <SelectItem value="Innovator">Innovator</SelectItem>
               </SelectContent>
             </Select>
           </div>

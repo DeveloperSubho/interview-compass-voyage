@@ -26,7 +26,7 @@ interface Question {
 
 const SubCategory = () => {
   const navigate = useNavigate();
-  const { category, subcategoryId } = useParams();
+  const { category, subcategoryName } = useParams();
   const location = useLocation();
   const { profile, user } = useAuth();
   const { toast } = useToast();
@@ -38,7 +38,8 @@ const SubCategory = () => {
   const [editingQuestion, setEditingQuestion] = useState<Question | null>(null);
   const [selectedQuestions, setSelectedQuestions] = useState<string[]>([]);
   const [bulkDeleteMode, setBulkDeleteMode] = useState(false);
-  const subcategoryName = location.state?.subcategoryName || `${category} Topic`;
+  const [ subcategoryId, setSubcategoryId ] = useState();
+  const [ subcategoryTitle, setSubcategoryTitle ] = useState();
 
   // Get user's subscription tier
   const userTier = profile?.tier || 'Explorer';
@@ -62,10 +63,10 @@ const SubCategory = () => {
     };
 
   useEffect(() => {
-    if (subcategoryId) {
-      fetchQuestions();
+    if (subcategoryName) {
+      fetchSubcategoryAndQuestions();
     }
-  }, [subcategoryId]);
+  }, [subcategoryName]);
 
   useEffect(() => {
     // Filter questions based on user's tier access
@@ -76,27 +77,41 @@ const SubCategory = () => {
     setFilteredQuestions(filtered);
   }, [questions, userTier, profile?.is_admin]);
 
-  const fetchQuestions = async () => {
-    try {
-      const { data, error } = await supabase
-        .from('questions')
-        .select('*')
-        .eq('subcategory_id', subcategoryId)
-        .order('created_at', { ascending: true });
+  const fetchSubcategoryAndQuestions = async () => {
 
-      if (error) throw error;
-      setQuestions(data || []);
-    } catch (error) {
-      console.error('Error fetching questions:', error);
-      toast({
-        title: "Error",
-        description: "Failed to load questions",
-        variant: "destructive",
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
+      try {
+
+          // Get Subcategory
+              const { data: subcategoriesData, error: subcategoriesError } = await supabase
+                .from('subcategories')
+                .select('*')
+                .eq('name', subcategoryName)
+                .order('created_at', { ascending: false });
+
+                setSubcategoryId(subcategoriesData[0].id);
+                setSubcategoryTitle(subcategoriesData[0].title);
+
+            // Then get Questions for Sub-Category
+            const { data, error } = await supabase
+              .from('questions')
+              .select('*')
+              .eq('subcategory_id', subcategoriesData[0].id)
+              .order('created_at', { ascending: true });
+
+            if (error) throw error;
+            setQuestions(data || []);
+          } catch (error) {
+            console.error('Error fetching questions:', error);
+            toast({
+              title: "Error",
+              description: "Failed to load questions",
+              variant: "destructive",
+            });
+          } finally {
+            setLoading(false);
+          }
+
+  }
 
   const handleDeleteQuestion = async (questionId: string) => {
     if (!window.confirm('Are you sure you want to delete this question?')) {
@@ -116,7 +131,7 @@ const SubCategory = () => {
         description: "Question deleted successfully",
       });
 
-      fetchQuestions();
+      fetchSubcategoryAndQuestions();
     } catch (error) {
       console.error('Error deleting question:', error);
       toast({
@@ -156,7 +171,7 @@ const SubCategory = () => {
 
       setSelectedQuestions([]);
       setBulkDeleteMode(false);
-      fetchQuestions();
+      fetchSubcategoryAndQuestions();
     } catch (error) {
       console.error('Error bulk deleting questions:', error);
       toast({
@@ -194,12 +209,13 @@ const SubCategory = () => {
   };
 
   const handleQuestionSaved = () => {
-    fetchQuestions();
+    fetchSubcategoryAndQuestions();
+    setShowQuestionModal(null);
     setEditingQuestion(null);
   };
 
   const handleBulkImportComplete = () => {
-    fetchQuestions();
+    fetchSubcategoryAndQuestions();
   };
 
   const getDifficultyColor = (level: string) => {
@@ -215,11 +231,11 @@ const SubCategory = () => {
     }
   };
 
-  const handleQuestionClick = (questionId: string) => {
+  const handleQuestionClick = (question: Question) => {
     if (bulkDeleteMode) return;
 
         if (canAccessQuestion(question.pricing_tier)) {
-          navigate(`/questions/java/${subcategoryId}/${question.id}`);
+          navigate(`/questions/${category}/${subcategoryName}/${question.id}`);
         } else {
           toast({
             title: "Upgrade Required",
@@ -263,10 +279,10 @@ const SubCategory = () => {
           <div className="flex items-center justify-between mb-8">
             <div>
               <h1 className="text-4xl md:text-5xl font-bold mb-4 bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent">
-                {subcategoryName} Questions
+                {subcategoryTitle} Questions
               </h1>
               <p className="text-muted-foreground text-lg max-w-2xl">
-                Practice and master these carefully curated questions for {subcategoryName}.
+                Practice and master these carefully curated questions for {subcategoryTitle}.
               </p>
             </div>
             {profile?.is_admin && (
@@ -349,7 +365,7 @@ const SubCategory = () => {
             >
               <CardHeader>
                 <div className="flex items-start justify-between gap-4">
-                  <div className="flex items-start gap-3">
+                  <div className="flex items-start gap-3 w-full">
                     {bulkDeleteMode && profile?.is_admin && (
                       <Checkbox
                         checked={selectedQuestions.includes(question.id)}
@@ -359,12 +375,12 @@ const SubCategory = () => {
                     )}
                     <div 
                       className="flex-1 cursor-pointer"
-                      onClick={() => handleQuestionClick(question.id)}
+                      onClick={() => handleQuestionClick(question)}
                     >
                       <div className="flex items-center gap-2 mb-2">
                         <span className="text-muted-foreground text-sm">#{index + 1}</span>
-                        <Badge className={`${getDifficultyColor(question.level)} border`}>
-                          {question.level}
+                        <Badge className={`${getDifficultyColor(question.pricing_tier)} border`}>
+                          {question.pricing_tier}
                         </Badge>
                         <Badge variant="secondary" className="bg-blue-600/20 text-blue-300 border-blue-600/30">
                           {question.type}
@@ -381,10 +397,6 @@ const SubCategory = () => {
                     </div>
                   </div>
                   <div className="flex items-center gap-2">
-                    <div className="flex items-center gap-1 text-muted-foreground">
-                      <Clock className="h-4 w-4" />
-                      <span className="text-sm">5-15 mins</span>
-                    </div>
                     {profile?.is_admin && !bulkDeleteMode && (
                       <div className="flex gap-1">
                         <Button
@@ -425,7 +437,7 @@ const SubCategory = () => {
             <p className="text-muted-foreground mb-4">
               {questions.length > 0 
                 ? "You need a higher tier subscription to access these questions."
-                : `Questions for ${subcategoryName} will appear here once they are added.`}
+                : `Questions for ${subcategoryTitle} will appear here once they are added.`}
             </p>
             {profile?.is_admin && (
               <div className="flex gap-2 justify-center">
@@ -456,19 +468,19 @@ const SubCategory = () => {
                 <div className="grid md:grid-cols-3 gap-8 text-center">
                   <div>
                     <div className="text-3xl font-bold text-green-400 mb-2">
-                      {filteredQuestions.filter(q => q.level === "Explorer").length}
+                      {filteredQuestions.filter(q => q.pricing_tier === "Explorer").length}
                     </div>
                     <div className="text-foreground">Explorer Questions</div>
                   </div>
                   <div>
                     <div className="text-3xl font-bold text-yellow-400 mb-2">
-                      {filteredQuestions.filter(q => q.level === "Builder").length}
+                      {filteredQuestions.filter(q => q.pricing_tier === "Builder").length}
                     </div>
                     <div className="text-foreground">Builder Questions</div>
                   </div>
                   <div>
                     <div className="text-3xl font-bold text-red-400 mb-2">
-                      {filteredQuestions.filter(q => q.level === "Innovator").length}
+                      {filteredQuestions.filter(q => q.pricing_tier === "Innovator").length}
                     </div>
                     <div className="text-foreground">Innovator Questions</div>
                   </div>
@@ -480,15 +492,16 @@ const SubCategory = () => {
       </div>
 
       <QuestionModal
+        key={editingQuestion?.id || "new"}
         isOpen={showQuestionModal}
         onClose={() => {
           setShowQuestionModal(false);
           setEditingQuestion(null);
         }}
-        onQuestionSaved={handleQuestionSaved}
+        onSuccess={handleQuestionSaved}
         subcategoryId={subcategoryId!}
-        subcategoryName={subcategoryName}
-        editingQuestion={editingQuestion}
+        subcategoryTitle={subcategoryTitle}
+        question={editingQuestion}
       />
 
       <BulkImportModal
@@ -497,6 +510,7 @@ const SubCategory = () => {
         onImportComplete={handleBulkImportComplete}
         subcategoryId={subcategoryId!}
         subcategoryName={subcategoryName}
+        subcategoryTitle={subcategoryTitle}
       />
 
       <Footer />

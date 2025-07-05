@@ -273,9 +273,9 @@ const Questions = () => {
                       )}
                     </div>
                   </div>
-                  <CardTitle className="text-foreground">{category.name}</CardTitle>
+                  <CardTitle className="text-foreground">{category.title}</CardTitle>
                   <CardDescription className="text-muted-foreground">
-                    {category.description || `Explore ${category.name} topics and questions`}
+                    {category.description || `Explore ${category.title} topics and questions`}
                   </CardDescription>
                 </CardHeader>
                 <CardContent>

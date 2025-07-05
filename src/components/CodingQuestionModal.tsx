@@ -1,6 +1,6 @@
 
-import { useState } from "react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { useState, useEffect } from "react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -18,7 +18,7 @@ interface CodingQuestion {
   difficulty: string;
   category: string;
   tags: string[];
-  pricing_tier: string;
+  tier: string;
   video_link?: string;
   github_link?: string;
 }
@@ -27,24 +27,48 @@ interface CodingQuestionModalProps {
   isOpen: boolean;
   onClose: () => void;
   onSuccess: () => void;
-  question?: CodingQuestion;
+  question?: CodingQuestion | null;
 }
 
 const CodingQuestionModal = ({ isOpen, onClose, onSuccess, question }: CodingQuestionModalProps) => {
   const { toast } = useToast();
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({
-    title: question?.title || "",
-    slug: question?.slug || "",
-    description: question?.description || "",
-    solution: question?.solution || "",
-    difficulty: question?.difficulty || "Easy",
-    category: question?.category || "",
-    tags: question?.tags?.join(", ") || "",
-    pricing_tier: question?.pricing_tier || "Explorer",
-    video_link: question?.video_link || "",
-    github_link: question?.github_link || ""
+    title: "",
+    slug: "",
+    description: "",
+    solution: "",
+    difficulty: "Easy",
+    status: "Unsolved",
+    tags: [],
+    github_link: "",
+    video_link: "",
+    is_paid: false,
+    level_unlock: "Beginner",
+    pricing_tier: "Explorer"
   });
+
+  useEffect(() => {
+      if (question) {
+        setFormData(question);
+      } else {
+        setFormData({
+          title: "",
+          slug: "",
+          description: "",
+          solution: "",
+          difficulty: "Easy",
+          status: "Unsolved",
+          category: "",
+          tags: [],
+          github_link: "",
+          video_link: "",
+          is_paid: false,
+          level_unlock: "Beginner",
+          pricing_tier: "Explorer"
+        });
+      }
+    }, [question, isOpen]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -53,7 +77,7 @@ const CodingQuestionModal = ({ isOpen, onClose, onSuccess, question }: CodingQue
     try {
       const questionData = {
         ...formData,
-        tags: formData.tags.split(",").map(tag => tag.trim()).filter(tag => tag)
+        tags: formData.tags.map(tag => tag.trim()).filter(tag => tag)
       };
 
       if (question?.id) {
@@ -101,6 +125,11 @@ const CodingQuestionModal = ({ isOpen, onClose, onSuccess, question }: CodingQue
       <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>{question ? "Edit Coding Question" : "Add New Coding Question"}</DialogTitle>
+          <DialogDescription>
+              {question
+                ? "Update the existing coding question details below."
+                : "Fill out the form to add a new coding question."}
+            </DialogDescription>
         </DialogHeader>
         
         <form onSubmit={handleSubmit} className="space-y-4">
@@ -155,15 +184,15 @@ const CodingQuestionModal = ({ isOpen, onClose, onSuccess, question }: CodingQue
             </div>
 
             <div>
-              <Label htmlFor="pricing_tier">Pricing Tier</Label>
-              <Select value={formData.pricing_tier} onValueChange={(value) => setFormData({ ...formData, pricing_tier: value })}>
+              <Label htmlFor="tier">Pricing Tier</Label>
+              <Select value={formData.tier} onValueChange={(value) => setFormData({ ...formData, tier: value })}>
                 <SelectTrigger>
                   <SelectValue placeholder="Select pricing tier" />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="Explorer">Explorer</SelectItem>
-                  <SelectItem value="Innovator">Innovator</SelectItem>
                   <SelectItem value="Builder">Builder</SelectItem>
+                  <SelectItem value="Innovator">Innovator</SelectItem>
                 </SelectContent>
               </Select>
             </div>

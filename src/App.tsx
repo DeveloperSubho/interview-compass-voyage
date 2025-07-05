@@ -15,12 +15,11 @@ import JavaSubcategories from "./pages/JavaSubcategories";
 import JavaQuestionList from "./pages/JavaQuestionList";
 import JavaQuestionDetail from "./pages/JavaQuestionDetail";
 import CategorySection from "./components/CategorySection";
-import CategoryQuestionList from "./components/CategoryQuestionList";
+import SubCategory from "./components/SubCategory";
 import Projects from "./pages/Projects";
 import ProjectCategory from "./pages/ProjectCategory";
 import ProjectDetail from "./pages/ProjectDetail";
 import CodingQuestions from "./pages/CodingQuestions";
-import CodingQuestionList from "./pages/CodingQuestionList";
 import CodingQuestionDetail from "./pages/CodingQuestionDetail";
 import SystemDesign from "./pages/SystemDesign";
 import Profile from "./pages/Profile";
@@ -49,15 +48,11 @@ function App() {
               <Routes>
                 <Route path="/" element={<Index />} />
                 <Route path="/questions" element={<Questions />} />
-                <Route path="/questions/java" element={<JavaSubcategories />} />
-                <Route path="/questions/java/:subcategoryId" element={<JavaQuestionList />} />
-                <Route path="/questions/java/:subcategoryId/:questionId" element={<JavaQuestionDetail />} />
                 <Route path="/questions/:category" element={<CategorySection onSignInClick={handleSignInClick} />} />
-                <Route path="/questions/:category/:subcategoryId" element={<CategoryQuestionList />} />
-                <Route path="/questions/:category/:subcategoryId/:questionId" element={<QuestionDetail />} />
+                <Route path="/questions/:category/:subcategoryName" element={<SubCategory />} />
+                <Route path="/questions/:category/:subcategoryName/:questionId" element={<QuestionDetail />} />
                 <Route path="/coding" element={<CodingQuestions />} />
-                <Route path="/coding/:category" element={<CodingQuestionList />} />
-                <Route path="/coding/:category/:slug" element={<CodingQuestionDetail />} />
+                <Route path="/coding/:slug" element={<CodingQuestionDetail />} />
                 <Route path="/system-design" element={<SystemDesign />} />
                 <Route path="/projects" element={<Projects />} />
                 <Route path="/projects/:type" element={<ProjectCategory />} />

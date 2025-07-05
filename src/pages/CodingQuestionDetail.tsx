@@ -26,12 +26,12 @@ interface CodingQuestion {
   video_link: string | null;
   is_paid: boolean;
   level_unlock: string;
-  pricing_tier: string;
+  tier: string;
   created_at: string;
 }
 
 const CodingQuestionDetail = () => {
-  const { category, slug } = useParams();
+  const { slug } = useParams();
   const navigate = useNavigate();
   const { hasAccess, isAdmin } = useAuth();
   const { toast } = useToast();
@@ -46,10 +46,10 @@ const CodingQuestionDetail = () => {
   };
 
   useEffect(() => {
-    if (category && slug) {
+    if (slug) {
       fetchQuestion();
     }
-  }, [category, slug]);
+  }, [slug]);
 
   const fetchQuestion = async () => {
     try {
@@ -87,7 +87,7 @@ const CodingQuestionDetail = () => {
     }
   };
 
-  const getPricingTierColor = (tier: string) => {
+  const getTierColor = (tier: string) => {
     switch (tier) {
       case "Explorer":
         return "bg-blue-500/20 text-blue-300 border-blue-500/30";
@@ -101,7 +101,7 @@ const CodingQuestionDetail = () => {
   };
 
   // Allow access if user is admin or has the required tier
-  const canAccess = isAdmin || hasAccess(question?.pricing_tier || "");
+  const canAccess = isAdmin || hasAccess(question?.tier || "");
 
   if (loading) {
     return (
@@ -142,12 +142,12 @@ const CodingQuestionDetail = () => {
       <div className="container mx-auto px-4 py-16">
         <div className="mb-8">
           <Button 
-            variant="ghost" 
-            onClick={() => navigate(`/coding/${category}`)}
-            className="text-muted-foreground hover:text-foreground hover:bg-accent mb-4"
+              variant="ghost"
+              onClick={() => navigate("/coding")}
+              className="text-muted-foreground hover:text-foreground hover:bg-accent mb-4"
           >
-            <ArrowLeft className="h-4 w-4 mr-2" />
-            Back to {category?.replace(/-/g, ' ')} Questions
+              <ArrowLeft className="h-4 w-4 mr-2" />
+              Back to Coding Questions
           </Button>
         </div>
 
@@ -161,8 +161,8 @@ const CodingQuestionDetail = () => {
                     <Badge className={`${getDifficultyColor(question.difficulty)} border`}>
                       {question.difficulty}
                     </Badge>
-                    <Badge className={`${getPricingTierColor(question.pricing_tier)} border`}>
-                      {question.pricing_tier}
+                    <Badge className={`${getTierColor(question.tier)} border`}>
+                      {question.tier}
                     </Badge>
                     {question.is_paid && (
                       <Badge className="bg-yellow-500/20 text-yellow-300 border-yellow-500/30">
@@ -185,28 +185,6 @@ const CodingQuestionDetail = () => {
                     ))}
                   </div>
                 </div>
-                <div className="flex items-center gap-2">
-                  {question.github_link && (
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => window.open(question.github_link!, '_blank')}
-                    >
-                      <Github className="h-4 w-4 mr-2" />
-                      Code
-                    </Button>
-                  )}
-                  {question.video_link && (
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => window.open(question.video_link!, '_blank')}
-                    >
-                      <Play className="h-4 w-4 mr-2" />
-                      Video
-                    </Button>
-                  )}
-                </div>
               </div>
             </CardHeader>
           </Card>
@@ -227,7 +205,7 @@ const CodingQuestionDetail = () => {
 
           {/* Solution - Protected Content */}
           <ProtectedContent 
-            requiredTier={isAdmin ? undefined : question.pricing_tier}
+            requiredTier={isAdmin ? undefined : question.tier}
             onSignInClick={handleSignInClick}
             showUpgradeMessage={true}
           >

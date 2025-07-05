@@ -24,7 +24,7 @@ interface CodingQuestion {
   difficulty: string;
   category: string;
   tags: string[];
-  pricing_tier: string;
+  tier: string;
   video_link?: string;
   github_link?: string;
   solution: string;
@@ -86,7 +86,7 @@ const CodingQuestions = () => {
     }
   };
 
-  const getPricingTierColor = (tier: string) => {
+  const getTierColor = (tier: string) => {
     switch (tier) {
       case "Explorer":
         return "bg-blue-500/20 text-blue-300 border-blue-500/30";
@@ -104,7 +104,7 @@ const CodingQuestions = () => {
                          question.description.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesDifficulty = !difficultyFilter || question.difficulty === difficultyFilter;
     const matchesCategory = !categoryFilter || question.category === categoryFilter;
-    const matchesTier = !tierFilter || question.pricing_tier === tierFilter;
+    const matchesTier = !tierFilter || question.tier === tierFilter;
     
     return matchesSearch && matchesDifficulty && matchesCategory && matchesTier;
   }).sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
@@ -215,7 +215,7 @@ const CodingQuestions = () => {
               <SelectValue placeholder="Filter by difficulty" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="">All Difficulties</SelectItem>
+              <SelectItem value="all">All Difficulties</SelectItem>
               <SelectItem value="Easy">Easy</SelectItem>
               <SelectItem value="Medium">Medium</SelectItem>
               <SelectItem value="Hard">Hard</SelectItem>
@@ -227,7 +227,7 @@ const CodingQuestions = () => {
               <SelectValue placeholder="Filter by category" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="">All Categories</SelectItem>
+              <SelectItem value="all">All Categories</SelectItem>
               {allCategories.map(category => (
                 <SelectItem key={category} value={category}>{category}</SelectItem>
               ))}
@@ -239,10 +239,10 @@ const CodingQuestions = () => {
               <SelectValue placeholder="Filter by tier" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="">All Tiers</SelectItem>
+              <SelectItem value="all">All Tiers</SelectItem>
               <SelectItem value="Explorer">Explorer</SelectItem>
-              <SelectItem value="Innovator">Innovator</SelectItem>
               <SelectItem value="Builder">Builder</SelectItem>
+              <SelectItem value="Innovator">Innovator</SelectItem>
             </SelectContent>
           </Select>
         </div>
@@ -278,8 +278,8 @@ const CodingQuestions = () => {
                       <Badge className={`${getDifficultyColor(question.difficulty)} border`}>
                         {question.difficulty}
                       </Badge>
-                      <Badge className={`${getPricingTierColor(question.pricing_tier)} border`}>
-                        {question.pricing_tier}
+                      <Badge className={`${getTierColor(question.tier)} border`}>
+                        {question.tier}
                       </Badge>
                     </div>
                   </div>
@@ -320,15 +320,6 @@ const CodingQuestions = () => {
                         </Button>
                       )}
                     </div>
-
-                    <ProtectedContent 
-                      requiredTier={isAdmin ? undefined : question.pricing_tier}
-                      showUpgradeMessage={true}
-                    >
-                      <Button className="w-full bg-green-600 hover:bg-green-700 text-white">
-                        View Solution
-                      </Button>
-                    </ProtectedContent>
                   </div>
                 </CardContent>
               </Card>

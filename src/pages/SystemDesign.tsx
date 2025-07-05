@@ -168,7 +168,7 @@ const SystemDesign = () => {
               <SelectValue placeholder="Filter by difficulty" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="">All Difficulties</SelectItem>
+              <SelectItem value="All">All Difficulties</SelectItem>
               <SelectItem value="Easy">Easy</SelectItem>
               <SelectItem value="Medium">Medium</SelectItem>
               <SelectItem value="Hard">Hard</SelectItem>
@@ -180,7 +180,7 @@ const SystemDesign = () => {
               <SelectValue placeholder="Filter by tier" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="">All Tiers</SelectItem>
+              <SelectItem value="All">All Tiers</SelectItem>
               <SelectItem value="Explorer">Explorer</SelectItem>
               <SelectItem value="Innovator">Innovator</SelectItem>
               <SelectItem value="Builder">Builder</SelectItem>
@@ -192,7 +192,7 @@ const SystemDesign = () => {
               <SelectValue placeholder="Filter by tag" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="">All Tags</SelectItem>
+              <SelectItem value="All">All Tags</SelectItem>
               {allTags.map(tag => (
                 <SelectItem key={tag} value={tag}>{tag}</SelectItem>
               ))}

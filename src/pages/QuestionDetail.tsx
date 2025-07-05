@@ -1,100 +1,146 @@
 
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, Clock, Code, CheckCircle } from "lucide-react";
+import { ArrowLeft, Clock, Code } from "lucide-react";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import { useNavigate, useParams } from "react-router-dom";
+import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/hooks/use-toast";
+
+interface Question {
+  id: string;
+  title: string;
+  content: string;
+  answer: string;
+  type: string;
+  level: string;
+  created_at: string;
+}
 
 const QuestionDetail = () => {
   const navigate = useNavigate();
-  const { category, questionId } = useParams();
+  const { category, subcategoryName, questionId } = useParams();
+  const { toast } = useToast();
+  const [question, setQuestion] = useState<Question | null>(null);
+  const [loading, setLoading] = useState(true);
 
-  // Sample question data - in a real app, this would come from an API
-  const sampleQuestion = {
-    id: questionId,
-    title: "What is the difference between == and === in JavaScript?",
-    difficulty: "Easy",
-    timeToSolve: "5 mins",
-    tags: ["JavaScript", "Comparison", "Fundamentals"],
-    description: "This question tests your understanding of JavaScript's comparison operators and type coercion.",
-    content: `
-## Question
+  useEffect(() => {
+    if (questionId) {
+      fetchQuestion();
+    }
+  }, [questionId]);
 
-Explain the difference between == (loose equality) and === (strict equality) operators in JavaScript. Provide examples to illustrate your explanation.
+  const fetchQuestion = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('questions')
+        .select('*')
+        .eq('id', questionId)
+        .single();
 
-## Key Points to Cover
-
-1. **Type Coercion**: Explain how == performs type coercion
-2. **Strict Comparison**: Explain how === performs strict comparison
-3. **Performance**: Discuss the performance implications
-4. **Best Practices**: When to use each operator
-
-## Sample Answer
-
-The main difference between == and === in JavaScript is:
-
-### == (Loose Equality)
-- Performs type coercion before comparison
-- Converts operands to the same type if they're different
-- Can lead to unexpected results
-
-\`\`\`javascript
-console.log(5 == "5");     // true (string "5" is converted to number 5)
-console.log(true == 1);    // true (true is converted to 1)
-console.log(null == undefined); // true (special case)
-\`\`\`
-
-### === (Strict Equality)
-- No type coercion
-- Compares both value and type
-- More predictable and safer
-
-\`\`\`javascript
-console.log(5 === "5");    // false (different types)
-console.log(true === 1);   // false (different types)
-console.log(null === undefined); // false (different types)
-\`\`\`
-
-### Best Practice
-Always use === unless you specifically need type coercion. It makes your code more predictable and easier to debug.
-
-## Related Topics
-- Type coercion in JavaScript
-- Truthy and falsy values
-- Object comparison
-- Array comparison
-    `,
-    hints: [
-      "Think about what happens when JavaScript tries to compare different data types",
-      "Consider the concept of type coercion and when it occurs",
-      "Remember that === checks both value and type"
-    ]
+      if (error) throw error;
+      setQuestion(data);
+    } catch (error) {
+      console.error('Error fetching question:', error);
+      toast({
+        title: "Error",
+        description: "Failed to load question details",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const getDifficultyColor = (difficulty: string) => {
-    switch (difficulty) {
-      case "Easy":
+  const getDifficultyColor = (pricing_tier: string) => {
+    switch (pricing_tier) {
+      case "Explorer":
         return "bg-green-500/20 text-green-300 border-green-500/30";
-      case "Medium":
+      case "Builder":
         return "bg-yellow-500/20 text-yellow-300 border-yellow-500/30";
-      case "Hard":
+      case "Innovator":
         return "bg-red-500/20 text-red-300 border-red-500/30";
       default:
         return "bg-gray-500/20 text-gray-300 border-gray-500/30";
     }
   };
 
+  const renderAnswerWithImages = (answer: string) => {
+    const lines = answer.split('\n');
+    return lines.map((line, index) => {
+      const imageUrlPattern = /(https?:\/\/[^\s]+\.(jpg|jpeg|png|gif|webp))/gi;
+      const matches = line.match(imageUrlPattern);
+
+      if (matches) {
+        return (
+          <div key={index} className="my-4">
+            {line.replace(imageUrlPattern, '').trim() && (
+              <p className="mb-2">{line.replace(imageUrlPattern, '').trim()}</p>
+            )}
+            {matches.map((url, imgIndex) => (
+              <img
+                key={imgIndex}
+                src={url}
+                alt="Answer illustration"
+                className="max-w-full h-auto rounded-lg border border-border my-2"
+                onError={(e) => {
+                  const target = e.target as HTMLImageElement;
+                  target.style.display = 'none';
+                }}
+              />
+            ))}
+          </div>
+        );
+      }
+
+      return line ? <p key={index} className="mb-2">{line}</p> : <br key={index} />;
+    });
+  };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-background text-foreground">
+        <Navbar />
+        <div className="container mx-auto px-4 py-16">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-400 mx-auto"></div>
+            <p className="mt-4 text-muted-foreground">Loading question...</p>
+          </div>
+        </div>
+        <Footer />
+      </div>
+    );
+  }
+
+  if (!question) {
+    return (
+      <div className="min-h-screen bg-background text-foreground">
+        <Navbar />
+        <div className="container mx-auto px-4 py-16">
+          <div className="text-center">
+            <h2 className="text-2xl font-bold text-muted-foreground mb-4">Question Not Found</h2>
+            <Button onClick={() => navigate(`/questions/${category}`)}>
+              Back to ${category} Topics
+            </Button>
+          </div>
+        </div>
+        <Footer />
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-background text-foreground">
       <Navbar />
-      
+
       <div className="container mx-auto px-4 py-16">
         <div className="mb-8">
-          <Button 
-            variant="ghost" 
-            onClick={() => navigate(`/questions/${category}`)}
+          <Button
+            variant="ghost"
+            onClick={() => navigate(`/questions/${category}/${subcategoryName}`)}
             className="text-muted-foreground hover:text-foreground hover:bg-accent mb-4"
           >
             <ArrowLeft className="h-4 w-4 mr-2" />
@@ -109,92 +155,40 @@ Always use === unless you specifically need type coercion. It makes your code mo
               <div className="flex items-start justify-between gap-4">
                 <div className="flex-1">
                   <div className="flex items-center gap-2 mb-2">
-                    <span className="text-muted-foreground text-sm">#{sampleQuestion.id}</span>
-                    <Badge className={`${getDifficultyColor(sampleQuestion.difficulty)} border`}>
-                      {sampleQuestion.difficulty}
+                    <Badge className={`${getDifficultyColor(question.pricing_tier)} border`}>
+                      {question.pricing_tier}
                     </Badge>
-                    <div className="flex items-center gap-1 text-muted-foreground">
-                      <Clock className="h-4 w-4" />
-                      <span className="text-sm">{sampleQuestion.timeToSolve}</span>
-                    </div>
+                    <Badge variant="secondary" className="bg-blue-600/20 text-blue-300 border-blue-600/30">
+                      {question.type}
+                    </Badge>
                   </div>
                   <CardTitle className="text-foreground text-2xl mb-2">
-                    {sampleQuestion.title}
+                    {question.title}
                   </CardTitle>
                   <CardDescription className="text-muted-foreground">
-                    {sampleQuestion.description}
+                    {question.content}
                   </CardDescription>
                 </div>
-              </div>
-              <div className="flex flex-wrap gap-2 mt-4">
-                {sampleQuestion.tags.map((tag, tagIndex) => (
-                  <Badge 
-                    key={tagIndex} 
-                    variant="secondary" 
-                    className="bg-muted text-muted-foreground"
-                  >
-                    {tag}
-                  </Badge>
-                ))}
               </div>
             </CardHeader>
           </Card>
 
-          {/* Question Content */}
+          {/* Question Answer */}
           <Card className="bg-card border-border mb-8">
             <CardHeader>
               <CardTitle className="text-foreground flex items-center gap-2">
                 <Code className="h-5 w-5" />
-                Question Details & Answer
+                Answer & Explanation
               </CardTitle>
             </CardHeader>
             <CardContent>
               <div className="prose prose-invert max-w-none">
-                <div className="whitespace-pre-wrap text-muted-foreground leading-relaxed">
-                  {sampleQuestion.content}
+                <div className="text-muted-foreground leading-relaxed">
+                  {renderAnswerWithImages(question.answer)}
                 </div>
               </div>
             </CardContent>
           </Card>
-
-          {/* Hints Section */}
-          <Card className="bg-card border-border mb-8">
-            <CardHeader>
-              <CardTitle className="text-foreground flex items-center gap-2">
-                💡 Hints
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-3">
-                {sampleQuestion.hints.map((hint, index) => (
-                  <div key={index} className="flex items-start gap-3">
-                    <div className="h-6 w-6 bg-blue-600 rounded-full flex items-center justify-center text-white text-sm font-semibold flex-shrink-0 mt-0.5">
-                      {index + 1}
-                    </div>
-                    <p className="text-muted-foreground">{hint}</p>
-                  </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Navigation */}
-          <div className="flex justify-between items-center">
-            <Button 
-              variant="outline" 
-              className="border-border text-foreground hover:bg-accent"
-              onClick={() => navigate(`/questions/${category}`)}
-            >
-              <ArrowLeft className="h-4 w-4 mr-2" />
-              Back to List
-            </Button>
-            <Button 
-              className="bg-green-600 hover:bg-green-700 text-white"
-            >
-              <CheckCircle className="h-4 w-4 mr-2" />
-              Mark as Complete
-            </Button>
-          </div>
         </div>
       </div>
 
